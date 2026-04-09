@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คำนวณงวดผ่อนชำระรถยนต์</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--blue:#1e3a8a;--bluel:#3b82f6;--bluep:#eff6ff;--green:#166534;--greenl:#22c55e;--greenp:#f0fdf4;--red:#dc2626;--orange:#ea580c;--gray:#374151;--grayl:#9ca3af;--border:#e5e7eb;--sh:0 2px 12px rgba(0,0,0,.08);--pur:#7c3aed;--purp:#f5f3ff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f1f5f9;color:var(--gray);min-height:100vh}
+header{background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;padding:14px 24px}
+.hdr-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+header h1{font-size:1.2rem;font-weight:700}
+header p{font-size:.78rem;opacity:.8;margin-top:2px}
+.page-nav{display:flex;gap:6px;flex-shrink:0}
+.pnav{padding:7px 16px;border:2px solid rgba(255,255,255,.5);border-radius:8px;background:transparent;color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.pnav.on{background:#fff;color:var(--blue);border-color:#fff}
+.container{max-width:1100px;margin:0 auto;padding:16px}
+.page{display:none}.page.on{display:block}
+.card{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:var(--sh)}
+.card-title{font-size:.9rem;font-weight:700;color:var(--blue);margin-bottom:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:640px){.g2,.g3,.g4,.cg{grid-template-columns:1fr!important}}
+label{display:block;font-size:.78rem;font-weight:600;color:#4b5563;margin-bottom:4px}
+.iw{position:relative}
+.iw span{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:.75rem;color:var(--grayl);pointer-events:none}
+input[type=number],input[type=date],input[type=text],select{width:100%;padding:8px 38px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;background:#fff;color:var(--gray);transition:border .2s}
+input[type=date],input[type=text]{padding-right:10px}
+input:focus,select:focus{outline:none;border-color:var(--bluel)}
+.tog{display:flex;gap:6px;margin-bottom:12px}
+.tbtn{flex:1;padding:6px;border:1.5px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:.78rem;font-weight:600;color:var(--grayl);transition:all .2s}
+.tbtn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-calc{width:100%;padding:11px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.btn-calc:hover{opacity:.9}
+.pp-toggle{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--greenp);border:1.5px solid #86efac;border-radius:10px;cursor:pointer;margin-top:10px;user-select:none}
+.pp-toggle input[type=checkbox]{width:18px;height:18px;accent-color:var(--greenl);cursor:pointer}
+.pp-toggle-label{font-size:.85rem;font-weight:700;color:var(--green)}
+.pp-panel{background:var(--greenp);border:1.5px solid #86efac;border-radius:10px;padding:14px;margin-top:8px}
+.pp-note{font-size:.74rem;color:var(--green);margin-top:10px;padding:8px 12px;background:#dcfce7;border-radius:8px;line-height:1.6}
+.sav-bar{background:linear-gradient(135deg,#166534,#16a34a);color:#fff;border-radius:10px;padding:12px 18px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.sav-item{text-align:center}.sav-lbl{font-size:.7rem;opacity:.85;margin-bottom:2px}.sav-val{font-size:1rem;font-weight:800}
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:680px){.sum-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:var(--sh);border-top:3px solid var(--bluel)}
+.stat.g{border-color:var(--greenl)}.stat.r{border-color:var(--red)}.stat.o{border-color:#f97316}.stat.pur{border-color:var(--pur)}
+.stat-lbl{font-size:.7rem;color:var(--grayl);font-weight:600;margin-bottom:3px}
+.stat-val{font-size:.98rem;font-weight:800;color:var(--blue)}
+.stat.g .stat-val{color:var(--green)}.stat.r .stat-val{color:var(--red)}.stat.o .stat-val{color:var(--orange)}.stat.pur .stat-val{color:var(--pur)}
+.tabs{display:flex;gap:0;margin-bottom:14px;border-bottom:2px solid var(--border);flex-wrap:wrap}
+.tab{padding:8px 15px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--grayl);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap}
+.tab.on{color:var(--blue);border-color:var(--blue)}
+.tab-content{display:none}.tab-content.on{display:block}
+.tw{overflow-x:auto;border-radius:10px;box-shadow:var(--sh)}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:.78rem}
+thead th{background:var(--blue);color:#fff;padding:9px 10px;text-align:right;white-space:nowrap;font-weight:600}
+thead th:first-child{text-align:center}
+thead th.th-pp{background:#15803d}
+tbody tr:nth-child(even){background:#f8faff}
+tbody tr.pp-row{background:#dcfce7!important}
+tbody tr.pp-row:hover{background:#bbf7d0!important}
+tbody tr:last-child td{font-weight:700;background:#eff6ff;color:var(--blue)}
+tbody tr.early-end td{background:#dcfce7;color:var(--green);font-weight:700}
+tbody tr:hover{background:var(--bluep)}
+td{padding:7px 10px;text-align:right;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+td:first-child{text-align:center;color:var(--grayl);font-weight:600}
+td:nth-child(2){text-align:left;color:#4b5563}
+.tp{color:#1d4ed8}.ti{color:var(--red)}.tpay{font-weight:700;color:var(--blue)}.tpp{color:#16a34a;font-weight:700}
+.btn-exp{padding:7px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn-exp:hover{background:#15803d}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.offer-card{border:2px solid var(--border);border-radius:12px;padding:14px}
+.offer-card.a{border-color:var(--bluel);background:var(--bluep)}
+.offer-card.b{border-color:#f97316;background:#fff7ed}
+.offer-tag{font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px}
+.tag-a{background:var(--bluel);color:#fff}.tag-b{background:#f97316;color:#fff}
+.cmp-table{width:100%;border-collapse:collapse;font-size:.82rem;border-radius:10px;overflow:hidden;box-shadow:var(--sh)}
+.cmp-table th{background:#374151;color:#fff;padding:9px 14px;text-align:left}
+.cmp-table td{padding:9px 14px;border-bottom:1px solid #f0f0f0;background:#fff}
+.cmp-table tr:nth-child(even) td{background:#f9fafb}
+.win{color:#16a34a;font-weight:700}
+.verdict{margin-top:12px;padding:12px 16px;border-radius:10px;background:var(--greenp);border:1px solid #86efac;font-size:.85rem;color:var(--green);font-weight:600}
+.chart-wrap{position:relative;height:280px;margin-top:4px}
+/* PAGE 2 */
+.prog-wrap{background:#e5e7eb;border-radius:20px;height:12px;overflow:hidden;margin:8px 0 4px}
+.prog-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .5s}
+.prog-label{font-size:.75rem;color:var(--grayl);text-align:right}
+.ptw{overflow-x:auto;border-radius:10px;box-shadow:var(--sh)}
+.pt{width:100%;border-collapse:collapse;background:#fff;font-size:.77rem}
+/* column group headers */
+.pt thead tr.hdr-top th{padding:7px 10px;font-size:.73rem;font-weight:700;text-align:center;white-space:nowrap}
+.pt thead tr.hdr-top th.th-base{background:#1e3a8a;color:#fff}
+.pt thead tr.hdr-top th.th-plan{background:#15803d;color:#fff}
+.pt thead tr.hdr-top th.th-actual{background:#6d28d9;color:#fff}
+.pt thead tr.hdr-top th.th-diff{background:#b45309;color:#fff}
+.pt thead tr.hdr-sub th{background:#374151;color:#e5e7eb;padding:7px 10px;text-align:center;font-size:.72rem;white-space:nowrap}
+/* column color bands */
+.pt td{padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
+.pt td.tdl{text-align:left}.pt td.tdr{text-align:right;font-variant-numeric:tabular-nums}
+.pt td.col-plan{background:#f0fdf4;color:#166534;font-weight:600}
+.pt td.col-actual-input{background:#f5f3ff}
+.pt td.col-diff-pos{background:#fef9c3;color:#854d0e;font-weight:600}
+.pt td.col-diff-neg{background:#fee2e2;color:#991b1b;font-weight:600}
+.pt td.col-diff-zero{color:var(--grayl)}
+.pt tbody tr:nth-child(even) td{filter:brightness(.97)}
+.pt tbody tr:hover td{background:#ede9fe!important;filter:none}
+/* inputs inside table */
+.pt input[type=date]{padding:5px 8px;font-size:.77rem;border-radius:6px;border:1.5px solid var(--border);width:136px;background:#fff}
+.pt input[type=date].filled{border-color:#22c55e;background:#f0fdf4}
+.pt input.pt-note{padding:5px 8px;font-size:.75rem;border-radius:6px;border:1.5px solid var(--border);width:120px;background:#fff}
+.pt input.actual-pp{padding:5px 8px;font-size:.77rem;border-radius:6px;border:1.5px solid #a78bfa;width:100px;text-align:right;background:#f5f3ff;color:#4c1d95;font-weight:600}
+.pt input.actual-pp:focus{outline:none;border-color:var(--pur);background:#ede9fe}
+.btn-paid{padding:4px 10px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-paid:hover{background:#16a34a}
+.btn-unpaid{padding:4px 10px;background:#f3f4f6;color:#9ca3af;border:1.5px solid var(--border);border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer}
+.btn-unpaid:hover{background:#fee2e2;color:var(--red);border-color:var(--red)}
+.st{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.69rem;font-weight:700;white-space:nowrap}
+.st-paid{background:#dcfce7;color:#166534}.st-late{background:#fef9c3;color:#854d0e}
+.st-pending{background:#dbeafe;color:#1d4ed8}.st-overdue{background:#fee2e2;color:var(--red)}
+.act-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn-purple{padding:8px 16px;background:var(--pur);color:#fff;border:none;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer}
+.btn-purple:hover{background:#6d28d9}
+.btn-danger{padding:8px 16px;background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer}
+.btn-danger:hover{background:#fee2e2}
+.empty-state{text-align:center;padding:50px 20px;color:var(--grayl)}
+.empty-state .big{font-size:3rem;margin-bottom:12px}
+.empty-state p{font-size:.9rem;margin-bottom:16px}
+.btn-goto{padding:10px 24px;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer}
+/* pp legend box */
+.pp-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.pp-leg-item{display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:600;padding:5px 12px;border-radius:8px}
+.pl-plan{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.pl-actual{background:#ede9fe;color:#4c1d95;border:1px solid #c4b5fd}
+.pl-diff{background:#fef9c3;color:#854d0e;border:1px solid #fde68a}
+/* p2 summary extras */
+.sum-grid-p2{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:800px){.sum-grid-p2{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.sum-grid-p2{grid-template-columns:repeat(2,1fr)}}
+.save-toast{position:fixed;bottom:20px;right:20px;background:#166534;color:#fff;padding:10px 18px;border-radius:10px;font-size:.82rem;font-weight:600;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none}
+.save-toast.show{opacity:1}
+.badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:20px;background:#dcfce7;color:#166534;margin-left:4px;vertical-align:middle}
+.hidden{display:none}.fade{animation:fi .3s}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.note{font-size:.72rem;color:var(--grayl);margin-top:8px}
+/* ---- OCPB info box ---- */
+.ocpb-box{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px 16px;margin-top:10px}
+.ocpb-title{font-size:.82rem;font-weight:800;color:#15803d;margin-bottom:10px}
+.ocpb-rules{display:flex;flex-direction:column;gap:8px}
+.ocpb-rule{display:flex;gap:10px;align-items:flex-start;font-size:.78rem;color:#166534;line-height:1.6}
+.ocpb-num{background:#16a34a;color:#fff;font-weight:800;font-size:.72rem;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+/* ---- Extra buttons ---- */
+.btn-pdf{padding:7px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn-pdf:hover{background:#b91c1c}
+.btn-import{padding:7px 14px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer}
+.btn-import:hover{background:#6d28d9}
+.btn-sync{padding:7px 16px;background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.6);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-sync:hover{background:rgba(255,255,255,.3)}
+.gs-url-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.gs-url-row input{flex:1;min-width:200px;padding:6px 10px;border:1.5px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-size:.78rem}
+.gs-url-row input::placeholder{color:rgba(255,255,255,.6)}
+.gs-url-row input:focus{outline:none;border-color:#fff;background:rgba(255,255,255,.2)}
+/* ---- Print / PDF ---- */
+@media print{
+  .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto{display:none!important}
+  .page{display:none!important}
+  body.print-p1 #page1{display:block!important}
+  body.print-p2 #page2{display:block!important}
+  .tab-content{display:block!important}
+  .card{box-shadow:none!important;border:1px solid #ddd;margin-bottom:8px}
+  body{background:#fff!important}
+  .container{max-width:100%;padding:4px}
+  .pp-panel.hidden,#res.hidden,.save-toast,.empty-state{display:none!important}
+  #p2Content.hidden{display:none!important}
+  header{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  thead{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  table,tr,td,th{page-break-inside:avoid}
+  .sum-grid,.sum-grid-p2{grid-template-columns:repeat(2,1fr)!important}
+}
+/* ---- Early Closure (ปิดบัญชีก่อนกำหนด สคบ.) ---- */
+.ec-info{font-size:.78rem;color:#374151;line-height:1.7;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.ec-tier-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:640px){.ec-tier-grid{grid-template-columns:1fr}}
+.ec-tier-card{border-radius:12px;padding:13px 15px;border:2px solid}
+.ec-tier-card.t1{background:#eff6ff;border-color:#93c5fd}
+.ec-tier-card.t2{background:#f0fdf4;border-color:#86efac}
+.ec-tier-card.t3{background:#f5f3ff;border-color:#c4b5fd}
+.ec-tier-label{font-size:.88rem;font-weight:800;margin-bottom:3px}
+.ec-tier-card.t1 .ec-tier-label{color:#1d4ed8}
+.ec-tier-card.t2 .ec-tier-label{color:#15803d}
+.ec-tier-card.t3 .ec-tier-label{color:#7c3aed}
+.ec-tier-range{font-size:.73rem;color:#6b7280;margin-bottom:3px}
+.ec-tier-desc{font-size:.76rem;font-weight:600;color:#374151;margin-bottom:4px}
+.ec-tier-savings{font-size:.78rem;font-weight:800;padding:4px 8px;border-radius:6px;display:inline-block;margin-top:2px}
+.ec-tier-card.t1 .ec-tier-savings{background:#dbeafe;color:#1d4ed8}
+.ec-tier-card.t2 .ec-tier-savings{background:#dcfce7;color:#15803d}
+.ec-tier-card.t3 .ec-tier-savings{background:#ede9fe;color:#7c3aed}
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr-inner">
+    <div>
+      <h1>🚗 คำนวณงวดผ่อนชำระรถยนต์</h1>
+      <p>ตารางรายเดือน · กราฟ · โปะเพิ่ม (สคบ.) · บันทึกการจ่าย</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <div class="page-nav">
+        <button class="pnav on" id="pnav1" onclick="showPage(1)">🧮 หน้า 1: คำนวณ</button>
+        <button class="pnav" id="pnav2" onclick="showPage(2)">📅 หน้า 2: บันทึกการจ่าย</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="btn-sync" id="btnSyncTo" onclick="syncToSheet()">☁ Sync → Google Sheet</button>
+        <button class="btn-sync" id="btnSyncFrom" onclick="syncFromSheet()">☁ Google Sheet → โหลด</button>
+        <button class="btn-sync" onclick="toggleGSUrl()" title="ตั้งค่า URL">⚙</button>
+      </div>
+      <div class="gs-url-row hidden" id="gsUrlRow">
+        <input type="text" id="gsUrl" placeholder="วาง Apps Script Web App URL ที่นี่..." oninput="saveGSUrl()">
+        <span style="font-size:.72rem;opacity:.8">URL จะถูกบันทึกอัตโนมัติ</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ========== PAGE 1 ========== -->
+<div id="page1" class="page on">
+<div class="card">
+  <div class="card-title">📋 ข้อมูลสินเชื่อ</div>
+  <div class="g2" style="margin-bottom:12px">
+    <div><label>ราคารถยนต์</label><div class="iw"><input type="number" id="carPrice" value="0" oninput="saveFormData()"><span>บาท</span></div></div>
+    <div><label>วันที่เริ่มผ่อน (งวดแรก)</label><input type="date" id="startDate" onchange="saveFormData()"></div>
+  </div>
+  <div style="margin-bottom:12px">
+    <label>เงินดาวน์</label>
+    <div class="tog"><button class="tbtn on" id="bb" onclick="setDM('baht')">บาท (฿)</button><button class="tbtn" id="bp" onclick="setDM('pct')">เปอร์เซ็นต์ (%)</button></div>
+    <div class="iw"><input type="number" id="down" value="0" oninput="saveFormData()"><span id="du">บาท</span></div>
+  </div>
+  <div class="g3" style="margin-bottom:4px">
+    <div><label>อัตราดอกเบี้ยต่อปี</label><div class="iw"><input type="number" id="rate" value="0" step="0.01" oninput="saveFormData()"><span>%/ปี</span></div></div>
+    <div><label>ระยะเวลาผ่อน</label><div class="iw"><input type="number" id="term" value="0" min="1" max="120" oninput="saveFormData()"><span>เดือน</span></div></div>
+    <div><label>วิธีคิดดอกเบี้ย</label>
+      <select id="method" onchange="saveFormData()">
+        <option value="flat">Flat Rate (นิยมรถยนต์)</option>
+        <option value="reduce">Reducing Balance</option>
+      </select>
+    </div>
+  </div>
+  <div class="pp-toggle" onclick="togglePP()">
+    <input type="checkbox" id="enablePP" onclick="event.stopPropagation();togglePP()">
+    <span class="pp-toggle-label">💰 เปิดใช้การโปะเพิ่ม (ตามกฎ สคบ.)</span>
+  </div>
+  <div id="ppPanel" class="pp-panel hidden">
+    <div class="g4">
+      <div><label>ยอดโปะเพิ่มต่อครั้ง</label><div class="iw"><input type="number" id="ppAmt" value="0" min="0" oninput="saveFormData()"><span>บาท</span></div></div>
+      <div><label>ความถี่การโปะ</label>
+        <select id="ppFreq" onchange="updatePPLabel();saveFormData()">
+          <option value="monthly">รายเดือน (ทุกงวด)</option>
+          <option value="yearly">รายปี (ปีละครั้ง)</option>
+        </select>
+      </div>
+      <div><label id="ppStartLabel">เริ่มโปะตั้งแต่งวดที่</label><div class="iw"><input type="number" id="ppStart" value="1" min="1" oninput="saveFormData()"><span id="ppStartUnit">งวด</span></div></div>
+      <div><label>สิ้นสุดที่งวด <span style="font-weight:400;color:var(--grayl)">(ว่าง=จนหมด)</span></label><div class="iw"><input type="number" id="ppEnd" placeholder="ไม่ระบุ" min="1" oninput="saveFormData()"><span>งวด</span></div></div>
+    </div>
+    <div class="pp-note">📌 <strong>กฎ สคบ.</strong> : ยอดโปะเพิ่มหักจากเงินต้นโดยตรง · ดอกเบี้ยที่ยังไม่ถึงกำหนดลดลงตามยอดคงเหลือจริง · ผ่อนหมดเร็วและประหยัดดอกเบี้ยรวม</div>
+    <div class="ocpb-box">
+      <div class="ocpb-title">📜 สาระสำคัญของกฎ สคบ. ว่าด้วยการชำระเงินคืนก่อนครบกำหนด (ประกาศคณะกรรมการว่าด้วยสัญญา)</div>
+      <div class="ocpb-rules">
+        <div class="ocpb-rule"><span class="ocpb-num">1</span><div><strong>ยอดโปะหักเงินต้นโดยตรง</strong> — เงินที่ผู้กู้ชำระเกินกว่าค่างวดปกติทุกบาทจะนำไปลดยอด<em>เงินต้นคงค้าง</em>ทันที ไม่ใช่นำไปชำระดอกเบี้ยล่วงหน้าหรือค่าธรรมเนียม</div></div>
+        <div class="ocpb-rule"><span class="ocpb-num">2</span><div><strong>ดอกเบี้ยคิดจากยอดต้นที่ลดลงจริง</strong> — หลังโปะ ดอกเบี้ยในงวดถัดไปจะคำนวณจากยอดเงินต้นที่เหลือน้อยลง ทำให้ภาระดอกเบี้ยลดลงโดยอัตโนมัติตลอดอายุสัญญา</div></div>
+        <div class="ocpb-rule"><span class="ocpb-num">3</span><div><strong>ระยะเวลาผ่อนสั้นลง</strong> — เมื่อเงินต้นลดเร็วกว่าแผน จำนวนงวดที่ต้องผ่อนจะน้อยลง ผู้กู้ผ่อนหมดเร็วขึ้นโดยไม่จำเป็นต้องแก้ไขสัญญา</div></div>
+        <div class="ocpb-rule"><span class="ocpb-num">4</span><div><strong>ไม่มีค่าปรับชำระคืนก่อนกำหนด</strong> — ตามประกาศ สคบ. ผู้ประกอบธุรกิจสินเชื่อ<em>ไม่สามารถ</em>เรียกเก็บค่าปรับ ค่าธรรมเนียม หรือดอกเบี้ยเพิ่มจากการโปะหรือปิดบัญชีก่อนครบกำหนด</div></div>
+        <div class="ocpb-rule"><span class="ocpb-num">5</span><div><strong>สิทธิ์ได้รับใบแสดงยอดคงเหลือ</strong> — ผู้กู้มีสิทธิ์ขอ "ใบแสดงยอดหนี้คงเหลือ" (Statement of Outstanding Balance) จากไฟแนนซ์ได้ทุกเมื่อ โดยผู้ให้สินเชื่อต้องออกให้ภายใน 7 วันทำการ</div></div>
+        <div class="ocpb-rule"><span class="ocpb-num">6</span><div><strong>วิธีคิดดอกเบี้ยยังคงเป็น Flat Rate</strong> — สัญญาเช่าซื้อรถยนต์ในไทย<em>ยังคงใช้ Flat Rate</em> (คิดดอกเบี้ยจากยอดกู้ตั้งต้น ตลอดสัญญา) กฎหมายใหม่เพียงบังคับให้<em>ระบุ EIR</em> (Effective Interest Rate) ควบคู่ในสัญญาเพื่อให้เปรียบเทียบได้ ไม่ได้เปลี่ยนวิธีคำนวณ</div></div>
+        <div class="ocpb-rule"><span class="ocpb-num">7</span><div><strong>ส่วนลดดอกเบี้ยกรณีปิดบัญชีก่อนกำหนด — 3 ขั้นบันได</strong> (มีผล 10 ม.ค. 2566) เมื่อปิดบัญชีครั้งเดียว ผู้เช่าซื้อจะได้รับ<em>ส่วนลดดอกเบี้ยที่ยังไม่ถึงกำหนดชำระ</em> (Unearned Interest จาก Flat Rate ที่คงเหลือ) ดังนี้:
+          <div style="margin-top:8px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:.76rem">
+            <span style="background:#dbeafe;color:#1d4ed8;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap">กรณีที่ 1</span><span>จ่ายค่างวดมาแล้ว <strong>ไม่เกิน 1/3</strong> ของสัญญา → ส่วนลด <strong style="color:#1d4ed8">ไม่น้อยกว่า 60%</strong></span>
+            <span style="background:#dcfce7;color:#15803d;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap">กรณีที่ 2</span><span>จ่ายค่างวดมาแล้ว <strong>1/3 ถึง 2/3</strong> ของสัญญา → ส่วนลด <strong style="color:#15803d">ไม่น้อยกว่า 70%</strong></span>
+            <span style="background:#ede9fe;color:#7c3aed;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap">กรณีที่ 3</span><span>จ่ายค่างวดมาแล้ว <strong>เกินกว่า 2/3</strong> ของสัญญา → ส่วนลด <strong style="color:#7c3aed">100% ทั้งหมด</strong> (จ่ายแค่เงินต้น)</span>
+          </div>
+          <div style="margin-top:6px;font-size:.73rem;color:#374151">👉 ดูตัวเลขจริงตามสัญญาของท่านได้ที่แท็บ <strong>🏁 ปิดบัญชีก่อนกำหนด</strong> (หลังกดคำนวณ)</div>
+        </div></div>
+      </div>
+      <div style="font-size:.72rem;color:#166534;margin-top:10px;padding-top:8px;border-top:1px solid #86efac">⚠️ <strong>อ้างอิง:</strong> ประกาศคณะกรรมการว่าด้วยสัญญา พ.ศ. 2565 (ราชกิจจานุเบกษา 12 ต.ค. 2565) มีผลบังคับใช้ 10 ม.ค. 2566 — ใช้กับสัญญาที่ทำตั้งแต่วันดังกล่าวเป็นต้นไป กรุณาตรวจสอบเงื่อนไขในสัญญาของท่านด้วยเสมอ</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn-calc" style="flex:1;margin-top:0" onclick="calculate()">คำนวณ ▶</button>
+    <button style="padding:11px 18px;background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;white-space:nowrap" onclick="resetFormData()">🗑 ล้างข้อมูล</button>
+  </div>
+  <div id="formSavedAt" style="font-size:.72rem;color:var(--grayl);margin-top:6px;text-align:right"></div>
+</div>
+
+<div id="res" class="hidden fade">
+  <div class="sum-grid">
+    <div class="stat"><div class="stat-lbl">ยอดจัดไฟแนนซ์</div><div class="stat-val" id="sLoan"></div></div>
+    <div class="stat g"><div class="stat-lbl">ค่างวดต่อเดือน</div><div class="stat-val" id="sMo"></div></div>
+    <div class="stat r"><div class="stat-lbl">ดอกเบี้ยรวม</div><div class="stat-val" id="sInt"></div></div>
+    <div class="stat o"><div class="stat-lbl">ยอดชำระรวม</div><div class="stat-val" id="sTot"></div></div>
+  </div>
+  <div id="savBar" class="sav-bar hidden">
+    <div style="font-size:.95rem;font-weight:800;flex:1">⚡ ผลการโปะเพิ่ม</div>
+    <div class="sav-item"><div class="sav-lbl">ประหยัดดอกเบี้ย</div><div class="sav-val" id="savInt">-</div></div>
+    <div class="sav-item"><div class="sav-lbl">ผ่อนหมดเร็วขึ้น</div><div class="sav-val" id="savMo">-</div></div>
+    <div class="sav-item"><div class="sav-lbl">จาก → เหลือ</div><div class="sav-val" id="savTerm">-</div></div>
+    <div class="sav-item"><div class="sav-lbl">ยอดโปะเพิ่มรวม</div><div class="sav-val" id="savPPTot">-</div></div>
+  </div>
+  <div class="card" style="padding-bottom:8px">
+    <div class="tabs">
+      <div class="tab on" onclick="showTab('tTable',this)">📋 ตารางรายงวด</div>
+      <div class="tab" onclick="showTab('tChart',this)">📊 กราฟ</div>
+      <div class="tab" onclick="showTab('tCompare',this)">⚖️ เปรียบเทียบ 2 ข้อเสนอ</div>
+      <div class="tab" onclick="showTab('tEC',this)">🏁 ปิดบัญชีก่อนกำหนด</div>
+    </div>
+    <div id="tTable" class="tab-content on">
+      <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <button class="btn-import" onclick="importCSV()">⬆ Import CSV</button>
+        <button class="btn-pdf" onclick="exportPDF(1)">📄 Export PDF</button>
+        <button class="btn-exp" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>งวดที่</th><th style="text-align:left">วันครบกำหนด</th>
+          <th>ยอดต้นงวด</th><th>เงินต้น</th><th>ดอกเบี้ย</th><th>ค่างวด</th>
+          <th id="ppHeader" class="th-pp hidden">โปะเพิ่ม</th>
+          <th>ยอดปลายงวด</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table></div>
+      <div id="tblNote" class="note"></div>
+    </div>
+    <div id="tChart" class="tab-content">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="tbtn on" id="cBtn1" onclick="setChart('bar',this)" style="flex:none;padding:5px 14px">แท่งรายเดือน</button>
+        <button class="tbtn" id="cBtn2" onclick="setChart('area',this)" style="flex:none;padding:5px 14px">สะสม</button>
+        <button class="tbtn" id="cBtn3" onclick="setChart('balance',this)" style="flex:none;padding:5px 14px">ยอดคงเหลือ</button>
+      </div>
+      <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+    </div>
+    <div id="tCompare" class="tab-content">
+      <div class="cmp-grid cg">
+        <div class="offer-card a"><span class="offer-tag tag-a">ข้อเสนอ A</span>
+          <div style="margin-bottom:10px"><label>ราคารถยนต์</label><div class="iw"><input type="number" id="aPrice" value="700000"><span>บาท</span></div></div>
+          <div style="margin-bottom:10px"><label>เงินดาวน์</label><div class="iw"><input type="number" id="aDown" value="100000"><span>บาท</span></div></div>
+          <div style="margin-bottom:10px"><label>อัตราดอกเบี้ย</label><div class="iw"><input type="number" id="aRate" value="2.75" step="0.01"><span>%/ปี</span></div></div>
+          <div><label>ระยะเวลา</label><div class="iw"><input type="number" id="aTerm" value="60"><span>เดือน</span></div></div>
+        </div>
+        <div class="offer-card b"><span class="offer-tag tag-b">ข้อเสนอ B</span>
+          <div style="margin-bottom:10px"><label>ราคารถยนต์</label><div class="iw"><input type="number" id="bPrice" value="700000"><span>บาท</span></div></div>
+          <div style="margin-bottom:10px"><label>เงินดาวน์</label><div class="iw"><input type="number" id="bDown" value="70000"><span>บาท</span></div></div>
+          <div style="margin-bottom:10px"><label>อัตราดอกเบี้ย</label><div class="iw"><input type="number" id="bRate" value="3.25" step="0.01"><span>%/ปี</span></div></div>
+          <div><label>ระยะเวลา</label><div class="iw"><input type="number" id="bTerm" value="72"><span>เดือน</span></div></div>
+        </div>
+      </div>
+      <div style="margin-top:10px"><label>วิธีคิดดอกเบี้ย</label>
+        <select id="cmpMethod"><option value="flat">Flat Rate</option><option value="reduce">Reducing Balance</option></select>
+      </div>
+      <button class="btn-calc" style="margin-top:10px" onclick="compare()">เปรียบเทียบ ▶</button>
+      <div id="cmpResult" class="hidden" style="margin-top:12px"></div>
+    </div>
+
+    <!-- ========== Early Closure Tab ========== -->
+    <div id="tEC" class="tab-content">
+      <div class="ec-info">
+        <strong>📜 กฎ สคบ. ว่าด้วยการปิดบัญชีก่อนกำหนด</strong> (ประกาศ 12 ต.ค. 2565 — มีผล 10 ม.ค. 2566 เฉพาะสัญญาใหม่)<br>
+        เมื่อปิดบัญชีก่อนครบสัญญา ผู้เช่าซื้อจะได้รับ <strong>ส่วนลดดอกเบี้ยที่ยังไม่ถึงกำหนดชำระ</strong> (Unearned Interest) ตามขั้นบันได 3 กรณี
+        — โดยดอกเบี้ยที่คงเหลือคำนวณจาก <strong>Flat Rate ตามสัญญา</strong> (ไม่ใช่ลดต้นลดดอก) ·
+        สูตร: <em>ยอดปิดบัญชี = เงินต้นคงเหลือ + ดอกเบี้ยคงเหลือ × (1 − % ส่วนลด)</em>
+      </div>
+      <div class="ec-tier-grid" id="ecTierCards"></div>
+      <div class="card" style="margin-top:0;padding:16px">
+        <div class="card-title">🔢 คำนวณยอดปิดบัญชีที่งวดที่ต้องการ</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+          <div>
+            <label>ปิดบัญชีหลังจ่ายครบงวดที่</label>
+            <div class="iw"><input type="number" id="ecN" value="1" min="1" style="max-width:110px"><span>งวด</span></div>
+          </div>
+          <button class="btn-calc" style="width:auto;padding:9px 22px;margin:0" onclick="renderEC()">คำนวณ ▶</button>
+        </div>
+        <div id="ecResult" class="hidden fade" style="margin-top:14px"></div>
+      </div>
+      <div class="card" style="margin-top:10px;padding:14px">
+        <div class="card-title">📋 ตารางยอดปิดบัญชีทุกงวด</div>
+        <div class="tw" style="max-height:400px;overflow-y:auto">
+          <table>
+            <thead><tr>
+              <th>งวดที่</th>
+              <th style="text-align:left">วันครบกำหนด</th>
+              <th>กรณีที่</th>
+              <th>ส่วนลด</th>
+              <th>เงินต้นคงเหลือ</th>
+              <th>ดอกเบี้ยที่เหลือ</th>
+              <th style="color:#22c55e">ยอดส่วนลด</th>
+              <th>ยอดปิดบัญชี</th>
+              <th style="color:#22c55e">ประหยัดดอกเบี้ย</th>
+            </tr></thead>
+            <tbody id="ecTbody"></tbody>
+          </table>
+        </div>
+        <div class="note" style="margin-top:6px">* ดอกเบี้ยที่เหลือ = ผลรวมดอกเบี้ยในงวดที่ยังไม่ถึงกำหนด · ประหยัดดอกเบี้ย = ส่วนลดที่ได้รับเทียบกับผ่อนครบสัญญา</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ========== PAGE 2 ========== -->
+<div id="page2" class="page">
+  <div id="p2Empty" class="card empty-state">
+    <div class="big">📋</div>
+    <p>ยังไม่มีข้อมูลตารางผ่อนชำระ<br>กรุณาไปกรอกข้อมูลและกดคำนวณที่หน้า 1 ก่อนครับ</p>
+    <button class="btn-goto" onclick="showPage(1)">← ไปหน้า 1 คำนวณ</button>
+  </div>
+
+  <div id="p2Content" class="hidden">
+    <!-- Summary 5 stats -->
+    <div class="sum-grid-p2">
+      <div class="stat g"><div class="stat-lbl">จ่ายแล้ว</div><div class="stat-val" id="p2Paid">-</div></div>
+      <div class="stat r"><div class="stat-lbl">เกินกำหนด (ยังไม่จ่าย)</div><div class="stat-val" id="p2Over">-</div></div>
+      <div class="stat"><div class="stat-lbl">รอชำระ</div><div class="stat-val" id="p2Pend">-</div></div>
+      <div class="stat pur"><div class="stat-lbl">งวดถัดไป</div><div class="stat-val" id="p2Next">-</div></div>
+      <div class="stat o"><div class="stat-lbl">โปะเพิ่มจริง vs แผน</div><div class="stat-val" id="p2PPDiff">-</div></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card" style="padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:.82rem;font-weight:700;color:var(--blue)">ความคืบหน้าการผ่อน</span>
+        <span class="prog-label" id="progLabel">0 / 0 งวด</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-size:.72rem;color:var(--grayl)" id="p2PaidAmt">ยอดจ่ายแล้ว: -</span>
+        <span style="font-size:.72rem;color:var(--grayl)" id="p2RemAmt">ยอดคงเหลือ: -</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="act-row">
+      <button class="btn-purple" onclick="markAllPaidToday()">✅ บันทึกทุกงวด "จ่ายวันนี้"</button>
+      <button class="btn-import" onclick="importPayCSV()">⬆ Import CSV</button>
+      <button class="btn-pdf" onclick="exportPDF(2)">📄 Export PDF</button>
+      <button class="btn-exp" onclick="exportPayCSV()">⬇ Export CSV</button>
+      <button class="btn-danger" onclick="clearAllPayments()">🗑 ล้างข้อมูลการจ่าย</button>
+      <span style="font-size:.75rem;color:var(--grayl);margin-left:auto" id="saveStatus">💾 บันทึกอัตโนมัติ</span>
+    </div>
+
+    <!-- Legend for PP columns (shown only when hasPP) -->
+    <div id="ppLegend" class="pp-legend hidden">
+      <div class="pp-leg-item pl-plan">🟢 โปะแผน = ยอดโปะตามแผนหน้า 1</div>
+      <div class="pp-leg-item pl-actual">🟣 โปะจริง = ยอดที่จ่ายจริง (กรอกเอง)</div>
+      <div class="pp-leg-item pl-diff">🟡 ผลต่าง = จริง − แผน (+ มากกว่า / − น้อยกว่า)</div>
+    </div>
+
+    <!-- Payment table -->
+    <div class="ptw">
+      <table class="pt" id="p2table">
+        <thead>
+          <tr class="hdr-top" id="p2hdrTop">
+            <!-- rendered by JS -->
+          </tr>
+          <tr class="hdr-sub" id="p2hdrSub">
+            <!-- rendered by JS -->
+          </tr>
+        </thead>
+        <tbody id="p2tbody"></tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:8px">💾 ข้อมูลบันทึกอัตโนมัติ · 🟢 จ่ายแล้ว · ⚠️ จ่ายช้า · 🔵 รอชำระ · 🔴 เกินกำหนด</p>
+  </div>
+</div>
+
+</div><!-- container -->
+<div id="toast" class="save-toast">💾 บันทึกแล้ว</div>
+
+<script>
+// ---- State ----
+let dm='baht', sched=[], schedBase=[], chartInst=null, chartMode='bar';
+let payRec={}; // { [i]: { paidDate, note, actualPP } }
+const SKEY='car_loan_pay_v2';
+const FKEY='car_loan_form_v1';
+
+// ---- Init ----
+const todayD=new Date(); todayD.setHours(0,0,0,0);
+const defDate=new Date(); defDate.setMonth(defDate.getMonth()+1);
+document.getElementById('startDate').value=defDate.toISOString().split('T')[0];
+loadPayments();
+loadFormData();
+
+// ---- Form persistence ----
+function saveFormData(){
+  const data={
+    carPrice:document.getElementById('carPrice').value,
+    down:document.getElementById('down').value,
+    dm:dm,
+    rate:document.getElementById('rate').value,
+    term:document.getElementById('term').value,
+    method:document.getElementById('method').value,
+    startDate:document.getElementById('startDate').value,
+    enablePP:document.getElementById('enablePP').checked,
+    ppAmt:document.getElementById('ppAmt').value,
+    ppFreq:document.getElementById('ppFreq').value,
+    ppStart:document.getElementById('ppStart').value,
+    ppEnd:document.getElementById('ppEnd').value,
+    savedAt:new Date().toLocaleString('th-TH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  };
+  try{localStorage.setItem(FKEY,JSON.stringify(data));updateFormSavedAt(data.savedAt);}catch(e){}
+}
+function loadFormData(){
+  try{
+    const raw=localStorage.getItem(FKEY);
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    if(d.carPrice!==undefined)document.getElementById('carPrice').value=d.carPrice;
+    if(d.down!==undefined)document.getElementById('down').value=d.down;
+    if(d.dm){dm=d.dm;setDM(d.dm);}
+    if(d.rate!==undefined)document.getElementById('rate').value=d.rate;
+    if(d.term!==undefined)document.getElementById('term').value=d.term;
+    if(d.method)document.getElementById('method').value=d.method;
+    if(d.startDate)document.getElementById('startDate').value=d.startDate;
+    if(d.enablePP){document.getElementById('enablePP').checked=true;document.getElementById('ppPanel').classList.remove('hidden');}
+    if(d.ppAmt!==undefined)document.getElementById('ppAmt').value=d.ppAmt;
+    if(d.ppFreq){document.getElementById('ppFreq').value=d.ppFreq;updatePPLabel();}
+    if(d.ppStart!==undefined)document.getElementById('ppStart').value=d.ppStart;
+    if(d.ppEnd!==undefined)document.getElementById('ppEnd').value=d.ppEnd;
+    if(d.savedAt)updateFormSavedAt(d.savedAt);
+  }catch(e){}
+}
+function updateFormSavedAt(ts){
+  const el=document.getElementById('formSavedAt');
+  if(el)el.textContent='💾 บันทึกล่าสุด: '+ts;
+}
+function resetFormData(){
+  if(!confirm('ล้างข้อมูลทั้งหมดและเริ่มต้นใหม่?'))return;
+  try{localStorage.removeItem(FKEY);}catch(e){}
+  document.getElementById('carPrice').value=0;
+  setDM('baht');
+  document.getElementById('down').value=0;
+  document.getElementById('rate').value=0;
+  document.getElementById('term').value=0;
+  document.getElementById('method').value='flat';
+  document.getElementById('startDate').value=defDate.toISOString().split('T')[0];
+  document.getElementById('enablePP').checked=false;
+  document.getElementById('ppPanel').classList.add('hidden');
+  document.getElementById('ppAmt').value=0;
+  document.getElementById('ppFreq').value='monthly';
+  document.getElementById('ppStart').value=1;
+  document.getElementById('ppEnd').value='';
+  document.getElementById('res').classList.add('hidden');
+  sched=[];schedBase=[];
+  const el=document.getElementById('formSavedAt');if(el)el.textContent='';
+}
+
+// ---- Page nav ----
+function showPage(n){
+  document.getElementById('page1').classList.toggle('on',n===1);
+  document.getElementById('page2').classList.toggle('on',n===2);
+  document.getElementById('pnav1').classList.toggle('on',n===1);
+  document.getElementById('pnav2').classList.toggle('on',n===2);
+  if(n===2) renderPage2();
+}
+
+// ---- Storage ----
+async function loadPayments(){
+  try{const r=await window.storage.get(SKEY);if(r)payRec=JSON.parse(r.value);}
+  catch(e){payRec={};}
+}
+async function savePayments(){
+  try{await window.storage.set(SKEY,JSON.stringify(payRec));showToast();}
+  catch(e){console.error(e);}
+}
+function showToast(){
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ---- Helpers ----
+function setDM(m){
+  dm=m;
+  document.getElementById('bb').classList.toggle('on',m==='baht');
+  document.getElementById('bp').classList.toggle('on',m==='pct');
+  document.getElementById('du').textContent=m==='baht'?'บาท':'%';
+  if(document.getElementById('down').value==0||document.getElementById('down').value=='')
+    document.getElementById('down').value=0;
+  saveFormData();
+}
+function togglePP(){
+  const cb=document.getElementById('enablePP');cb.checked=!cb.checked;
+  document.getElementById('ppPanel').classList.toggle('hidden',!cb.checked);
+}
+function updatePPLabel(){
+  const y=document.getElementById('ppFreq').value==='yearly';
+  document.getElementById('ppStartLabel').textContent=y?'โปะปีละครั้ง เดือนที่':'เริ่มโปะตั้งแต่งวดที่';
+  document.getElementById('ppStartUnit').textContent=y?'(นับจากงวดแรก)':'งวด';
+}
+function fmt(n){return n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtDiff(n){
+  if(Math.abs(n)<0.01) return '-';
+  return (n>0?'+':'')+fmt(n);
+}
+function addMonths(ds,n){
+  const d=new Date(ds);d.setMonth(d.getMonth()+n);
+  return{display:d.toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}),iso:d.toISOString().split('T')[0]};
+}
+function getPP(){
+  if(!document.getElementById('enablePP').checked)return null;
+  const ev=document.getElementById('ppEnd').value;
+  return{amt:+document.getElementById('ppAmt').value||0,freq:document.getElementById('ppFreq').value,
+    start:+document.getElementById('ppStart').value||1,end:ev?+ev:null};
+}
+
+// ---- Build schedule ----
+function buildSchedule(loan,rate,term,method,startDate,prepay=null){
+  const rows=[],r=rate/100/12;
+  let basePay,fInt,fPrin;
+  if(method==='flat'){
+    const ti=loan*(rate/100)*(term/12);fInt=ti/term;fPrin=loan/term;basePay=fInt+fPrin;
+  } else {
+    basePay=r===0?loan/term:loan*(r*Math.pow(1+r,term))/(Math.pow(1+r,term)-1);
+  }
+  let bal=loan;
+  for(let i=1;i<=term*3&&bal>0.005;i++){
+    const op=bal;let int,pr,pay;
+    if(method==='flat'){int=fInt;pr=Math.min(fPrin,bal);pay=pr+int;}
+    else{int=bal*r;pr=Math.min(basePay-int,bal);if(pr<0)pr=0;pay=pr+int;}
+    bal=Math.max(0,bal-pr);
+    let pp=0;
+    if(prepay&&bal>0.005){
+      const inR=i>=prepay.start&&(!prepay.end||i<=prepay.end);
+      const hitF=prepay.freq==='monthly'||(prepay.freq==='yearly'&&(i-prepay.start)%12===0&&i>=prepay.start);
+      if(inR&&hitF){pp=Math.min(prepay.amt,bal);bal=Math.max(0,bal-pp);}
+    }
+    const dt=startDate==='2000-01-01'?{display:'',iso:''}:addMonths(startDate,i-1);
+    rows.push({i,date:dt.display,dateISO:dt.iso,op,pr,int,pay,pp,bal});
+    if(bal<0.005)break;
+  }
+  return rows;
+}
+
+// ---- Calculate ----
+function calculate(){
+  const price=+document.getElementById('carPrice').value||0;
+  const downRaw=+document.getElementById('down').value||0;
+  const rate=+document.getElementById('rate').value||0;
+  const term=+document.getElementById('term').value||0;
+  const method=document.getElementById('method').value;
+  const sd=document.getElementById('startDate').value;
+  const down=dm==='pct'?price*(downRaw/100):downRaw;
+  const loan=price-down;
+  if(loan<=0||term<=0){alert('กรุณากรอกข้อมูลให้ถูกต้อง');return;}
+
+  const pp=getPP();
+  schedBase=buildSchedule(loan,rate,term,method,sd,null);
+  sched=pp?buildSchedule(loan,rate,term,method,sd,pp):schedBase;
+
+  const totInt=sched.reduce((a,r)=>a+r.int,0);
+  const totPP=sched.reduce((a,r)=>a+r.pp,0);
+  document.getElementById('sLoan').textContent=fmt(loan)+' บาท';
+  document.getElementById('sMo').textContent=fmt(sched[0].pay)+' บาท';
+  document.getElementById('sInt').textContent=fmt(totInt)+' บาท';
+  document.getElementById('sTot').textContent=fmt(loan+totInt)+' บาท';
+
+  const banner=document.getElementById('savBar');
+  if(pp){
+    const bI=schedBase.reduce((a,r)=>a+r.int,0),sI=bI-totInt,sM=schedBase.length-sched.length;
+    document.getElementById('savInt').textContent=fmt(sI)+' บาท';
+    document.getElementById('savMo').textContent=(sM>0?sM:0)+' เดือน';
+    document.getElementById('savTerm').textContent=`${schedBase.length} → ${sched.length} งวด`;
+    document.getElementById('savPPTot').textContent=fmt(totPP)+' บาท';
+    banner.classList.remove('hidden');
+  } else banner.classList.add('hidden');
+
+  renderTable(sched,pp,term,method);
+  document.getElementById('res').classList.remove('hidden');
+  buildChart();
+  document.getElementById('res').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ---- Page1 table ----
+function renderTable(rows,prepay,origTerm,method){
+  const hasPP=prepay&&rows.some(r=>r.pp>0);
+  document.getElementById('ppHeader').classList.toggle('hidden',!hasPP);
+  const tb=document.getElementById('tbody');tb.innerHTML='';
+  rows.forEach((r,idx)=>{
+    const isPP=r.pp>0,isE=idx===rows.length-1&&rows.length<origTerm;
+    const tr=document.createElement('tr');
+    if(isPP)tr.className='pp-row';if(isE)tr.className='early-end';
+    const ppc=hasPP?`<td class="tpp">${r.pp>0?fmt(r.pp)+' 💚':'-'}</td>`:'';
+    tr.innerHTML=`<td>${r.i}${isPP?'<span class="badge">โปะ</span>':''}</td><td>${r.date}</td><td>${fmt(r.op)}</td><td class="tp">${fmt(r.pr)}</td><td class="ti">${fmt(r.int)}</td><td class="tpay">${fmt(r.pay)}</td>${ppc}<td>${fmt(r.bal)}</td>`;
+    tb.appendChild(tr);
+  });
+  const tot=rows.reduce((a,r)=>({pr:a.pr+r.pr,int:a.int+r.int,pay:a.pay+r.pay,pp:a.pp+r.pp}),{pr:0,int:0,pay:0,pp:0});
+  const tf=document.createElement('tr');
+  const ppc=hasPP?`<td class="tpp">${fmt(tot.pp)}</td>`:'';
+  tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td>-</td><td>${fmt(tot.pr)}</td><td>${fmt(tot.int)}</td><td>${fmt(tot.pay)}</td>${ppc}<td>0.00</td>`;
+  tb.appendChild(tf);
+  const ex=[];
+  if(method==='flat')ex.push('Flat Rate: ดอกเบี้ยคงที่จากยอดกู้ตั้งต้น');else ex.push('Reducing Balance: ดอกเบี้ยจากยอดคงเหลือ');
+  if(hasPP)ex.push('🟢 แถวสีเขียว = งวดที่โปะเพิ่ม | ยอดโปะหักจากเงินต้นโดยตรง (สคบ.)');
+  document.getElementById('tblNote').textContent='* '+ex.join(' · ');
+}
+
+// ---- Tabs ----
+function showTab(id,el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');el.classList.add('on');
+  if(id==='tChart')setTimeout(()=>buildChart(),50);
+  if(id==='tEC')setTimeout(()=>renderECTab(),50);
+}
+
+// ---- Chart ----
+function setChart(m,el){
+  chartMode=m;['cBtn1','cBtn2','cBtn3'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  el.classList.add('on');buildChart();
+}
+function buildChart(){
+  if(!sched.length)return;
+  const ctx=document.getElementById('myChart').getContext('2d');
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const labels=sched.map(r=>`${r.i}`),hasPP=sched.some(r=>r.pp>0);
+  if(chartMode==='bar'){
+    const ds=[{label:'เงินต้น',data:sched.map(r=>+r.pr.toFixed(2)),backgroundColor:'#3b82f6'},{label:'ดอกเบี้ย',data:sched.map(r=>+r.int.toFixed(2)),backgroundColor:'#ef4444'}];
+    if(hasPP)ds.push({label:'โปะเพิ่ม',data:sched.map(r=>+r.pp.toFixed(2)),backgroundColor:'#22c55e'});
+    chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:15,font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+  } else if(chartMode==='area'){
+    let cp=0,ci=0,cpp=0;const cpA=[],ciA=[],cppA=[];
+    sched.forEach(r=>{cp+=r.pr;ci+=r.int;cpp+=r.pp;cpA.push(+cp.toFixed(2));ciA.push(+ci.toFixed(2));cppA.push(+cpp.toFixed(2));});
+    const ds=[{label:'เงินต้นสะสม',data:cpA,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.15)',fill:true,tension:.3,pointRadius:0},{label:'ดอกเบี้ยสะสม',data:ciA,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.3,pointRadius:0}];
+    if(hasPP)ds.push({label:'โปะเพิ่มสะสม',data:cppA,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.3,pointRadius:0});
+    chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+  } else {
+    const allL=schedBase.length>sched.length?schedBase.map(r=>`${r.i}`):labels;
+    const padded=sched.map(r=>+r.bal.toFixed(2));while(padded.length<allL.length)padded.push(0);
+    const ds=[{label:'ยอดคงเหลือ (มีโปะ)',data:padded,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.3,pointRadius:0}];
+    if(hasPP)ds.push({label:'ยอดคงเหลือ (ไม่โปะ)',data:schedBase.map(r=>+r.bal.toFixed(2)),borderColor:'#9ca3af',borderDash:[5,5],fill:false,tension:.3,pointRadius:0});
+    chartInst=new Chart(ctx,{type:'line',data:{labels:allL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+  }
+}
+
+// ---- Compare ----
+function compare(){
+  const mth=document.getElementById('cmpMethod').value;
+  const aL=+document.getElementById('aPrice').value - +document.getElementById('aDown').value;
+  const bL=+document.getElementById('bPrice').value - +document.getElementById('bDown').value;
+  const aR=+document.getElementById('aRate').value,bR=+document.getElementById('bRate').value;
+  const aT=+document.getElementById('aTerm').value,bT=+document.getElementById('bTerm').value;
+  if(aL<=0||bL<=0){alert('ยอดจัดไฟแนนซ์ต้องมากกว่า 0');return;}
+  const sa=buildSchedule(aL,aR,aT,mth,'2000-01-01'),sb=buildSchedule(bL,bR,bT,mth,'2000-01-01');
+  const aI=sa.reduce((x,r)=>x+r.int,0),bI=sb.reduce((x,r)=>x+r.int,0);
+  const aTo=aL+aI,bTo=bL+bI,aMo=sa[0].pay,bMo=sb[0].pay;
+  function w(a,b){return`<span class="${a<=b?'win':''}">${a<=b?'✔':''}</span>`}
+  document.getElementById('cmpResult').innerHTML=`
+  <table class="cmp-table"><thead><tr><th>รายการ</th><th>📘 A</th><th>📙 B</th></tr></thead><tbody>
+    <tr><td>ยอดจัดไฟแนนซ์</td><td>${fmt(aL)} บาท</td><td>${fmt(bL)} บาท</td></tr>
+    <tr><td>อัตราดอกเบี้ย</td><td>${aR}% ${w(aR,bR)}</td><td>${bR}% ${w(bR,aR)}</td></tr>
+    <tr><td>ระยะเวลา</td><td>${aT} เดือน</td><td>${bT} เดือน</td></tr>
+    <tr><td>ค่างวด/เดือน</td><td>${fmt(aMo)} ${w(aMo,bMo)}</td><td>${fmt(bMo)} ${w(bMo,aMo)}</td></tr>
+    <tr><td>ดอกเบี้ยรวม</td><td>${fmt(aI)} ${w(aI,bI)}</td><td>${fmt(bI)} ${w(bI,aI)}</td></tr>
+    <tr><td><strong>ยอดชำระรวม</strong></td><td><strong>${fmt(aTo)}</strong> ${w(aTo,bTo)}</td><td><strong>${fmt(bTo)}</strong> ${w(bTo,aTo)}</td></tr>
+  </tbody></table>
+  <div class="verdict">💡 ${aTo<bTo?`A ประหยัดกว่า ฿${fmt(bTo-aTo)}`:bTo<aTo?`B ประหยัดกว่า ฿${fmt(aTo-bTo)}`:'เท่ากัน'}${aMo<bMo?` · ค่างวด A เบากว่า ฿${fmt(bMo-aMo)}`:bMo<aMo?` · ค่างวด B เบากว่า ฿${fmt(aMo-bMo)}`:''}</div>`;
+  document.getElementById('cmpResult').classList.remove('hidden');
+}
+
+// ---- Export page1 CSV ----
+function exportCSV(){
+  if(!sched.length)return;
+  const hasPP=sched.some(r=>r.pp>0);
+  const hdr=['งวดที่','วันครบกำหนด','วันที่ (ISO)','ยอดคงเหลือต้นงวด','เงินต้น','ดอกเบี้ย','ค่างวด'];
+  if(hasPP)hdr.push('โปะเพิ่ม');hdr.push('ยอดคงเหลือปลายงวด');
+  const rows=sched.map(r=>{const b=`${r.i},"${r.date}","${r.dateISO||''}",${r.op.toFixed(2)},${r.pr.toFixed(2)},${r.int.toFixed(2)},${r.pay.toFixed(2)}`;return hasPP?`${b},${r.pp.toFixed(2)},${r.bal.toFixed(2)}`:`${b},${r.bal.toFixed(2)}`;});
+  dl('\uFEFF'+[hdr.join(','),...rows].join('\n'),'car_loan_schedule.csv');
+}
+function dl(csv,fname){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=fname;a.click();}
+
+// ---- Export PDF ----
+function exportPDF(n){
+  document.body.classList.add('print-p'+n);
+  window.print();
+  setTimeout(()=>{document.body.classList.remove('print-p1','print-p2');},600);
+}
+
+// ---- CSV line parser ----
+function parseCSVLine(line){
+  const res=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    if(line[i]==='"'){inQ=!inQ;}
+    else if(line[i]===','&&!inQ){res.push(cur.trim());cur='';}
+    else cur+=line[i];
+  }
+  res.push(cur.trim());return res;
+}
+
+// ---- Import CSV page1 (schedule) ----
+function importCSV(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();r.onload=ev=>parseScheduleCSV(ev.target.result);r.readAsText(f,'UTF-8');
+  };inp.click();
+}
+function parseScheduleCSV(text){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.split('\n').filter(l=>l.trim());
+  if(lines.length<2)return alert('ไม่พบข้อมูลในไฟล์');
+  const h=parseCSVLine(lines[0]);
+  const iI=h.indexOf('งวดที่'),iDt=h.indexOf('วันครบกำหนด'),iISO=h.indexOf('วันที่ (ISO)'),
+    iOp=h.indexOf('ยอดคงเหลือต้นงวด'),iPr=h.indexOf('เงินต้น'),iInt=h.indexOf('ดอกเบี้ย'),
+    iPay=h.indexOf('ค่างวด'),iPP=h.indexOf('โปะเพิ่ม'),iBal=h.indexOf('ยอดคงเหลือปลายงวด');
+  if(iI<0||iPay<0)return alert('รูปแบบ CSV ไม่ถูกต้อง — กรุณาใช้ไฟล์ที่ Export จากโปรแกรมนี้');
+  const ns=[];
+  for(let i=1;i<lines.length;i++){
+    const c=parseCSVLine(lines[i]);
+    if(!c[iI]||isNaN(+c[iI]))continue;
+    ns.push({i:+c[iI],date:iDt>=0?c[iDt]:'',dateISO:iISO>=0?c[iISO]:'',
+      op:+(c[iOp]||0),pr:+(c[iPr]||0),int:+(c[iInt]||0),
+      pay:+(c[iPay]||0),pp:iPP>=0?+(c[iPP]||0):0,bal:+(c[iBal]||0)});
+  }
+  if(!ns.length)return alert('ไม่พบแถวข้อมูลในไฟล์');
+  sched=ns;schedBase=ns;
+  renderTable(sched,sched.some(r=>r.pp>0)?{amt:1}:null,sched.length,'flat');
+  document.getElementById('res').classList.remove('hidden');
+  alert('นำเข้าตารางผ่อนสำเร็จ '+ns.length+' งวด');
+}
+
+// ---- Import CSV page2 (payments) ----
+function importPayCSV(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();r.onload=ev=>parsePayCSVFile(ev.target.result);r.readAsText(f,'UTF-8');
+  };inp.click();
+}
+function parsePayCSVFile(text){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.split('\n').filter(l=>l.trim());
+  if(lines.length<2)return alert('ไม่พบข้อมูลในไฟล์');
+  const h=parseCSVLine(lines[0]);
+  const iI=h.indexOf('งวดที่'),iPD=h.indexOf('วันที่จ่ายจริง'),
+    iNote=h.indexOf('หมายเหตุ'),iAct=h.indexOf('โปะจริง');
+  if(iI<0)return alert('รูปแบบ CSV ไม่ถูกต้อง — กรุณาใช้ไฟล์ที่ Export จากโปรแกรมนี้');
+  let cnt=0;
+  for(let i=1;i<lines.length;i++){
+    const c=parseCSVLine(lines[i]);
+    const inst=+c[iI];if(!inst||isNaN(inst))continue;
+    if(!payRec[inst])payRec[inst]={paidDate:'',note:'',actualPP:''};
+    if(iPD>=0&&c[iPD])payRec[inst].paidDate=c[iPD];
+    if(iNote>=0&&c[iNote])payRec[inst].note=c[iNote];
+    if(iAct>=0&&c[iAct]!==undefined&&c[iAct]!=='')payRec[inst].actualPP=c[iAct];
+    cnt++;
+  }
+  savePayments();renderPage2();
+  alert('นำเข้าข้อมูลการจ่ายสำเร็จ '+cnt+' รายการ');
+}
+
+// ---- Google Sheet Sync ----
+let GS_URL='';
+function toggleGSUrl(){document.getElementById('gsUrlRow').classList.toggle('hidden');}
+function saveGSUrl(){GS_URL=document.getElementById('gsUrl').value.trim();try{localStorage.setItem('gs_url',GS_URL);}catch(e){}}
+(function(){try{const v=localStorage.getItem('gs_url');if(v){GS_URL=v;document.getElementById('gsUrl').value=v;}}catch(e){}})();
+
+async function syncToSheet(){
+  if(!GS_URL)return alert('กรุณาใส่ Apps Script Web App URL ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
+  if(!sched.length)return alert('กรุณาคำนวณตารางผ่อนก่อน');
+  const btn=document.getElementById('btnSyncTo');btn.textContent='⏳ กำลังซิงค์...';btn.disabled=true;
+  try{
+    const res=await fetch(GS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'syncAll',schedule:sched,payments:payRec})});
+    const data=await res.json();
+    if(data.error)throw new Error(data.error);
+    btn.textContent='✅ ซิงค์แล้ว!';showToast();
+    setTimeout(()=>{btn.textContent='☁ Sync → Google Sheet';btn.disabled=false;},2500);
+  }catch(e){alert('Sync ไม่สำเร็จ: '+e.message);btn.textContent='☁ Sync → Google Sheet';btn.disabled=false;}
+}
+async function syncFromSheet(){
+  if(!GS_URL)return alert('กรุณาใส่ Apps Script Web App URL ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
+  if(!confirm('โหลดข้อมูลจาก Google Sheet และแทนที่ข้อมูลปัจจุบัน?'))return;
+  const btn=document.getElementById('btnSyncFrom');btn.textContent='⏳ กำลังโหลด...';btn.disabled=true;
+  try{
+    const [rs,rp]=await Promise.all([
+      fetch(GS_URL+'?action=readSchedule').then(r=>r.json()),
+      fetch(GS_URL+'?action=readPayments').then(r=>r.json())
+    ]);
+    if(rs.rows&&rs.rows.length){
+      sched=rs.rows;schedBase=rs.rows;
+      renderTable(sched,sched.some(r=>r.pp>0)?{amt:1}:null,sched.length,'flat');
+      document.getElementById('res').classList.remove('hidden');
+    }
+    if(rp.payments){payRec=rp.payments;await savePayments();}
+    alert('โหลดข้อมูลจาก Google Sheet สำเร็จ');
+    btn.textContent='✅ โหลดแล้ว!';
+    setTimeout(()=>{btn.textContent='☁ Google Sheet → โหลด';btn.disabled=false;},2500);
+  }catch(e){alert('โหลดไม่สำเร็จ: '+e.message);btn.textContent='☁ Google Sheet → โหลด';btn.disabled=false;}
+}
+
+// ========== EARLY CLOSURE (สคบ.) ==========
+function calcEarlyClosure(n){
+  if(!schedBase.length)return null;
+  const T=schedBase.length;
+  if(n<1||n>=T)return null;
+  const row=schedBase[n-1];
+  const remainingPrincipal=row.bal;
+  const remainingMonths=T-n;
+  // Sum of all unearned interest (works for both flat & reducing)
+  const unearnedInterest=schedBase.slice(n).reduce((a,r)=>a+r.int,0);
+  // Tier based on fraction paid: n*3<=T → ≤1/3, n*3<=2T → ≤2/3, else >2/3
+  let tier,rebatePct;
+  if(n*3<=T){tier=1;rebatePct=0.60;}
+  else if(n*3<=2*T){tier=2;rebatePct=0.70;}
+  else{tier=3;rebatePct=1.00;}
+  const rebateAmt=unearnedInterest*rebatePct;
+  const closureAmt=remainingPrincipal+unearnedInterest-rebateAmt;
+  const totalIntPaid=schedBase.slice(0,n).reduce((a,r)=>a+r.int,0);
+  const totalIntFull=schedBase.reduce((a,r)=>a+r.int,0);
+  const intIfClose=totalIntPaid+(unearnedInterest-rebateAmt);
+  return{n,T,remainingMonths,remainingPrincipal,unearnedInterest,
+    tier,rebatePct,rebateAmt,closureAmt,
+    totalIntPaid,totalIntFull,intIfClose,savings:rebateAmt,
+    date:schedBase[n-1]?.date||''};
+}
+
+function renderECTab(){
+  if(!schedBase.length)return;
+  const T=schedBase.length;
+  const t1=Math.floor(T/3),t2=Math.floor(2*T/3);
+  const ex=(n)=>{const r=calcEarlyClosure(n);return r?`ตัวอย่างปิดที่งวด ${n}: ประหยัด ฿${fmt(r.savings)}`:''};
+  document.getElementById('ecTierCards').innerHTML=`
+    <div class="ec-tier-card t1">
+      <div class="ec-tier-label">กรณีที่ 1 — ส่วนลด 60%</div>
+      <div class="ec-tier-range">ปิดบัญชีหลังงวดที่ 1 – ${t1} (ไม่เกิน 1/3 ของสัญญา)</div>
+      <div class="ec-tier-desc">ดอกเบี้ยที่ยังไม่ถึงกำหนดลดลง <strong>60%</strong></div>
+      <span class="ec-tier-savings">${ex(t1)}</span>
+    </div>
+    <div class="ec-tier-card t2">
+      <div class="ec-tier-label">กรณีที่ 2 — ส่วนลด 70%</div>
+      <div class="ec-tier-range">ปิดบัญชีหลังงวดที่ ${t1+1} – ${t2} (1/3 ถึง 2/3 ของสัญญา)</div>
+      <div class="ec-tier-desc">ดอกเบี้ยที่ยังไม่ถึงกำหนดลดลง <strong>70%</strong></div>
+      <span class="ec-tier-savings">${ex(t2)}</span>
+    </div>
+    <div class="ec-tier-card t3">
+      <div class="ec-tier-label">กรณีที่ 3 — ส่วนลด 100%</div>
+      <div class="ec-tier-range">ปิดบัญชีหลังงวดที่ ${t2+1} – ${T-1} (เกิน 2/3 ของสัญญา)</div>
+      <div class="ec-tier-desc">ดอกเบี้ยที่ยังไม่ถึงกำหนด<strong>ลดทั้งหมด</strong> — จ่ายเพียงเงินต้นคงเหลือ</div>
+      <span class="ec-tier-savings">${ex(t2+1)}</span>
+    </div>`;
+  const ecN=document.getElementById('ecN');
+  ecN.max=T-1;
+  if(+ecN.value<1||+ecN.value>=T)ecN.value=t2;
+  renderEC();
+  renderECTable();
+}
+
+function renderEC(){
+  const n=+document.getElementById('ecN').value;
+  const r=calcEarlyClosure(n);
+  const el=document.getElementById('ecResult');
+  if(!r){el.classList.add('hidden');return;}
+  const tc=['#1d4ed8','#15803d','#7c3aed'][r.tier-1];
+  const tb=['#eff6ff','#f0fdf4','#f5f3ff'][r.tier-1];
+  const tNames=['กรณีที่ 1 (ผ่อนมาแล้วไม่เกิน 1/3)','กรณีที่ 2 (ผ่อนมาแล้ว 1/3 – 2/3)','กรณีที่ 3 (ผ่อนมาแล้วเกิน 2/3)'];
+  el.innerHTML=`
+    <div style="background:${tb};border:2px solid ${tc};border-radius:12px;padding:16px">
+      <div style="font-size:.85rem;font-weight:800;color:${tc};margin-bottom:14px">
+        📊 ปิดบัญชีหลังงวดที่ ${r.n} / ${r.T} — ${tNames[r.tier-1]} · ส่วนลด ${(r.rebatePct*100).toFixed(0)}%
+      </div>
+      <div class="g4" style="gap:10px;margin-bottom:12px">
+        <div style="background:#fff;border-radius:8px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+          <div style="font-size:.68rem;color:#6b7280;margin-bottom:2px">เงินต้นคงเหลือ</div>
+          <div style="font-size:.95rem;font-weight:800;color:#1d4ed8">฿${fmt(r.remainingPrincipal)}</div>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+          <div style="font-size:.68rem;color:#6b7280;margin-bottom:2px">ดอกเบี้ยที่ยังไม่ถึงกำหนด (${r.remainingMonths} งวด)</div>
+          <div style="font-size:.95rem;font-weight:800;color:#ef4444">฿${fmt(r.unearnedInterest)}</div>
+        </div>
+        <div style="background:#dcfce7;border-radius:8px;padding:10px">
+          <div style="font-size:.68rem;color:#15803d;margin-bottom:2px">ส่วนลดตาม สคบ. ${(r.rebatePct*100).toFixed(0)}%</div>
+          <div style="font-size:.95rem;font-weight:800;color:#15803d">−฿${fmt(r.rebateAmt)}</div>
+        </div>
+        <div style="background:${tc};border-radius:8px;padding:10px">
+          <div style="font-size:.68rem;color:rgba(255,255,255,.85);margin-bottom:2px">ยอดปิดบัญชีรวม</div>
+          <div style="font-size:.95rem;font-weight:800;color:#fff">฿${fmt(r.closureAmt)}</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.75);border-radius:8px;padding:12px;font-size:.78rem;line-height:2">
+        <div style="display:flex;justify-content:space-between"><span>ดอกเบี้ยที่จ่ายไปแล้ว ${r.n} งวด</span><span>฿${fmt(r.totalIntPaid)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>ดอกเบี้ยส่วนที่ต้องจ่ายเมื่อปิดบัญชี (หักส่วนลดแล้ว)</span><span style="color:#ef4444">+฿${fmt(r.unearnedInterest-r.rebateAmt)}</span></div>
+        <div style="display:flex;justify-content:space-between;border-top:1px dashed #d1d5db;padding-top:2px"><span style="font-weight:700">ดอกเบี้ยรวมที่ต้องจ่ายจริง</span><span style="font-weight:800;color:${tc}">฿${fmt(r.intIfClose)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#9ca3af">เทียบกับผ่อนครบ ${r.T} งวด</span><span style="color:#9ca3af">฿${fmt(r.totalIntFull)}</span></div>
+      </div>
+      <div style="margin-top:10px;padding:10px 16px;background:#16a34a;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.9rem;font-weight:800;color:#fff">💚 ประหยัดดอกเบี้ยได้ทั้งหมด</span>
+        <span style="font-size:1.1rem;font-weight:900;color:#fff">฿${fmt(r.savings)}</span>
+      </div>
+    </div>`;
+  el.classList.remove('hidden');
+}
+
+function renderECTable(){
+  const tb=document.getElementById('ecTbody');
+  if(!schedBase.length||!tb)return;
+  const T=schedBase.length;
+  const tierBg=['#dbeafe','#dcfce7','#ede9fe'];
+  const tierFg=['#1d4ed8','#15803d','#7c3aed'];
+  tb.innerHTML='';
+  for(let n=1;n<T;n++){
+    const r=calcEarlyClosure(n);
+    if(!r)continue;
+    const tr=document.createElement('tr');
+    tr.style.background=tierBg[r.tier-1];
+    tr.innerHTML=`
+      <td style="text-align:center;font-weight:700">${r.n}</td>
+      <td style="text-align:left;white-space:nowrap">${r.date}</td>
+      <td style="text-align:center"><span style="font-weight:800;color:${tierFg[r.tier-1]}">กรณี ${r.tier}</span></td>
+      <td style="text-align:center;font-weight:800;color:${tierFg[r.tier-1]}">${(r.rebatePct*100).toFixed(0)}%</td>
+      <td style="text-align:right">${fmt(r.remainingPrincipal)}</td>
+      <td style="text-align:right;color:#ef4444">${fmt(r.unearnedInterest)}</td>
+      <td style="text-align:right;color:#16a34a;font-weight:700">−${fmt(r.rebateAmt)}</td>
+      <td style="text-align:right;font-weight:800">${fmt(r.closureAmt)}</td>
+      <td style="text-align:right;color:#16a34a;font-weight:700">+${fmt(r.savings)}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+// ========== PAGE 2 ==========
+function getStatus(r){
+  const rec=payRec[r.i];
+  if(rec&&rec.paidDate){
+    const paid=new Date(rec.paidDate),due=new Date(r.dateISO);
+    return paid<=due?{cls:'st-paid',label:'✅ จ่ายแล้ว'}:{cls:'st-late',label:'⚠️ จ่ายช้า'};
+  }
+  const due=new Date(r.dateISO);
+  return due>=todayD?{cls:'st-pending',label:'⏳ รอชำระ'}:{cls:'st-overdue',label:'🔴 เกินกำหนด'};
+}
+
+function renderPage2(){
+  if(!sched.length){
+    document.getElementById('p2Empty').classList.remove('hidden');
+    document.getElementById('p2Content').classList.add('hidden');
+    return;
+  }
+  document.getElementById('p2Empty').classList.add('hidden');
+  document.getElementById('p2Content').classList.remove('hidden');
+
+  const hasPP=sched.some(r=>r.pp>0);
+  document.getElementById('ppLegend').classList.toggle('hidden',!hasPP);
+
+  // ---- Build header ----
+  const topRow=document.getElementById('p2hdrTop');
+  const subRow=document.getElementById('p2hdrSub');
+
+  // count pp columns colspan
+  const ppCols=hasPP?3:0; // plan | actual | diff
+
+  topRow.innerHTML=`
+    <th class="th-base" colspan="5">📋 ข้อมูลงวด</th>
+    ${hasPP?`<th class="th-plan" colspan="1">🟢 โปะแผน</th><th class="th-actual" colspan="1">🟣 โปะจริง</th><th class="th-diff" colspan="1">🟡 ผลต่าง</th>`:''}
+    <th class="th-actual" colspan="4">📅 บันทึกการจ่าย</th>
+  `;
+  subRow.innerHTML=`
+    <th>งวดที่</th>
+    <th>วันครบกำหนด</th>
+    <th>ค่างวด</th>
+    <th>รวม (ค่างวด+โปะ)</th>
+    <th>ยอดปลายงวด</th>
+    ${hasPP?`
+    <th style="background:#15803d">ตามแผน (บาท)</th>
+    <th style="background:#6d28d9">จริง (บาท)</th>
+    <th style="background:#b45309">ผลต่าง</th>
+    `:''}
+    <th style="background:#4c1d95">วันที่จ่ายจริง</th>
+    <th style="background:#4c1d95">สถานะ</th>
+    <th style="background:#4c1d95">หมายเหตุ</th>
+    <th style="background:#4c1d95">Action</th>
+  `;
+
+  // ---- Summary counts ----
+  let paidCnt=0,overCnt=0,pendCnt=0,paidAmt=0,remAmt=0,nextRow=null;
+  let totPlanPP=0,totActualPP=0;
+
+  sched.forEach(r=>{
+    const rec=payRec[r.i]||{};
+    const st=getStatus(r);
+    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:r.pp;
+    const total=r.pay+r.pp;
+    if(st.cls==='st-paid'||st.cls==='st-late'){paidCnt++;paidAmt+=total;}
+    else{if(st.cls==='st-overdue')overCnt++;else{pendCnt++;if(!nextRow)nextRow=r;}remAmt+=total;}
+    if(hasPP){totPlanPP+=r.pp;totActualPP+=actualPP;}
+  });
+
+  document.getElementById('p2Paid').textContent=`${paidCnt} งวด / ฿${fmt(paidAmt)}`;
+  document.getElementById('p2Over').textContent=`${overCnt} งวด`;
+  document.getElementById('p2Pend').textContent=`${pendCnt} งวด`;
+  document.getElementById('p2Next').textContent=nextRow?`งวด ${nextRow.i} · ${nextRow.date}`:'ผ่อนหมดแล้ว 🎉';
+  if(hasPP){
+    const diff=totActualPP-totPlanPP;
+    document.getElementById('p2PPDiff').textContent=`จริง ฿${fmt(totActualPP)} / แผน ฿${fmt(totPlanPP)}\n${diff>=0?'+':''}฿${fmt(diff)}`;
+  } else document.getElementById('p2PPDiff').textContent='-';
+
+  const pct=sched.length?Math.round((paidCnt/sched.length)*100):0;
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progLabel').textContent=`${paidCnt} / ${sched.length} งวด (${pct}%)`;
+  document.getElementById('p2PaidAmt').textContent=`ยอดจ่ายแล้ว: ฿${fmt(paidAmt)}`;
+  document.getElementById('p2RemAmt').textContent=`ยอดคงเหลือ: ฿${fmt(remAmt)}`;
+
+  // ---- Rows ----
+  const tb=document.getElementById('p2tbody');tb.innerHTML='';
+  sched.forEach(r=>{
+    const rec=payRec[r.i]||{paidDate:'',note:'',actualPP:''};
+    const st=getStatus(r);
+    // actual PP value: if user has entered something use it, else show plan as default placeholder
+    const actualPPVal=rec.actualPP!==undefined&&rec.actualPP!==''?rec.actualPP:'';
+    const planPP=r.pp;
+    const diff=actualPPVal!==''?+actualPPVal-planPP:null;
+    let diffCls='col-diff-zero',diffTxt='-';
+    if(diff!==null){
+      if(Math.abs(diff)<0.01){diffCls='col-diff-zero';diffTxt='-';}
+      else if(diff>0){diffCls='col-diff-pos';diffTxt='+฿'+fmt(diff);}
+      else{diffCls='col-diff-neg';diffTxt='-฿'+fmt(Math.abs(diff));}
+    }
+    const totalWithActual=r.pay+(actualPPVal!==''?+actualPPVal:planPP);
+
+    const ppCells=hasPP?`
+      <td class="col-plan tdr">${planPP>0?fmt(planPP):'-'}</td>
+      <td class="col-actual-input">
+        <input type="number" class="actual-pp" id="app_${r.i}"
+          value="${actualPPVal}"
+          placeholder="${planPP>0?fmt(planPP):'0'}"
+          min="0" step="100"
+          onchange="onActualPPChange(${r.i})"
+          title="กรอกยอดโปะเพิ่มจริง (แผน: ฿${planPP>0?fmt(planPP):'0'})">
+      </td>
+      <td class="${diffCls} tdr">${diffTxt}</td>
+    `:'';
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><strong>${r.i}</strong></td>
+      <td class="tdl" style="white-space:nowrap">${r.date}</td>
+      <td class="tdr">${fmt(r.pay)}</td>
+      <td class="tdr"><strong>${fmt(totalWithActual)}</strong></td>
+      <td class="tdr">${fmt(r.bal)}</td>
+      ${ppCells}
+      <td>
+        <input type="date" id="pd_${r.i}" value="${rec.paidDate||''}"
+          class="${rec.paidDate?'filled':''}"
+          onchange="onPDChange(${r.i})">
+      </td>
+      <td><span class="st ${st.cls}">${st.label}</span></td>
+      <td>
+        <input type="text" class="pt-note" id="pn_${r.i}"
+          value="${rec.note||''}" placeholder="หมายเหตุ..."
+          onchange="onNoteChange(${r.i})">
+      </td>
+      <td>
+        ${!rec.paidDate
+          ?`<button class="btn-paid" onclick="markPaid(${r.i})">✓ วันนี้</button>`
+          :`<button class="btn-unpaid" onclick="unmarkPaid(${r.i})">✕ ยกเลิก</button>`
+        }
+      </td>`;
+    tb.appendChild(tr);
+  });
+
+  // Total row
+  const totPay=sched.reduce((a,r)=>a+r.pay,0);
+  const totActAll=sched.reduce((a,r)=>{
+    const rec=payRec[r.i]||{};
+    return a+(rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:r.pp);
+  },0);
+  const tf=document.createElement('tr');
+  const ppTotCells=hasPP?`<td class="col-plan tdr"><strong>${fmt(totPlanPP)}</strong></td><td class="col-actual-input tdr"><strong>${fmt(totActAll)}</strong></td><td class="${totActAll-totPlanPP>0.01?'col-diff-pos':totPlanPP-totActAll>0.01?'col-diff-neg':'col-diff-zero'} tdr"><strong>${totActAll-totPlanPP>0.01?'+฿'+fmt(totActAll-totPlanPP):totPlanPP-totActAll>0.01?'-฿'+fmt(totPlanPP-totActAll):'-'}</strong></td>`:'';
+  tf.style.fontWeight='700';tf.style.background='#ede9fe';
+  tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td class="tdr">${fmt(totPay)}</td><td class="tdr">${fmt(totPay+totActAll)}</td><td>-</td>${ppTotCells}<td colspan="4">-</td>`;
+  tb.appendChild(tf);
+}
+
+// ---- Page2 event handlers ----
+function onPDChange(i){
+  const val=document.getElementById('pd_'+i).value;
+  if(!payRec[i])payRec[i]={paidDate:'',note:'',actualPP:''};
+  payRec[i].paidDate=val;
+  document.getElementById('pd_'+i).classList.toggle('filled',!!val);
+  savePayments();renderPage2();
+}
+function onNoteChange(i){
+  const val=document.getElementById('pn_'+i).value;
+  if(!payRec[i])payRec[i]={paidDate:'',note:'',actualPP:''};
+  payRec[i].note=val;savePayments();
+}
+function onActualPPChange(i){
+  const val=document.getElementById('app_'+i).value;
+  if(!payRec[i])payRec[i]={paidDate:'',note:'',actualPP:''};
+  payRec[i].actualPP=val;
+  savePayments();renderPage2();
+}
+function markPaid(i){
+  const iso=new Date().toISOString().split('T')[0];
+  if(!payRec[i])payRec[i]={paidDate:'',note:'',actualPP:''};
+  payRec[i].paidDate=iso;savePayments();renderPage2();
+}
+function unmarkPaid(i){
+  if(!confirm(`ยืนยันยกเลิกการจ่ายงวดที่ ${i}?`))return;
+  if(payRec[i])payRec[i].paidDate='';
+  savePayments();renderPage2();
+}
+function markAllPaidToday(){
+  if(!confirm('บันทึกทุกงวดที่ยังไม่มีวันจ่ายเป็นวันนี้?'))return;
+  const iso=new Date().toISOString().split('T')[0];
+  sched.forEach(r=>{if(!payRec[r.i]||!payRec[r.i].paidDate){if(!payRec[r.i])payRec[r.i]={paidDate:'',note:'',actualPP:''};payRec[r.i].paidDate=iso;}});
+  savePayments();renderPage2();
+}
+function clearAllPayments(){
+  if(!confirm('ล้างข้อมูลการจ่ายทั้งหมด?'))return;
+  payRec={};savePayments();renderPage2();
+}
+function exportPayCSV(){
+  if(!sched.length)return;
+  const hasPP=sched.some(r=>r.pp>0);
+  const hdr=['งวดที่','วันครบกำหนด','ค่างวด'];
+  if(hasPP)hdr.push('โปะแผน','โปะจริง','ผลต่างโปะ');
+  hdr.push('รวมต้องจ่าย','วันที่จ่ายจริง','สถานะ','หมายเหตุ');
+  const rows=sched.map(r=>{
+    const rec=payRec[r.i]||{};
+    const st=getStatus(r);
+    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:r.pp;
+    const diff=actualPP-r.pp;
+    const ppPart=hasPP?`,${r.pp.toFixed(2)},${actualPP.toFixed(2)},${diff>=0?'+':''}${diff.toFixed(2)}`:'';
+    return `${r.i},"${r.date}",${r.pay.toFixed(2)}${ppPart},${(r.pay+actualPP).toFixed(2)},"${rec.paidDate||''}","${st.label.replace(/[✅⏳🔴⚠️]/g,'').trim()}","${rec.note||''}"`;
+  });
+  dl('\uFEFF'+[hdr.join(','),...rows].join('\n'),'car_loan_payments.csv');
+}
+</script>
+</body>
+</html>
