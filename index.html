@@ -1285,14 +1285,17 @@ function onActualPPChange(i){
   savePayments();renderPage2();buildPPChart();
 }
 
-// ---- PP Combo Chart (Bar per installment + Line cumulative) ----
+// ---- PP Combo Chart (Bar per installment + Line cumulative + Forecast) ----
 let ppChartInst=null;
 function buildPPChart(){
   const section=document.getElementById('ppChartSection');
   if(!sched.length){section.style.display='none';return;}
+
   const labels=[],barData=[],lineData=[];
   let cum=0,hasAny=false;
-  sched.forEach(r=>{
+  let lastActualIdx=-1,countPaid=0,totPP=0;
+
+  sched.forEach((r,idx)=>{
     const rec=payRec[r.i]||{};
     const pp=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
     if(pp>0)hasAny=true;
@@ -1300,9 +1303,24 @@ function buildPPChart(){
     labels.push('งวด '+r.i);
     barData.push(pp);
     lineData.push(cum);
+    if(rec.paidDate){countPaid++;totPP+=pp;lastActualIdx=idx;}
   });
+
   if(!hasAny){section.style.display='none';return;}
   section.style.display='';
+
+  // Forecast: เฉลี่ยจากงวดที่จ่ายแล้ว → ต่อเส้นไปจนงวดสุดท้าย
+  const forecastData=new Array(sched.length).fill(null);
+  if(lastActualIdx>=0&&lastActualIdx<sched.length-1){
+    const avgPP=countPaid>0?totPP/countPaid:0;
+    forecastData[lastActualIdx]=lineData[lastActualIdx]; // จุดเชื่อมต่อ
+    let fcCum=lineData[lastActualIdx];
+    for(let i=lastActualIdx+1;i<sched.length;i++){
+      fcCum+=avgPP;
+      forecastData[i]=Math.round(fcCum*100)/100;
+    }
+  }
+
   if(ppChartInst)ppChartInst.destroy();
   ppChartInst=new Chart(document.getElementById('ppChart'),{
     data:{
@@ -1319,7 +1337,7 @@ function buildPPChart(){
         },
         {
           type:'line',
-          label:'ยอดสะสม (บาท)',
+          label:'ยอดสะสมจริง (บาท)',
           data:lineData,
           borderColor:'#dc2626',
           backgroundColor:'rgba(220,38,38,0.06)',
@@ -1328,6 +1346,19 @@ function buildPPChart(){
           pointRadius:3,
           borderWidth:2,
           yAxisID:'y'
+        },
+        {
+          type:'line',
+          label:'Forecast (เฉลี่ยจริง)',
+          data:forecastData,
+          borderColor:'#f97316',
+          backgroundColor:'rgba(249,115,22,0.06)',
+          fill:false,
+          tension:0.3,
+          pointRadius:2,
+          borderWidth:2,
+          borderDash:[6,4],
+          yAxisID:'y'
         }
       ]
     },
@@ -1335,7 +1366,14 @@ function buildPPChart(){
       responsive:true,
       plugins:{
         legend:{display:true,position:'top'},
-        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2})}}
+        tooltip:{
+          callbacks:{
+            label:ctx=>{
+              if(ctx.parsed.y===null)return null;
+              return ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2});
+            }
+          }
+        }
       },
       scales:{
         y:{ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})}},
