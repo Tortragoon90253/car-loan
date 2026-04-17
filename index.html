@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>คำนวณงวดผ่อนชำระรถยนต์</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root{--blue:#1e3a8a;--bluel:#3b82f6;--bluep:#eff6ff;--green:#166534;--greenl:#22c55e;--greenp:#f0fdf4;--red:#dc2626;--orange:#ea580c;--gray:#374151;--grayl:#9ca3af;--border:#e5e7eb;--sh:0 2px 12px rgba(0,0,0,.08);--pur:#7c3aed;--purp:#f5f3ff}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -158,9 +160,15 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .btn-sync{padding:7px 16px;background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.6);border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-sync:hover{background:rgba(255,255,255,.3)}
 .gs-url-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
-.gs-url-row input{flex:1;min-width:200px;padding:6px 10px;border:1.5px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-size:.78rem}
-.gs-url-row input::placeholder{color:rgba(255,255,255,.6)}
-.gs-url-row input:focus{outline:none;border-color:#fff;background:rgba(255,255,255,.2)}
+.gs-url-row input,.gs-url-row textarea{flex:1;min-width:200px;padding:6px 10px;border:1.5px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-size:.78rem}
+.gs-url-row input::placeholder,.gs-url-row textarea::placeholder{color:rgba(255,255,255,.6)}
+.gs-url-row input:focus,.gs-url-row textarea:focus{outline:none;border-color:#fff;background:rgba(255,255,255,.2)}
+.gs-url-row textarea{resize:vertical;font-family:monospace}
+#fbStatus{font-size:.72rem;opacity:.85;white-space:nowrap}
+.pp-chart-card{background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:14px;box-shadow:var(--sh)}
+.pp-chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pp-chart-title{font-size:.9rem;font-weight:700;color:var(--pur)}
+.btn-sm{padding:4px 10px;background:#f5f3ff;color:var(--pur);border:1.5px solid #c4b5fd;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer}
 /* ---- Print / PDF ---- */
 @media print{
   .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto{display:none!important}
@@ -211,13 +219,15 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <button class="pnav" id="pnav2" onclick="showPage(2)">📅 หน้า 2: บันทึกการจ่าย</button>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <button class="btn-sync" id="btnSyncTo" onclick="syncToSheet()">☁ Sync → Google Sheet</button>
-        <button class="btn-sync" id="btnSyncFrom" onclick="syncFromSheet()">☁ Google Sheet → โหลด</button>
-        <button class="btn-sync" onclick="toggleGSUrl()" title="ตั้งค่า URL">⚙</button>
+        <button class="btn-sync" id="btnSyncTo" onclick="syncToFirebase()">☁ บันทึก → Firebase</button>
+        <button class="btn-sync" id="btnSyncFrom" onclick="syncFromFirebase()">☁ Firebase → โหลด</button>
+        <button class="btn-sync" onclick="toggleFBSettings()" title="ตั้งค่า Firebase">⚙</button>
       </div>
-      <div class="gs-url-row hidden" id="gsUrlRow">
-        <input type="text" id="gsUrl" placeholder="วาง Apps Script Web App URL ที่นี่..." oninput="saveGSUrl()">
-        <span style="font-size:.72rem;opacity:.8">URL จะถูกบันทึกอัตโนมัติ</span>
+      <div class="gs-url-row hidden" id="fbSettingsRow">
+        <textarea id="fbConfig" rows="3" placeholder='วาง Firebase Config JSON ที่นี่ เช่น {"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
+        <input type="text" id="fbSyncCode" placeholder="รหัส Sync (เช่น my-car-2024)">
+        <button class="btn-sync" onclick="saveFBSettings()">บันทึกการตั้งค่า</button>
+        <span id="fbStatus">ยังไม่ได้เชื่อมต่อ</span>
       </div>
     </div>
   </div>
@@ -437,6 +447,15 @@ td:nth-child(2){text-align:left;color:#4b5563}
       </div>
     </div>
 
+    <!-- PP Cumulative Chart -->
+    <div class="pp-chart-card" id="ppChartSection" style="display:none">
+      <div class="pp-chart-header">
+        <span class="pp-chart-title">📈 กราฟเงินโปะสะสม</span>
+        <button class="btn-sm" onclick="togglePPChart()">ซ่อน/แสดง</button>
+      </div>
+      <canvas id="ppChart" height="120"></canvas>
+    </div>
+
     <!-- Actions -->
     <div class="act-row">
       <button class="btn-purple" onclick="markAllPaidToday()">✅ บันทึกทุกงวด "จ่ายวันนี้"</button>
@@ -447,11 +466,14 @@ td:nth-child(2){text-align:left;color:#4b5563}
       <span style="font-size:.75rem;color:var(--grayl);margin-left:auto" id="saveStatus">💾 บันทึกอัตโนมัติ</span>
     </div>
 
-    <!-- Legend for PP columns (shown only when hasPP) -->
+    <!-- Legend for PP columns -->
     <div id="ppLegend" class="pp-legend hidden">
       <div class="pp-leg-item pl-plan">🟢 โปะแผน = ยอดโปะตามแผนหน้า 1</div>
-      <div class="pp-leg-item pl-actual">🟣 โปะจริง = ยอดที่จ่ายจริง (กรอกเอง)</div>
+      <div class="pp-leg-item pl-actual">🟣 โปะจริง = ยอดที่จ่ายจริง (กรอกเองได้ทุกงวด)</div>
       <div class="pp-leg-item pl-diff">🟡 ผลต่าง = จริง − แผน (+ มากกว่า / − น้อยกว่า)</div>
+    </div>
+    <div class="pp-legend" style="margin-bottom:10px">
+      <div class="pp-leg-item pl-actual">🟣 สามารถกรอกเงินโปะจริงได้ทุกงวด แม้ไม่ได้ตั้งค่าโปะล่วงหน้า</div>
     </div>
 
     <!-- Payment table -->
@@ -856,44 +878,93 @@ function parsePayCSVFile(text){
   alert('นำเข้าข้อมูลการจ่ายสำเร็จ '+cnt+' รายการ');
 }
 
-// ---- Google Sheet Sync ----
-let GS_URL='';
-function toggleGSUrl(){document.getElementById('gsUrlRow').classList.toggle('hidden');}
-function saveGSUrl(){GS_URL=document.getElementById('gsUrl').value.trim();try{localStorage.setItem('gs_url',GS_URL);}catch(e){}}
-(function(){try{const v=localStorage.getItem('gs_url');if(v){GS_URL=v;document.getElementById('gsUrl').value=v;}}catch(e){}})();
+// ---- Firebase Sync ----
+let firebaseApp=null,db=null;
+const FB_CFG_KEY='fb_config_v1';
+const FB_CODE_KEY='fb_sync_code';
 
-async function syncToSheet(){
-  if(!GS_URL)return alert('กรุณาใส่ Apps Script Web App URL ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
-  if(!sched.length)return alert('กรุณาคำนวณตารางผ่อนก่อน');
-  const btn=document.getElementById('btnSyncTo');btn.textContent='⏳ กำลังซิงค์...';btn.disabled=true;
+function toggleFBSettings(){document.getElementById('fbSettingsRow').classList.toggle('hidden');}
+
+function initFirebase(){
   try{
-    const res=await fetch(GS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'syncAll',schedule:sched,payments:payRec})});
-    const data=await res.json();
-    if(data.error)throw new Error(data.error);
-    btn.textContent='✅ ซิงค์แล้ว!';showToast();
-    setTimeout(()=>{btn.textContent='☁ Sync → Google Sheet';btn.disabled=false;},2500);
-  }catch(e){alert('Sync ไม่สำเร็จ: '+e.message);btn.textContent='☁ Sync → Google Sheet';btn.disabled=false;}
+    const cfgStr=localStorage.getItem(FB_CFG_KEY);
+    const code=localStorage.getItem(FB_CODE_KEY)||'';
+    if(!cfgStr||!code)return false;
+    const cfg=JSON.parse(cfgStr);
+    if(firebaseApp){try{firebaseApp.delete();}catch(e){}}
+    firebaseApp=firebase.initializeApp(cfg,'car-loan-'+Date.now());
+    db=firebaseApp.firestore();
+    document.getElementById('fbStatus').textContent='✅ เชื่อมต่อแล้ว: '+code;
+    return true;
+  }catch(e){
+    document.getElementById('fbStatus').textContent='❌ Config ผิดพลาด: '+e.message;
+    db=null;return false;
+  }
 }
-async function syncFromSheet(){
-  if(!GS_URL)return alert('กรุณาใส่ Apps Script Web App URL ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
-  if(!confirm('โหลดข้อมูลจาก Google Sheet และแทนที่ข้อมูลปัจจุบัน?'))return;
+
+function saveFBSettings(){
+  const cfg=document.getElementById('fbConfig').value.trim();
+  const code=document.getElementById('fbSyncCode').value.trim();
+  if(!cfg||!code)return alert('กรุณากรอก Firebase Config JSON และรหัส Sync');
+  try{JSON.parse(cfg);}catch(e){return alert('Firebase Config ไม่ถูกต้อง — ต้องเป็น JSON');}
+  localStorage.setItem(FB_CFG_KEY,cfg);
+  localStorage.setItem(FB_CODE_KEY,code);
+  if(initFirebase())alert('เชื่อมต่อ Firebase สำเร็จ! รหัส Sync: '+code);
+}
+
+// โหลด Firebase settings ตอน page load
+(function(){
+  const cfg=localStorage.getItem(FB_CFG_KEY);
+  const code=localStorage.getItem(FB_CODE_KEY);
+  if(cfg)document.getElementById('fbConfig').value=cfg;
+  if(code)document.getElementById('fbSyncCode').value=code;
+  if(cfg&&code)initFirebase();
+})();
+
+async function syncToFirebase(){
+  if(!db&&!initFirebase())return alert('กรุณาตั้งค่า Firebase ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
+  if(!sched.length)return alert('กรุณาคำนวณตารางผ่อนก่อน');
+  const btn=document.getElementById('btnSyncTo');btn.textContent='⏳ กำลังบันทึก...';btn.disabled=true;
+  try{
+    const code=localStorage.getItem(FB_CODE_KEY);
+    const formData=JSON.parse(localStorage.getItem(FKEY)||'{}');
+    await db.collection('car-loan-sync').doc(code).set({
+      schedule:sched,
+      payments:payRec,
+      formData:formData,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    btn.textContent='✅ บันทึกแล้ว!';showToast();
+    setTimeout(()=>{btn.textContent='☁ บันทึก → Firebase';btn.disabled=false;},2500);
+  }catch(e){alert('Sync ไม่สำเร็จ: '+e.message);btn.textContent='☁ บันทึก → Firebase';btn.disabled=false;}
+}
+
+async function syncFromFirebase(){
+  if(!db&&!initFirebase())return alert('กรุณาตั้งค่า Firebase ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
+  if(!confirm('โหลดข้อมูลจาก Firebase และแทนที่ข้อมูลปัจจุบัน?'))return;
   const btn=document.getElementById('btnSyncFrom');btn.textContent='⏳ กำลังโหลด...';btn.disabled=true;
   try{
-    const [rs,rp]=await Promise.all([
-      fetch(GS_URL+'?action=readSchedule').then(r=>r.json()),
-      fetch(GS_URL+'?action=readPayments').then(r=>r.json())
-    ]);
-    if(rs.rows&&rs.rows.length){
-      sched=rs.rows;schedBase=rs.rows;
+    const code=localStorage.getItem(FB_CODE_KEY);
+    const snap=await db.collection('car-loan-sync').doc(code).get();
+    if(!snap.exists){
+      alert('ไม่พบข้อมูลสำหรับรหัส Sync "'+code+'" — กรุณาบันทึกจากอุปกรณ์แรกก่อน');
+      btn.textContent='☁ Firebase → โหลด';btn.disabled=false;return;
+    }
+    const data=snap.data();
+    if(data.schedule&&data.schedule.length){
+      sched=data.schedule;schedBase=data.schedule;
       renderTable(sched,sched.some(r=>r.pp>0)?{amt:1}:null,sched.length,'flat');
       document.getElementById('res').classList.remove('hidden');
     }
-    if(rp.payments){payRec=rp.payments;await savePayments();}
-    alert('โหลดข้อมูลจาก Google Sheet สำเร็จ');
+    if(data.payments){payRec=data.payments;await savePayments();}
+    if(data.formData&&Object.keys(data.formData).length){
+      localStorage.setItem(FKEY,JSON.stringify(data.formData));loadFormData();
+    }
+    renderPage2();buildPPChart();
+    alert('โหลดข้อมูลจาก Firebase สำเร็จ');
     btn.textContent='✅ โหลดแล้ว!';
-    setTimeout(()=>{btn.textContent='☁ Google Sheet → โหลด';btn.disabled=false;},2500);
-  }catch(e){alert('โหลดไม่สำเร็จ: '+e.message);btn.textContent='☁ Google Sheet → โหลด';btn.disabled=false;}
+    setTimeout(()=>{btn.textContent='☁ Firebase → โหลด';btn.disabled=false;},2500);
+  }catch(e){alert('โหลดไม่สำเร็จ: '+e.message);btn.textContent='☁ Firebase → โหลด';btn.disabled=false;}
 }
 
 // ========== EARLY CLOSURE (สคบ.) ==========
@@ -1051,25 +1122,22 @@ function renderPage2(){
   const topRow=document.getElementById('p2hdrTop');
   const subRow=document.getElementById('p2hdrSub');
 
-  // count pp columns colspan
-  const ppCols=hasPP?3:0; // plan | actual | diff
-
+  // ข้อมูลงวด: งวดที่ | วันครบ | ค่างวด | [โปะแผน if hasPP] | โปะจริง | ยอดปลายงวด
+  const baseCols=hasPP?5:4; // +1 for โปะแผน when hasPP
   topRow.innerHTML=`
-    <th class="th-base" colspan="5">📋 ข้อมูลงวด</th>
-    ${hasPP?`<th class="th-plan" colspan="1">🟢 โปะแผน</th><th class="th-actual" colspan="1">🟣 โปะจริง</th><th class="th-diff" colspan="1">🟡 ผลต่าง</th>`:''}
+    <th class="th-base" colspan="${baseCols}">📋 ข้อมูลงวด</th>
+    ${hasPP?`<th class="th-diff" colspan="1">🟡 ผลต่าง</th>`:''}
+    <th class="th-actual" colspan="1">🟣 เงินโปะจริง</th>
     <th class="th-actual" colspan="4">📅 บันทึกการจ่าย</th>
   `;
   subRow.innerHTML=`
     <th>งวดที่</th>
     <th>วันครบกำหนด</th>
     <th>ค่างวด</th>
-    <th>รวม (ค่างวด+โปะ)</th>
+    ${hasPP?`<th style="background:#15803d">โปะแผน (บาท)</th>`:''}
     <th>ยอดปลายงวด</th>
-    ${hasPP?`
-    <th style="background:#15803d">ตามแผน (บาท)</th>
-    <th style="background:#6d28d9">จริง (บาท)</th>
-    <th style="background:#b45309">ผลต่าง</th>
-    `:''}
+    ${hasPP?`<th style="background:#b45309">ผลต่าง</th>`:''}
+    <th style="background:#6d28d9">โปะจริง (บาท)</th>
     <th style="background:#4c1d95">วันที่จ่ายจริง</th>
     <th style="background:#4c1d95">สถานะ</th>
     <th style="background:#4c1d95">หมายเหตุ</th>
@@ -1083,20 +1151,21 @@ function renderPage2(){
   sched.forEach(r=>{
     const rec=payRec[r.i]||{};
     const st=getStatus(r);
-    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:r.pp;
+    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
     const total=r.pay+r.pp;
     if(st.cls==='st-paid'||st.cls==='st-late'){paidCnt++;paidAmt+=total;}
     else{if(st.cls==='st-overdue')overCnt++;else{pendCnt++;if(!nextRow)nextRow=r;}remAmt+=total;}
-    if(hasPP){totPlanPP+=r.pp;totActualPP+=actualPP;}
+    totPlanPP+=r.pp;
+    totActualPP+=actualPP;
   });
 
   document.getElementById('p2Paid').textContent=`${paidCnt} งวด / ฿${fmt(paidAmt)}`;
   document.getElementById('p2Over').textContent=`${overCnt} งวด`;
   document.getElementById('p2Pend').textContent=`${pendCnt} งวด`;
   document.getElementById('p2Next').textContent=nextRow?`งวด ${nextRow.i} · ${nextRow.date}`:'ผ่อนหมดแล้ว 🎉';
-  if(hasPP){
+  if(totActualPP>0||hasPP){
     const diff=totActualPP-totPlanPP;
-    document.getElementById('p2PPDiff').textContent=`จริง ฿${fmt(totActualPP)} / แผน ฿${fmt(totPlanPP)}\n${diff>=0?'+':''}฿${fmt(diff)}`;
+    document.getElementById('p2PPDiff').textContent=`โปะสะสมจริง ฿${fmt(totActualPP)}${hasPP?` / แผน ฿${fmt(totPlanPP)}\n${diff>=0?'+':''}฿${fmt(diff)}`:''}`;
   } else document.getElementById('p2PPDiff').textContent='-';
 
   const pct=sched.length?Math.round((paidCnt/sched.length)*100):0;
@@ -1110,39 +1179,36 @@ function renderPage2(){
   sched.forEach(r=>{
     const rec=payRec[r.i]||{paidDate:'',note:'',actualPP:''};
     const st=getStatus(r);
-    // actual PP value: if user has entered something use it, else show plan as default placeholder
     const actualPPVal=rec.actualPP!==undefined&&rec.actualPP!==''?rec.actualPP:'';
     const planPP=r.pp;
-    const diff=actualPPVal!==''?+actualPPVal-planPP:null;
+    const diff=hasPP&&actualPPVal!==''?+actualPPVal-planPP:null;
     let diffCls='col-diff-zero',diffTxt='-';
     if(diff!==null){
       if(Math.abs(diff)<0.01){diffCls='col-diff-zero';diffTxt='-';}
       else if(diff>0){diffCls='col-diff-pos';diffTxt='+฿'+fmt(diff);}
       else{diffCls='col-diff-neg';diffTxt='-฿'+fmt(Math.abs(diff));}
     }
-    const totalWithActual=r.pay+(actualPPVal!==''?+actualPPVal:planPP);
 
-    const ppCells=hasPP?`
-      <td class="col-plan tdr">${planPP>0?fmt(planPP):'-'}</td>
-      <td class="col-actual-input">
+    const planCell=hasPP?`<td class="col-plan tdr">${planPP>0?fmt(planPP):'-'}</td>`:'';
+    const diffCell=hasPP?`<td class="${diffCls} tdr">${diffTxt}</td>`:'';
+    const actualCell=`<td class="col-actual-input">
         <input type="number" class="actual-pp" id="app_${r.i}"
           value="${actualPPVal}"
           placeholder="${planPP>0?fmt(planPP):'0'}"
           min="0" step="100"
           onchange="onActualPPChange(${r.i})"
-          title="กรอกยอดโปะเพิ่มจริง (แผน: ฿${planPP>0?fmt(planPP):'0'})">
-      </td>
-      <td class="${diffCls} tdr">${diffTxt}</td>
-    `:'';
+          title="กรอกยอดเงินโปะจริง${planPP>0?' (แผน: ฿'+fmt(planPP)+')':''}">
+      </td>`;
 
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><strong>${r.i}</strong></td>
       <td class="tdl" style="white-space:nowrap">${r.date}</td>
       <td class="tdr">${fmt(r.pay)}</td>
-      <td class="tdr"><strong>${fmt(totalWithActual)}</strong></td>
+      ${planCell}
       <td class="tdr">${fmt(r.bal)}</td>
-      ${ppCells}
+      ${diffCell}
+      ${actualCell}
       <td>
         <input type="date" id="pd_${r.i}" value="${rec.paidDate||''}"
           class="${rec.paidDate?'filled':''}"
@@ -1163,17 +1229,19 @@ function renderPage2(){
     tb.appendChild(tr);
   });
 
-  // Total row
+  // Total row — match column structure: งวดที่+วันครบ | ค่างวด | [โปะแผน] | ยอดปลายงวด | [ผลต่าง] | โปะจริง | colspan4
   const totPay=sched.reduce((a,r)=>a+r.pay,0);
-  const totActAll=sched.reduce((a,r)=>{
-    const rec=payRec[r.i]||{};
-    return a+(rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:r.pp);
-  },0);
+  const totActAllDisplay=sched.reduce((a,r)=>{const rec=payRec[r.i]||{};return a+(rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0);},0);
   const tf=document.createElement('tr');
-  const ppTotCells=hasPP?`<td class="col-plan tdr"><strong>${fmt(totPlanPP)}</strong></td><td class="col-actual-input tdr"><strong>${fmt(totActAll)}</strong></td><td class="${totActAll-totPlanPP>0.01?'col-diff-pos':totPlanPP-totActAll>0.01?'col-diff-neg':'col-diff-zero'} tdr"><strong>${totActAll-totPlanPP>0.01?'+฿'+fmt(totActAll-totPlanPP):totPlanPP-totActAll>0.01?'-฿'+fmt(totPlanPP-totActAll):'-'}</strong></td>`:'';
+  const planTotCell=hasPP?`<td class="col-plan tdr"><strong>${fmt(totPlanPP)}</strong></td>`:'';
+  const diffTot=totActualPP-totPlanPP;
+  const diffTotCls=diffTot>0.01?'col-diff-pos':totPlanPP-totActualPP>0.01?'col-diff-neg':'col-diff-zero';
+  const diffTotTxt=diffTot>0.01?'+฿'+fmt(diffTot):totPlanPP-totActualPP>0.01?'-฿'+fmt(totPlanPP-totActualPP):'-';
+  const diffTotCell=hasPP?`<td class="${diffTotCls} tdr"><strong>${diffTotTxt}</strong></td>`:'';
   tf.style.fontWeight='700';tf.style.background='#ede9fe';
-  tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td class="tdr">${fmt(totPay)}</td><td class="tdr">${fmt(totPay+totActAll)}</td><td>-</td>${ppTotCells}<td colspan="4">-</td>`;
+  tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td class="tdr">${fmt(totPay)}</td>${planTotCell}<td>-</td>${diffTotCell}<td class="col-actual-input tdr"><strong>${fmt(totActAllDisplay)}</strong></td><td colspan="4">-</td>`;
   tb.appendChild(tf);
+  buildPPChart();
 }
 
 // ---- Page2 event handlers ----
@@ -1193,7 +1261,58 @@ function onActualPPChange(i){
   const val=document.getElementById('app_'+i).value;
   if(!payRec[i])payRec[i]={paidDate:'',note:'',actualPP:''};
   payRec[i].actualPP=val;
-  savePayments();renderPage2();
+  savePayments();renderPage2();buildPPChart();
+}
+
+// ---- Cumulative PP Chart ----
+let ppChartInst=null;
+function buildPPChart(){
+  const section=document.getElementById('ppChartSection');
+  if(!sched.length){section.style.display='none';return;}
+  const labels=[],data=[];
+  let cum=0,hasAny=false;
+  sched.forEach(r=>{
+    const rec=payRec[r.i]||{};
+    const pp=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
+    if(pp>0)hasAny=true;
+    cum+=pp;
+    labels.push('งวด '+r.i);
+    data.push(cum);
+  });
+  if(!hasAny){section.style.display='none';return;}
+  section.style.display='';
+  if(ppChartInst)ppChartInst.destroy();
+  ppChartInst=new Chart(document.getElementById('ppChart'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'เงินโปะสะสม (บาท)',
+        data,
+        borderColor:'#7c3aed',
+        backgroundColor:'rgba(124,58,237,0.12)',
+        fill:true,
+        tension:0.3,
+        pointRadius:3,
+        pointBackgroundColor:'#7c3aed'
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>'฿'+ctx.parsed.y.toLocaleString('th-TH',{minimumFractionDigits:2})}}
+      },
+      scales:{
+        y:{ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})}},
+        x:{ticks:{maxTicksLimit:12}}
+      }
+    }
+  });
+}
+function togglePPChart(){
+  const canvas=document.getElementById('ppChart');
+  canvas.style.display=canvas.style.display==='none'?'':'none';
 }
 function markPaid(i){
   const iso=new Date().toISOString().split('T')[0];
@@ -1219,15 +1338,18 @@ function exportPayCSV(){
   if(!sched.length)return;
   const hasPP=sched.some(r=>r.pp>0);
   const hdr=['งวดที่','วันครบกำหนด','ค่างวด'];
-  if(hasPP)hdr.push('โปะแผน','โปะจริง','ผลต่างโปะ');
+  if(hasPP)hdr.push('โปะแผน');
+  hdr.push('โปะจริง');
+  if(hasPP)hdr.push('ผลต่างโปะ');
   hdr.push('รวมต้องจ่าย','วันที่จ่ายจริง','สถานะ','หมายเหตุ');
   const rows=sched.map(r=>{
     const rec=payRec[r.i]||{};
     const st=getStatus(r);
-    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:r.pp;
+    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
     const diff=actualPP-r.pp;
-    const ppPart=hasPP?`,${r.pp.toFixed(2)},${actualPP.toFixed(2)},${diff>=0?'+':''}${diff.toFixed(2)}`:'';
-    return `${r.i},"${r.date}",${r.pay.toFixed(2)}${ppPart},${(r.pay+actualPP).toFixed(2)},"${rec.paidDate||''}","${st.label.replace(/[✅⏳🔴⚠️]/g,'').trim()}","${rec.note||''}"`;
+    const planPart=hasPP?`,${r.pp.toFixed(2)}`:'';
+    const diffPart=hasPP?`,${diff>=0?'+':''}${diff.toFixed(2)}`:'';
+    return `${r.i},"${r.date}",${r.pay.toFixed(2)}${planPart},${actualPP.toFixed(2)}${diffPart},${(r.pay+actualPP).toFixed(2)},"${rec.paidDate||''}","${st.label.replace(/[✅⏳🔴⚠️]/g,'').trim()}","${rec.note||''}"`;
   });
   dl('\uFEFF'+[hdr.join(','),...rows].join('\n'),'car_loan_payments.csv');
 }
