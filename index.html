@@ -529,6 +529,7 @@ function saveFormData(){
     savedAt:new Date().toLocaleString('th-TH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})
   };
   try{localStorage.setItem(FKEY,JSON.stringify(data));updateFormSavedAt(data.savedAt);}catch(e){}
+  scheduleFirebaseSync();
 }
 function loadFormData(){
   try{
@@ -592,6 +593,7 @@ async function loadPayments(){
 async function savePayments(){
   try{await window.storage.set(SKEY,JSON.stringify(payRec));showToast();}
   catch(e){console.error(e);}
+  scheduleFirebaseSync();
 }
 function showToast(){
   const t=document.getElementById('toast');t.classList.add('show');
@@ -722,6 +724,7 @@ function renderTable(rows,prepay,origTerm,method){
   if(method==='flat')ex.push('Flat Rate: ดอกเบี้ยคงที่จากยอดกู้ตั้งต้น');else ex.push('Reducing Balance: ดอกเบี้ยจากยอดคงเหลือ');
   if(hasPP)ex.push('🟢 แถวสีเขียว = งวดที่โปะเพิ่ม | ยอดโปะหักจากเงินต้นโดยตรง (สคบ.)');
   document.getElementById('tblNote').textContent='* '+ex.join(' · ');
+  scheduleFirebaseSync();
 }
 
 // ---- Tabs ----
@@ -879,9 +882,27 @@ function parsePayCSVFile(text){
 }
 
 // ---- Firebase Sync ----
-let firebaseApp=null,db=null;
+let firebaseApp=null,db=null,fbSyncTimer=null;
 const FB_CFG_KEY='fb_config_v1';
 const FB_CODE_KEY='fb_sync_code';
+
+function scheduleFirebaseSync(){
+  if(!db)return;
+  clearTimeout(fbSyncTimer);
+  document.getElementById('fbStatus').textContent='⏳ รอ sync...';
+  fbSyncTimer=setTimeout(async()=>{
+    if(!sched.length)return;
+    try{
+      const code=localStorage.getItem(FB_CODE_KEY);
+      const formData=JSON.parse(localStorage.getItem(FKEY)||'{}');
+      await db.collection('car-loan-sync').doc(code).set({
+        schedule:sched,payments:payRec,formData:formData,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('fbStatus').textContent='✅ Sync อัตโนมัติ: '+new Date().toLocaleTimeString('th-TH');
+    }catch(e){document.getElementById('fbStatus').textContent='❌ Auto-sync ล้มเหลว';}
+  },3000);
+}
 
 function toggleFBSettings(){document.getElementById('fbSettingsRow').classList.toggle('hidden');}
 
@@ -1264,12 +1285,12 @@ function onActualPPChange(i){
   savePayments();renderPage2();buildPPChart();
 }
 
-// ---- Cumulative PP Chart ----
+// ---- PP Combo Chart (Bar per installment + Line cumulative) ----
 let ppChartInst=null;
 function buildPPChart(){
   const section=document.getElementById('ppChartSection');
   if(!sched.length){section.style.display='none';return;}
-  const labels=[],data=[];
+  const labels=[],barData=[],lineData=[];
   let cum=0,hasAny=false;
   sched.forEach(r=>{
     const rec=payRec[r.i]||{};
@@ -1277,31 +1298,44 @@ function buildPPChart(){
     if(pp>0)hasAny=true;
     cum+=pp;
     labels.push('งวด '+r.i);
-    data.push(cum);
+    barData.push(pp);
+    lineData.push(cum);
   });
   if(!hasAny){section.style.display='none';return;}
   section.style.display='';
   if(ppChartInst)ppChartInst.destroy();
   ppChartInst=new Chart(document.getElementById('ppChart'),{
-    type:'line',
     data:{
       labels,
-      datasets:[{
-        label:'เงินโปะสะสม (บาท)',
-        data,
-        borderColor:'#7c3aed',
-        backgroundColor:'rgba(124,58,237,0.12)',
-        fill:true,
-        tension:0.3,
-        pointRadius:3,
-        pointBackgroundColor:'#7c3aed'
-      }]
+      datasets:[
+        {
+          type:'bar',
+          label:'โปะรายงวด (บาท)',
+          data:barData,
+          backgroundColor:'rgba(124,58,237,0.5)',
+          borderColor:'#7c3aed',
+          borderWidth:1,
+          yAxisID:'y'
+        },
+        {
+          type:'line',
+          label:'ยอดสะสม (บาท)',
+          data:lineData,
+          borderColor:'#dc2626',
+          backgroundColor:'rgba(220,38,38,0.06)',
+          fill:false,
+          tension:0.3,
+          pointRadius:3,
+          borderWidth:2,
+          yAxisID:'y'
+        }
+      ]
     },
     options:{
       responsive:true,
       plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>'฿'+ctx.parsed.y.toLocaleString('th-TH',{minimumFractionDigits:2})}}
+        legend:{display:true,position:'top'},
+        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2})}}
       },
       scales:{
         y:{ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})}},
