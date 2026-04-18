@@ -882,12 +882,14 @@ function parsePayCSVFile(text){
 }
 
 // ---- Firebase Sync ----
-let firebaseApp=null,db=null,fbSyncTimer=null;
+let firebaseApp=null,db=null,fbSyncTimer=null,fbListener=null;
+const FB_DEVICE_ID='fb_dev_'+Math.random().toString(36).substr(2,9);
+let isLoadingFromFirebase=false;
 const FB_CFG_KEY='fb_config_v1';
 const FB_CODE_KEY='fb_sync_code';
 
 function scheduleFirebaseSync(){
-  if(!db)return;
+  if(!db||isLoadingFromFirebase)return;
   clearTimeout(fbSyncTimer);
   document.getElementById('fbStatus').textContent='⏳ รอ sync...';
   fbSyncTimer=setTimeout(async()=>{
@@ -897,6 +899,7 @@ function scheduleFirebaseSync(){
       const formData=JSON.parse(localStorage.getItem(FKEY)||'{}');
       await db.collection('car-loan-sync').doc(code).set({
         schedule:sched,payments:payRec,formData:formData,
+        deviceId:FB_DEVICE_ID,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
       });
       document.getElementById('fbStatus').textContent='✅ Sync อัตโนมัติ: '+new Date().toLocaleTimeString('th-TH');
@@ -915,7 +918,8 @@ function initFirebase(){
     if(firebaseApp){try{firebaseApp.delete();}catch(e){}}
     firebaseApp=firebase.initializeApp(cfg,'car-loan-'+Date.now());
     db=firebaseApp.firestore();
-    document.getElementById('fbStatus').textContent='✅ เชื่อมต่อแล้ว: '+code;
+    startFirebaseListener();
+    document.getElementById('fbStatus').textContent='✅ เชื่อมต่อแล้ว (Auto-sync เปิด): '+code;
     return true;
   }catch(e){
     document.getElementById('fbStatus').textContent='❌ Config ผิดพลาด: '+e.message;
@@ -942,6 +946,50 @@ function saveFBSettings(){
   if(cfg&&code)initFirebase();
 })();
 
+// โหลดข้อมูลจาก Firebase snapshot เข้า app state โดยไม่ trigger re-sync
+async function applyFirebaseData(data){
+  isLoadingFromFirebase=true;
+  try{
+    if(data.schedule&&data.schedule.length){
+      sched=data.schedule;schedBase=data.schedule;
+      renderTable(sched,sched.some(r=>r.pp>0)?{amt:1}:null,sched.length,'flat');
+      document.getElementById('res').classList.remove('hidden');
+    }
+    if(data.payments){
+      payRec=data.payments;
+      try{await window.storage.set(SKEY,JSON.stringify(payRec));}catch(e){}
+    }
+    if(data.formData&&Object.keys(data.formData).length){
+      localStorage.setItem(FKEY,JSON.stringify(data.formData));
+      loadFormData();
+    }
+    renderPage2();buildPPChart();
+  }catch(e){
+    document.getElementById('fbStatus').textContent='⚠ โหลดไม่สำเร็จ: '+e.message;
+  }finally{
+    isLoadingFromFirebase=false;
+  }
+}
+
+// เปิด real-time listener — อัปเดตอัตโนมัติเมื่ออุปกรณ์อื่น sync หรือโหลดครั้งแรก
+function startFirebaseListener(){
+  if(!db)return;
+  if(fbListener){fbListener();fbListener=null;}
+  const code=localStorage.getItem(FB_CODE_KEY);
+  if(!code)return;
+  fbListener=db.collection('car-loan-sync').doc(code).onSnapshot(
+    snap=>{
+      if(!snap.exists)return;
+      const data=snap.data();
+      if(data.deviceId===FB_DEVICE_ID)return; // บันทึกของตัวเอง ไม่ต้องโหลดซ้ำ
+      applyFirebaseData(data).then(()=>{
+        document.getElementById('fbStatus').textContent='✅ โหลดอัตโนมัติ: '+new Date().toLocaleTimeString('th-TH');
+      });
+    },
+    err=>{document.getElementById('fbStatus').textContent='⚠ Listener: '+err.message;}
+  );
+}
+
 async function syncToFirebase(){
   if(!db&&!initFirebase())return alert('กรุณาตั้งค่า Firebase ก่อน (กดปุ่ม ⚙ ในแถบด้านบน)');
   if(!sched.length)return alert('กรุณาคำนวณตารางผ่อนก่อน');
@@ -953,6 +1001,7 @@ async function syncToFirebase(){
       schedule:sched,
       payments:payRec,
       formData:formData,
+      deviceId:FB_DEVICE_ID,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     btn.textContent='✅ บันทึกแล้ว!';showToast();
@@ -971,17 +1020,7 @@ async function syncFromFirebase(){
       alert('ไม่พบข้อมูลสำหรับรหัส Sync "'+code+'" — กรุณาบันทึกจากอุปกรณ์แรกก่อน');
       btn.textContent='☁ Firebase → โหลด';btn.disabled=false;return;
     }
-    const data=snap.data();
-    if(data.schedule&&data.schedule.length){
-      sched=data.schedule;schedBase=data.schedule;
-      renderTable(sched,sched.some(r=>r.pp>0)?{amt:1}:null,sched.length,'flat');
-      document.getElementById('res').classList.remove('hidden');
-    }
-    if(data.payments){payRec=data.payments;await savePayments();}
-    if(data.formData&&Object.keys(data.formData).length){
-      localStorage.setItem(FKEY,JSON.stringify(data.formData));loadFormData();
-    }
-    renderPage2();buildPPChart();
+    await applyFirebaseData(snap.data());
     alert('โหลดข้อมูลจาก Firebase สำเร็จ');
     btn.textContent='✅ โหลดแล้ว!';
     setTimeout(()=>{btn.textContent='☁ Firebase → โหลด';btn.disabled=false;},2500);
