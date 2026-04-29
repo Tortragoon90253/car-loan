@@ -224,7 +224,6 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <button class="btn-sync" onclick="toggleFBSettings()" title="ตั้งค่า Firebase">⚙</button>
       </div>
       <div class="gs-url-row hidden" id="fbSettingsRow">
-        <textarea id="fbConfig" rows="3" placeholder='วาง Firebase Config JSON ที่นี่ เช่น {"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
         <input type="text" id="fbSyncCode" placeholder="รหัส Sync (เช่น my-car-2024)">
         <button class="btn-sync" onclick="saveFBSettings()">บันทึกการตั้งค่า</button>
         <span id="fbStatus">ยังไม่ได้เชื่อมต่อ</span>
@@ -498,6 +497,18 @@ td:nth-child(2){text-align:left;color:#4b5563}
 <div id="toast" class="save-toast">💾 บันทึกแล้ว</div>
 
 <script>
+// ---- Firebase Config (ฝังในโค้ดโดยตรง — แก้ค่าด้านล่างให้ตรงกับ project ของคุณ) ----
+// หมายเหตุ: Firebase web config ไม่ใช่ความลับ แต่ต้องตั้ง Firestore Security Rules ให้รัดกุม
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBOt-T8nt1CL3l1bS1ay8QUMiBR75_Smm8",
+  authDomain: "car-loan-e4a4d.firebaseapp.com",
+  projectId: "car-loan-e4a4d",
+  storageBucket: "car-loan-e4a4d.firebasestorage.app",
+  messagingSenderId: "204269726076",
+  appId: "1:204269726076:web:ba08f9f7a7aadc68391cf9",
+  measurementId: "G-486C8THQ3S"
+};
+
 // ---- State ----
 let dm='baht', sched=[], schedBase=[], chartInst=null, chartMode='bar';
 let payRec={}; // { [i]: { paidDate, note, actualPP } }
@@ -885,7 +896,6 @@ function parsePayCSVFile(text){
 let firebaseApp=null,db=null,fbSyncTimer=null,fbListener=null;
 const FB_DEVICE_ID='fb_dev_'+Math.random().toString(36).substr(2,9);
 let isLoadingFromFirebase=false;
-const FB_CFG_KEY='fb_config_v1';
 const FB_CODE_KEY='fb_sync_code';
 
 function scheduleFirebaseSync(){
@@ -911,12 +921,10 @@ function toggleFBSettings(){document.getElementById('fbSettingsRow').classList.t
 
 function initFirebase(){
   try{
-    const cfgStr=localStorage.getItem(FB_CFG_KEY);
     const code=localStorage.getItem(FB_CODE_KEY)||'';
-    if(!cfgStr||!code)return false;
-    const cfg=JSON.parse(cfgStr);
+    if(!code)return false;
     if(firebaseApp){try{firebaseApp.delete();}catch(e){}}
-    firebaseApp=firebase.initializeApp(cfg,'car-loan-'+Date.now());
+    firebaseApp=firebase.initializeApp(FIREBASE_CONFIG,'car-loan-'+Date.now());
     db=firebaseApp.firestore();
     startFirebaseListener();
     document.getElementById('fbStatus').textContent='✅ เชื่อมต่อแล้ว (Auto-sync เปิด): '+code;
@@ -928,22 +936,19 @@ function initFirebase(){
 }
 
 function saveFBSettings(){
-  const cfg=document.getElementById('fbConfig').value.trim();
   const code=document.getElementById('fbSyncCode').value.trim();
-  if(!cfg||!code)return alert('กรุณากรอก Firebase Config JSON และรหัส Sync');
-  try{JSON.parse(cfg);}catch(e){return alert('Firebase Config ไม่ถูกต้อง — ต้องเป็น JSON');}
-  localStorage.setItem(FB_CFG_KEY,cfg);
+  if(!code)return alert('กรุณากรอกรหัส Sync');
   localStorage.setItem(FB_CODE_KEY,code);
   if(initFirebase())alert('เชื่อมต่อ Firebase สำเร็จ! รหัส Sync: '+code);
 }
 
 // โหลด Firebase settings ตอน page load
 (function(){
-  const cfg=localStorage.getItem(FB_CFG_KEY);
   const code=localStorage.getItem(FB_CODE_KEY);
-  if(cfg)document.getElementById('fbConfig').value=cfg;
-  if(code)document.getElementById('fbSyncCode').value=code;
-  if(cfg&&code)initFirebase();
+  if(code){
+    document.getElementById('fbSyncCode').value=code;
+    initFirebase();
+  }
 })();
 
 // โหลดข้อมูลจาก Firebase snapshot เข้า app state โดยไม่ trigger re-sync
