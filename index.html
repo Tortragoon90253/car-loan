@@ -455,6 +455,16 @@ td:nth-child(2){text-align:left;color:#4b5563}
       <canvas id="ppChart" height="120"></canvas>
     </div>
 
+    <!-- Payoff Forecast Chart -->
+    <div class="pp-chart-card" id="forecastChartSection" style="display:none">
+      <div class="pp-chart-header">
+        <span class="pp-chart-title">📉 คาดการณ์ปิดบัญชี (จากเงินโปะจริง)</span>
+        <button class="btn-sm" onclick="toggleForecastChart()">ซ่อน/แสดง</button>
+      </div>
+      <div id="forecastSummary" style="margin:6px 0 10px;font-size:14px;line-height:1.7"></div>
+      <canvas id="forecastChart" height="120"></canvas>
+    </div>
+
     <!-- Actions -->
     <div class="act-row">
       <button class="btn-purple" onclick="markAllPaidToday()">✅ บันทึกทุกงวด "จ่ายวันนี้"</button>
@@ -672,6 +682,58 @@ function buildSchedule(loan,rate,term,method,startDate,prepay=null){
     if(bal<0.005)break;
   }
   return rows;
+}
+
+// ---- Forecast schedule from actual extra payments ----
+function buildForecastSchedule(){
+  if(!sched.length)return null;
+  let totActual=0,paidCount=0;
+  Object.keys(payRec).forEach(k=>{
+    const rec=payRec[k];
+    if(rec&&rec.paidDate&&rec.actualPP!==''&&rec.actualPP!==undefined){
+      totActual+=+rec.actualPP||0;
+      paidCount++;
+    }
+  });
+  if(paidCount===0)return null;
+  const avgActualPP=totActual/paidCount;
+
+  const rate=+document.getElementById('rate').value||0;
+  const term=+document.getElementById('term').value||0;
+  const method=document.getElementById('method').value;
+  const r=rate/100/12;
+  const loan=sched[0].op;
+  let fInt,fPrin,basePay;
+  if(method==='flat'){
+    const ti=loan*(rate/100)*(term/12);fInt=ti/term;fPrin=loan/term;basePay=fInt+fPrin;
+  } else {
+    basePay=r===0?loan/term:loan*(r*Math.pow(1+r,term))/(Math.pow(1+r,term)-1);
+  }
+
+  let bal=loan;
+  const rows=[];
+  let closeAt=null;
+  for(let i=1;i<=term*3&&bal>0.005;i++){
+    let intM,pr;
+    if(method==='flat'){intM=fInt;pr=Math.min(fPrin,bal);}
+    else{intM=bal*r;pr=Math.min(basePay-intM,bal);if(pr<0)pr=0;}
+    bal=Math.max(0,bal-pr);
+    let pp=0,isForecast=true;
+    const rec=payRec[i]||{};
+    if(rec.paidDate&&rec.actualPP!==''&&rec.actualPP!==undefined){
+      pp=+rec.actualPP||0;
+      isForecast=false;
+    } else {
+      pp=avgActualPP;
+    }
+    if(bal>0.005){
+      pp=Math.min(pp,bal);
+      bal=Math.max(0,bal-pp);
+    } else pp=0;
+    rows.push({i,bal:Math.round(bal*100)/100,pp,isForecast});
+    if(bal<0.005){closeAt=i;break;}
+  }
+  return {rows,closeAt:closeAt||rows.length,avgActualPP,paidCount};
 }
 
 // ---- Calculate ----
@@ -1307,6 +1369,7 @@ function renderPage2(){
   tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td class="tdr">${fmt(totPay)}</td>${planTotCell}<td>-</td>${diffTotCell}<td class="col-actual-input tdr"><strong>${fmt(totActAllDisplay)}</strong></td><td colspan="4">-</td>`;
   tb.appendChild(tf);
   buildPPChart();
+  buildForecastChart();
 }
 
 // ---- Page2 event handlers ----
@@ -1326,7 +1389,7 @@ function onActualPPChange(i){
   const val=document.getElementById('app_'+i).value;
   if(!payRec[i])payRec[i]={paidDate:'',note:'',actualPP:''};
   payRec[i].actualPP=val;
-  savePayments();renderPage2();buildPPChart();
+  savePayments();renderPage2();buildPPChart();buildForecastChart();
 }
 
 // ---- PP Combo Chart (Bar per installment + Line cumulative + Forecast) ----
@@ -1428,6 +1491,105 @@ function buildPPChart(){
 }
 function togglePPChart(){
   const canvas=document.getElementById('ppChart');
+  canvas.style.display=canvas.style.display==='none'?'':'none';
+}
+
+// ---- Payoff Forecast Chart ----
+let forecastChartInst=null;
+function buildForecastChart(){
+  const section=document.getElementById('forecastChartSection');
+  if(!sched.length){section.style.display='none';return;}
+  const fc=buildForecastSchedule();
+  if(!fc){section.style.display='none';return;}
+  section.style.display='';
+
+  const planLen=sched.length,closeAt=fc.closeAt,maxLen=Math.max(planLen,closeAt);
+  const labels=[],planData=[],actualData=[],forecastData=[];
+
+  let firstForecastIdx=-1;
+  for(let i=0;i<fc.rows.length;i++){if(fc.rows[i].isForecast){firstForecastIdx=i;break;}}
+
+  for(let idx=0;idx<maxLen;idx++){
+    labels.push('งวด '+(idx+1));
+    planData.push(idx<planLen?Math.round(sched[idx].bal*100)/100:null);
+    if(idx<fc.rows.length){
+      const row=fc.rows[idx];
+      if(row.isForecast){
+        actualData.push(null);
+        forecastData.push(row.bal);
+      } else {
+        actualData.push(row.bal);
+        forecastData.push(idx===firstForecastIdx-1?row.bal:null);
+      }
+    } else {
+      actualData.push(null);
+      forecastData.push(null);
+    }
+  }
+
+  const saved=planLen-closeAt;
+  const pay=sched[0].pay||0;
+  const sum=document.getElementById('forecastSummary');
+  let html='<strong>ปิดบัญชีคาดการณ์: งวดที่ '+closeAt+'</strong> จากแผน '+planLen+' งวด';
+  if(saved>0)html+=' &nbsp;✅ <span style="color:#16a34a">เร็วกว่าแผน '+saved+' งวด (~฿'+fmt(saved*pay)+')</span>';
+  else if(saved<0)html+=' &nbsp;⚠️ <span style="color:#dc2626">ช้ากว่าแผน '+(-saved)+' งวด</span>';
+  else html+=' &nbsp;= ตรงตามแผน';
+  html+='<br>เงินโปะจริงเฉลี่ย/งวด: ฿'+fmt(fc.avgActualPP)+' (จาก '+fc.paidCount+' งวดที่บันทึก)';
+  sum.innerHTML=html;
+
+  if(forecastChartInst)forecastChartInst.destroy();
+  forecastChartInst=new Chart(document.getElementById('forecastChart'),{
+    data:{
+      labels,
+      datasets:[
+        {
+          type:'line',label:'ค่างวดตามแผน (บาท)',data:planData,
+          borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.05)',
+          fill:false,tension:0.2,borderWidth:2,
+          pointRadius:(ctx)=>ctx.dataIndex===planLen-1?6:0,
+          pointBackgroundColor:'#7c3aed'
+        },
+        {
+          type:'line',label:'จริง (บาท)',data:actualData,
+          borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.06)',
+          fill:false,tension:0.2,borderWidth:2.5,
+          pointRadius:3,pointBackgroundColor:'#16a34a',
+          spanGaps:false
+        },
+        {
+          type:'line',label:'คาดการณ์ (บาท)',data:forecastData,
+          borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.06)',
+          fill:false,tension:0.2,borderWidth:2.5,borderDash:[6,4],
+          pointRadius:(ctx)=>ctx.dataIndex===closeAt-1?7:2,
+          pointBackgroundColor:'#f97316',
+          spanGaps:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:true,position:'top'},
+        tooltip:{
+          callbacks:{
+            label:ctx=>{
+              if(ctx.parsed.y===null||ctx.parsed.y===undefined)return null;
+              return ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2});
+            }
+          }
+        }
+      },
+      scales:{
+        y:{title:{display:true,text:'ยอดหนี้คงเหลือ'},
+           ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})},
+           beginAtZero:true},
+        x:{ticks:{maxTicksLimit:12}}
+      }
+    }
+  });
+}
+function toggleForecastChart(){
+  const canvas=document.getElementById('forecastChart');
   canvas.style.display=canvas.style.display==='none'?'':'none';
 }
 function markPaid(i){
