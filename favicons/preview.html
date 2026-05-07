@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Logo Preview - เลือก Favicon</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+  h1 { color: #1e3a8a; margin-bottom: 8px; }
+  p { color: #6b7280; margin-bottom: 40px; font-size: 14px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; }
+  .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 200px; transition: transform .2s, box-shadow .2s; cursor: pointer; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+  .card img { width: 64px; height: 64px; margin-bottom: 12px; }
+  .card .sizes { display: flex; gap: 8px; justify-content: center; align-items: flex-end; margin-bottom: 12px; }
+  .card .sizes img { margin: 0; }
+  .card .num { font-size: 13px; font-weight: 700; color: #1e3a8a; margin-bottom: 4px; }
+  .card .desc { font-size: 12px; color: #6b7280; line-height: 1.5; }
+  .browser-bar { background: #e5e7eb; border-radius: 8px 8px 0 0; padding: 8px 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 11px; color: #374151; }
+  .browser-bar .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .tab-preview { display: flex; align-items: center; gap: 6px; background: #fff; border-radius: 6px 6px 0 0; padding: 6px 10px; font-size: 11px; color: #374151; font-weight: 500; max-width: 160px; border-top: 2px solid #3b82f6; }
+  .tab-preview img { width: 16px; height: 16px; }
+  .tab-text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<h1>เลือก Logo สำหรับ Browser Tab</h1>
+<p>คลิกที่การ์ดเพื่อดูรายละเอียด — แสดงทั้งขนาด 64px, 32px และจำลองแท็บ browser</p>
+<div class="grid">
+
+  <div class="card">
+    <div class="browser-bar">
+      <div class="dot" style="background:#ef4444"></div>
+      <div class="dot" style="background:#f59e0b"></div>
+      <div class="dot" style="background:#22c55e"></div>
+      <div class="tab-preview">
+        <img src="logo1.svg"><span class="tab-text">คำนวณงวดผ่อน...</span>
+      </div>
+    </div>
+    <div class="sizes">
+      <img src="logo1.svg" width="64" height="64">
+      <img src="logo1.svg" width="32" height="32">
+      <img src="logo1.svg" width="16" height="16">
+    </div>
+    <div class="num">ตัวเลือก 1</div>
+    <div class="desc">รถยนต์ + เหรียญ ฿<br>พื้นน้ำเงินเข้ม<br>เหรียญสีเขียว badge</div>
+  </div>
+
+  <div class="card">
+    <div class="browser-bar">
+      <div class="dot" style="background:#ef4444"></div>
+      <div class="dot" style="background:#f59e0b"></div>
+      <div class="dot" style="background:#22c55e"></div>
+      <div class="tab-preview">
+        <img src="logo2.svg"><span class="tab-text">คำนวณงวดผ่อน...</span>
+      </div>
+    </div>
+    <div class="sizes">
+      <img src="logo2.svg" width="64" height="64">
+      <img src="logo2.svg" width="32" height="32">
+      <img src="logo2.svg" width="16" height="16">
+    </div>
+    <div class="num">ตัวเลือก 2</div>
+    <div class="desc">กราฟแท่ง + รถยนต์<br>Gradient น้ำเงิน<br>สไตล์ Finance App</div>
+  </div>
+
+  <div class="card">
+    <div class="browser-bar">
+      <div class="dot" style="background:#ef4444"></div>
+      <div class="dot" style="background:#f59e0b"></div>
+      <div class="dot" style="background:#22c55e"></div>
+      <div class="tab-preview">
+        <img src="logo3.svg"><span class="tab-text">คำนวณงวดผ่อน...</span>
+      </div>
+    </div>
+    <div class="sizes">
+      <img src="logo3.svg" width="64" height="64">
+      <img src="logo3.svg" width="32" height="32">
+      <img src="logo3.svg" width="16" height="16">
+    </div>
+    <div class="num">ตัวเลือก 3</div>
+    <div class="desc">สปีดโดมิเตอร์ + %<br>พื้นดำ เข็มสีทอง<br>สไตล์ Premium Dark</div>
+  </div>
+
+  <div class="card">
+    <div class="browser-bar">
+      <div class="dot" style="background:#ef4444"></div>
+      <div class="dot" style="background:#f59e0b"></div>
+      <div class="dot" style="background:#22c55e"></div>
+      <div class="tab-preview">
+        <img src="logo4.svg"><span class="tab-text">คำนวณงวดผ่อน...</span>
+      </div>
+    </div>
+    <div class="sizes">
+      <img src="logo4.svg" width="64" height="64">
+      <img src="logo4.svg" width="32" height="32">
+      <img src="logo4.svg" width="16" height="16">
+    </div>
+    <div class="num">ตัวเลือก 4</div>
+    <div class="desc">กุญแจรถ + ฿<br>พื้นขาว สะอาด<br>สไตล์ Clean Minimal</div>
+  </div>
+
+  <div class="card">
+    <div class="browser-bar">
+      <div class="dot" style="background:#ef4444"></div>
+      <div class="dot" style="background:#f59e0b"></div>
+      <div class="dot" style="background:#22c55e"></div>
+      <div class="tab-preview">
+        <img src="logo5.svg"><span class="tab-text">คำนวณงวดผ่อน...</span>
+      </div>
+    </div>
+    <div class="sizes">
+      <img src="logo5.svg" width="64" height="64">
+      <img src="logo5.svg" width="32" height="32">
+      <img src="logo5.svg" width="16" height="16">
+    </div>
+    <div class="num">ตัวเลือก 5</div>
+    <div class="desc">฿ ขนาดใหญ่ Bold<br>รถเป็น background<br>สไตล์ Typography</div>
+  </div>
+
+</div>
+</body>
+</html>
