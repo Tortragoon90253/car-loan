@@ -607,12 +607,12 @@ function showPage(n){
 }
 
 // ---- Storage ----
-async function loadPayments(){
-  try{const r=await window.storage.get(SKEY);if(r)payRec=JSON.parse(r.value);}
+function loadPayments(){
+  try{const r=localStorage.getItem(SKEY);if(r)payRec=JSON.parse(r);}
   catch(e){payRec={};}
 }
-async function savePayments(){
-  try{await window.storage.set(SKEY,JSON.stringify(payRec));showToast();}
+function savePayments(){
+  try{localStorage.setItem(SKEY,JSON.stringify(payRec));showToast();}
   catch(e){console.error(e);}
   scheduleFirebaseSync();
 }
@@ -1024,7 +1024,7 @@ async function applyFirebaseData(data){
     }
     if(data.payments){
       payRec=data.payments;
-      try{await window.storage.set(SKEY,JSON.stringify(payRec));}catch(e){}
+      try{localStorage.setItem(SKEY,JSON.stringify(payRec));}catch(e){}
     }
     if(data.formData&&Object.keys(data.formData).length){
       localStorage.setItem(FKEY,JSON.stringify(data.formData));
