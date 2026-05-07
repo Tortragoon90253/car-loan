@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Option 1: รถยนต์ + เหรียญบาท บนพื้นน้ำเงินเข้ม -->
+  <rect width="64" height="64" rx="12" fill="#1e3a8a"/>
+  <!-- car body -->
+  <rect x="8" y="30" width="48" height="16" rx="4" fill="#fff"/>
+  <!-- car roof -->
+  <path d="M16 30 L22 20 L42 20 L48 30Z" fill="#fff"/>
+  <!-- wheels -->
+  <circle cx="18" cy="46" r="7" fill="#1e3a8a"/>
+  <circle cx="18" cy="46" r="4" fill="#93c5fd"/>
+  <circle cx="46" cy="46" r="7" fill="#1e3a8a"/>
+  <circle cx="46" cy="46" r="4" fill="#93c5fd"/>
+  <!-- windows -->
+  <rect x="23" y="22" width="8" height="7" rx="2" fill="#bfdbfe"/>
+  <rect x="33" y="22" width="8" height="7" rx="2" fill="#bfdbfe"/>
+  <!-- baht coin (top right badge) -->
+  <circle cx="50" cy="14" r="10" fill="#22c55e"/>
+  <text x="50" y="19" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#fff">฿</text>
+</svg>
