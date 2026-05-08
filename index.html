@@ -966,15 +966,12 @@ function scheduleFirebaseSync(){
   clearTimeout(fbSyncTimer);
   document.getElementById('fbStatus').textContent='⏳ รอ sync...';
   fbSyncTimer=setTimeout(async()=>{
-    if(!sched.length)return;
     try{
       const code=localStorage.getItem(FB_CODE_KEY);
       const formData=JSON.parse(localStorage.getItem(FKEY)||'{}');
-      await db.collection('car-loan-sync').doc(code).set({
-        schedule:sched,payments:payRec,formData:formData,
-        deviceId:FB_DEVICE_ID,
-        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-      });
+      const payload={formData:formData,payments:payRec,deviceId:FB_DEVICE_ID,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+      if(sched.length)payload.schedule=sched;
+      await db.collection('car-loan-sync').doc(code).set(payload,{merge:true});
       document.getElementById('fbStatus').textContent='✅ Sync อัตโนมัติ: '+new Date().toLocaleTimeString('th-TH');
     }catch(e){document.getElementById('fbStatus').textContent='❌ Auto-sync ล้มเหลว';}
   },3000);
