@@ -437,13 +437,18 @@ td:nth-child(2){text-align:left;color:#4b5563}
     <!-- Progress -->
     <div class="card" style="padding:14px 18px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-size:.82rem;font-weight:700;color:var(--blue)">ความคืบหน้าการผ่อน</span>
-        <span class="prog-label" id="progLabel">0 / 0 งวด</span>
+        <span style="font-size:.82rem;font-weight:700;color:var(--blue)">📅 ความคืบหน้างวด</span>
+        <span class="prog-label" id="progLabel">0 / 0 งวด (0%)</span>
       </div>
       <div class="prog-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:.72rem;color:var(--grayl)" id="p2PaidAmt">ยอดจ่ายแล้ว: -</span>
-        <span style="font-size:.72rem;color:var(--grayl)" id="p2RemAmt">ยอดคงเหลือ: -</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:4px">
+        <span style="font-size:.82rem;font-weight:700;color:#16a34a">💰 ลดหนี้แล้ว (รวมโปะจริง)</span>
+        <span class="prog-label" id="debtLabel">0%</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar" id="debtBar" style="width:0%;background:linear-gradient(90deg,#16a34a,#22c55e)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:4px">
+        <span style="font-size:.72rem;color:var(--grayl)" id="p2PaidAmt">ยอดจ่ายจริง: -</span>
+        <span style="font-size:.72rem;color:#16a34a;font-weight:600" id="p2ActualRem">ยอดหนี้คงเหลือจริง: -</span>
       </div>
     </div>
 
@@ -1283,6 +1288,37 @@ function renderPage2(){
     <th style="background:#4c1d95">Action</th>
   `;
 
+  // ---- Actual remaining balance (simulate amortization with actual PP) ----
+  const loanAmt=sched[0].op;
+  const rateVal=+document.getElementById('rate').value||0;
+  const termVal=+document.getElementById('term').value||0;
+  const methodVal=document.getElementById('method').value;
+  const rM=rateVal/100/12;
+  let actualBal=loanAmt;
+  if(methodVal==='flat'){
+    const fPrin=loanAmt/termVal;
+    sched.forEach(r=>{
+      const rec=payRec[r.i]||{};
+      if(rec.paidDate){
+        const aPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
+        actualBal=Math.max(0,actualBal-Math.min(fPrin,actualBal)-aPP);
+      }
+    });
+  } else {
+    const bPay=rM===0?loanAmt/termVal:loanAmt*(rM*Math.pow(1+rM,termVal))/(Math.pow(1+rM,termVal)-1);
+    sched.forEach(r=>{
+      const rec=payRec[r.i]||{};
+      if(rec.paidDate){
+        const aPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
+        const intM=actualBal*rM;
+        let pr=Math.min(bPay-intM,actualBal);if(pr<0)pr=0;
+        actualBal=Math.max(0,actualBal-pr-aPP);
+      }
+    });
+  }
+  const actualRemainingBal=actualBal;
+  const debtPaidPct=loanAmt>0?Math.min(100,Math.round((1-actualBal/loanAmt)*100)):0;
+
   // ---- Summary counts ----
   let paidCnt=0,overCnt=0,pendCnt=0,paidAmt=0,remAmt=0,nextRow=null;
   let totPlanPP=0,totActualPP=0;
@@ -1290,12 +1326,12 @@ function renderPage2(){
   sched.forEach(r=>{
     const rec=payRec[r.i]||{};
     const st=getStatus(r);
-    const actualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
-    const total=r.pay+r.pp;
+    const recActualPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
+    const total=r.pay+recActualPP;
     if(st.cls==='st-paid'||st.cls==='st-late'){paidCnt++;paidAmt+=total;}
-    else{if(st.cls==='st-overdue')overCnt++;else{pendCnt++;if(!nextRow)nextRow=r;}remAmt+=total;}
+    else{if(st.cls==='st-overdue')overCnt++;else{pendCnt++;if(!nextRow)nextRow=r;}remAmt+=r.pay+r.pp;}
     totPlanPP+=r.pp;
-    totActualPP+=actualPP;
+    totActualPP+=recActualPP;
   });
 
   document.getElementById('p2Paid').textContent=`${paidCnt} งวด / ฿${fmt(paidAmt)}`;
@@ -1310,8 +1346,10 @@ function renderPage2(){
   const pct=sched.length?Math.round((paidCnt/sched.length)*100):0;
   document.getElementById('progBar').style.width=pct+'%';
   document.getElementById('progLabel').textContent=`${paidCnt} / ${sched.length} งวด (${pct}%)`;
-  document.getElementById('p2PaidAmt').textContent=`ยอดจ่ายแล้ว: ฿${fmt(paidAmt)}`;
-  document.getElementById('p2RemAmt').textContent=`ยอดคงเหลือ: ฿${fmt(remAmt)}`;
+  document.getElementById('debtBar').style.width=debtPaidPct+'%';
+  document.getElementById('debtLabel').textContent=debtPaidPct+'%';
+  document.getElementById('p2PaidAmt').textContent=`ยอดจ่ายจริง: ฿${fmt(paidAmt)}`;
+  document.getElementById('p2ActualRem').textContent=`ยอดหนี้คงเหลือจริง: ฿${fmt(actualRemainingBal)}`;
 
   // ---- Rows ----
   const tb=document.getElementById('p2tbody');tb.innerHTML='';
@@ -1410,7 +1448,8 @@ function buildPPChart(){
   const section=document.getElementById('ppChartSection');
   if(!sched.length){section.style.display='none';return;}
 
-  const labels=[],barData=[],lineData=[];
+  const hasPP=sched.some(r=>r.pp>0);
+  const labels=[],barActual=[],barPlan=[],lineData=[];
   let cum=0,hasAny=false;
   let lastActualIdx=-1,countPaid=0,totPP=0;
 
@@ -1420,19 +1459,20 @@ function buildPPChart(){
     if(pp>0)hasAny=true;
     cum+=pp;
     labels.push('งวด '+r.i);
-    barData.push(pp);
-    lineData.push(cum);
+    barActual.push(pp);
+    barPlan.push(r.pp||0);
+    lineData.push(+cum.toFixed(2));
     if(rec.paidDate){countPaid++;totPP+=pp;lastActualIdx=idx;}
   });
 
-  if(!hasAny){section.style.display='none';return;}
+  if(!hasAny&&!hasPP){section.style.display='none';return;}
   section.style.display='';
 
-  // Forecast: เฉลี่ยจากงวดที่จ่ายแล้ว → ต่อเส้นไปจนงวดสุดท้าย
+  // Forecast cumulative line (right axis)
   const forecastData=new Array(sched.length).fill(null);
   if(lastActualIdx>=0&&lastActualIdx<sched.length-1){
     const avgPP=countPaid>0?totPP/countPaid:0;
-    forecastData[lastActualIdx]=lineData[lastActualIdx]; // จุดเชื่อมต่อ
+    forecastData[lastActualIdx]=lineData[lastActualIdx];
     let fcCum=lineData[lastActualIdx];
     for(let i=lastActualIdx+1;i<sched.length;i++){
       fcCum+=avgPP;
@@ -1440,47 +1480,31 @@ function buildPPChart(){
     }
   }
 
+  const datasets=[];
+  if(hasPP){
+    datasets.push({
+      type:'bar',label:'โปะแผน/งวด',data:barPlan,
+      backgroundColor:'rgba(34,197,94,0.3)',borderColor:'#22c55e',borderWidth:1,yAxisID:'y'
+    });
+  }
+  datasets.push({
+    type:'bar',label:'โปะจริง/งวด',data:barActual,
+    backgroundColor:'rgba(124,58,237,0.55)',borderColor:'#7c3aed',borderWidth:1,yAxisID:'y'
+  });
+  datasets.push({
+    type:'line',label:'สะสมจริง',data:lineData,
+    borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.06)',
+    fill:false,tension:0.3,pointRadius:2,borderWidth:2,yAxisID:'y2'
+  });
+  datasets.push({
+    type:'line',label:'สะสมคาดการณ์',data:forecastData,
+    borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.06)',
+    fill:false,tension:0.3,pointRadius:2,borderWidth:2,borderDash:[6,4],yAxisID:'y2'
+  });
+
   if(ppChartInst)ppChartInst.destroy();
   ppChartInst=new Chart(document.getElementById('ppChart'),{
-    data:{
-      labels,
-      datasets:[
-        {
-          type:'bar',
-          label:'โปะรายงวด (บาท)',
-          data:barData,
-          backgroundColor:'rgba(124,58,237,0.5)',
-          borderColor:'#7c3aed',
-          borderWidth:1,
-          yAxisID:'y'
-        },
-        {
-          type:'line',
-          label:'ยอดสะสมจริง (บาท)',
-          data:lineData,
-          borderColor:'#dc2626',
-          backgroundColor:'rgba(220,38,38,0.06)',
-          fill:false,
-          tension:0.3,
-          pointRadius:3,
-          borderWidth:2,
-          yAxisID:'y'
-        },
-        {
-          type:'line',
-          label:'Forecast (เฉลี่ยจริง)',
-          data:forecastData,
-          borderColor:'#f97316',
-          backgroundColor:'rgba(249,115,22,0.06)',
-          fill:false,
-          tension:0.3,
-          pointRadius:2,
-          borderWidth:2,
-          borderDash:[6,4],
-          yAxisID:'y'
-        }
-      ]
-    },
+    data:{labels,datasets},
     options:{
       responsive:true,
       plugins:{
@@ -1489,13 +1513,25 @@ function buildPPChart(){
           callbacks:{
             label:ctx=>{
               if(ctx.parsed.y===null)return null;
-              return ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2});
+              return ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:0});
             }
           }
         }
       },
       scales:{
-        y:{ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})}},
+        y:{
+          position:'left',
+          title:{display:true,text:'โปะรายงวด (฿)'},
+          ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})},
+          beginAtZero:true
+        },
+        y2:{
+          position:'right',
+          title:{display:true,text:'สะสมรวม (฿)'},
+          ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})},
+          grid:{drawOnChartArea:false},
+          beginAtZero:true
+        },
         x:{ticks:{maxTicksLimit:12}}
       }
     }
@@ -1555,21 +1591,23 @@ function buildForecastChart(){
       labels,
       datasets:[
         {
-          type:'line',label:'ค่างวดตามแผน (บาท)',data:planData,
-          borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.05)',
-          fill:false,tension:0.2,borderWidth:2,
+          type:'line',label:'ยอดหนี้ตามแผน',data:planData,
+          borderColor:'#7c3aed',
+          backgroundColor:'rgba(124,58,237,0.05)',
+          fill:{target:1,above:'rgba(239,68,68,0.07)',below:'rgba(22,163,74,0.07)'},
+          tension:0.2,borderWidth:2,
           pointRadius:(ctx)=>ctx.dataIndex===planLen-1?6:0,
           pointBackgroundColor:'#7c3aed'
         },
         {
-          type:'line',label:'จริง (บาท)',data:actualData,
+          type:'line',label:'ยอดหนี้จริง (มีโปะจริง)',data:actualData,
           borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,0.06)',
           fill:false,tension:0.2,borderWidth:2.5,
           pointRadius:3,pointBackgroundColor:'#16a34a',
           spanGaps:false
         },
         {
-          type:'line',label:'คาดการณ์ (บาท)',data:forecastData,
+          type:'line',label:'คาดการณ์ (avg โปะต่อไป)',data:forecastData,
           borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.06)',
           fill:false,tension:0.2,borderWidth:2.5,borderDash:[6,4],
           pointRadius:(ctx)=>ctx.dataIndex===closeAt-1?7:2,
@@ -1586,13 +1624,13 @@ function buildForecastChart(){
           callbacks:{
             label:ctx=>{
               if(ctx.parsed.y===null||ctx.parsed.y===undefined)return null;
-              return ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2});
+              return ctx.dataset.label+': ฿'+ctx.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:0});
             }
           }
         }
       },
       scales:{
-        y:{title:{display:true,text:'ยอดหนี้คงเหลือ'},
+        y:{title:{display:true,text:'ยอดหนี้คงเหลือ (฿)'},
            ticks:{callback:v=>'฿'+v.toLocaleString('th-TH',{maximumFractionDigits:0})},
            beginAtZero:true},
         x:{ticks:{maxTicksLimit:12}}
