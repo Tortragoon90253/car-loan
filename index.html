@@ -528,6 +528,7 @@ const FIREBASE_CONFIG = {
 // ---- State ----
 let dm='baht', sched=[], schedBase=[], chartInst=null, chartMode='bar';
 let payRec={}; // { [i]: { paidDate, note, actualPP } }
+let schedInfo={rate:0,term:0,method:'flat'};
 const SKEY='car_loan_pay_v2';
 const FKEY='car_loan_form_v1';
 
@@ -711,9 +712,9 @@ function buildForecastSchedule(){
     if(rec&&rec.paidDate)lastPaidInstallment=Math.max(lastPaidInstallment,+k);
   });
 
-  const rate=+document.getElementById('rate').value||0;
-  const term=+document.getElementById('term').value||0;
-  const method=document.getElementById('method').value;
+  const rate=schedInfo.rate;
+  const term=schedInfo.term||schedBase.length;
+  const method=schedInfo.method;
   const r=rate/100/12;
   const loan=sched[0].op;
   let fInt,fPrin,basePay;
@@ -771,6 +772,7 @@ function calculate(){
   const pp=getPP();
   schedBase=buildSchedule(loan,rate,term,method,sd,null);
   sched=pp?buildSchedule(loan,rate,term,method,sd,pp):schedBase;
+  schedInfo={rate,term,method};
 
   const totInt=sched.reduce((a,r)=>a+r.int,0);
   const totPP=sched.reduce((a,r)=>a+r.pp,0);
@@ -1288,36 +1290,13 @@ function renderPage2(){
     <th style="background:#4c1d95">Action</th>
   `;
 
-  // ---- Actual remaining balance (simulate amortization with actual PP) ----
-  const loanAmt=sched[0].op;
-  const rateVal=+document.getElementById('rate').value||0;
-  const termVal=+document.getElementById('term').value||0;
-  const methodVal=document.getElementById('method').value;
-  const rM=rateVal/100/12;
-  let actualBal=loanAmt;
-  if(methodVal==='flat'){
-    const fPrin=loanAmt/termVal;
-    sched.forEach(r=>{
-      const rec=payRec[r.i]||{};
-      if(rec.paidDate){
-        const aPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
-        actualBal=Math.max(0,actualBal-Math.min(fPrin,actualBal)-aPP);
-      }
-    });
-  } else {
-    const bPay=rM===0?loanAmt/termVal:loanAmt*(rM*Math.pow(1+rM,termVal))/(Math.pow(1+rM,termVal)-1);
-    sched.forEach(r=>{
-      const rec=payRec[r.i]||{};
-      if(rec.paidDate){
-        const aPP=rec.actualPP!==undefined&&rec.actualPP!==''?+rec.actualPP:0;
-        const intM=actualBal*rM;
-        let pr=Math.min(bPay-intM,actualBal);if(pr<0)pr=0;
-        actualBal=Math.max(0,actualBal-pr-aPP);
-      }
-    });
+  // ---- Actual remaining balance from forecast schedule ----
+  const _fc=buildForecastSchedule();
+  let actualRemainingBal=sched[0].op;
+  if(_fc&&_fc.rows.length>0){
+    const lastActual=_fc.rows.filter(r=>!r.isForecast).pop();
+    if(lastActual)actualRemainingBal=lastActual.bal;
   }
-  const actualRemainingBal=actualBal;
-  const debtPaidPct=loanAmt>0?Math.min(100,Math.round((1-actualBal/loanAmt)*100)):0;
 
   // ---- Summary counts ----
   let paidCnt=0,overCnt=0,pendCnt=0,paidAmt=0,remAmt=0,nextRow=null;
@@ -1342,6 +1321,13 @@ function renderPage2(){
     const diff=totActualPP-totPlanPP;
     document.getElementById('p2PPDiff').textContent=`โปะสะสมจริง ฿${fmt(totActualPP)}${hasPP?` / แผน ฿${fmt(totPlanPP)}\n${diff>=0?'+':''}฿${fmt(diff)}`:''}`;
   } else document.getElementById('p2PPDiff').textContent='-';
+
+  // Fallback: if no actualPP data, use planned balance of last paid installment
+  if(actualRemainingBal===sched[0].op&&paidCnt>0){
+    sched.forEach(r=>{const rec=payRec[r.i]||{};if(rec.paidDate)actualRemainingBal=r.bal;});
+  }
+  const loanAmt=sched[0].op;
+  const debtPaidPct=loanAmt>0?Math.min(100,Math.round((1-actualRemainingBal/loanAmt)*100)):0;
 
   const pct=sched.length?Math.round((paidCnt/sched.length)*100):0;
   document.getElementById('progBar').style.width=pct+'%';
@@ -1548,7 +1534,7 @@ function buildForecastChart(){
   const section=document.getElementById('forecastChartSection');
   if(!sched.length){section.style.display='none';return;}
   const fc=buildForecastSchedule();
-  if(!fc){section.style.display='none';return;}
+  if(!fc||fc.rows.length===0){section.style.display='none';return;}
   section.style.display='';
 
   const planLen=sched.length,closeAt=fc.closeAt,maxLen=Math.max(planLen,closeAt);
