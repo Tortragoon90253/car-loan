@@ -699,6 +699,13 @@ function buildForecastSchedule(){
   if(paidCount===0)return null;
   const avgActualPP=totActual/paidCount;
 
+  // Find the last installment that has been paid (has paidDate)
+  let lastPaidInstallment=0;
+  Object.keys(payRec).forEach(k=>{
+    const rec=payRec[k];
+    if(rec&&rec.paidDate)lastPaidInstallment=Math.max(lastPaidInstallment,+k);
+  });
+
   const rate=+document.getElementById('rate').value||0;
   const term=+document.getElementById('term').value||0;
   const method=document.getElementById('method').value;
@@ -721,11 +728,18 @@ function buildForecastSchedule(){
     bal=Math.max(0,bal-pr);
     let pp=0,isForecast=true;
     const rec=payRec[i]||{};
-    if(rec.paidDate&&rec.actualPP!==''&&rec.actualPP!==undefined){
-      pp=+rec.actualPP||0;
+    if(rec.paidDate){
+      // Paid installment: use recorded actualPP, or 0 if not recorded
+      pp=(rec.actualPP!==''&&rec.actualPP!==undefined)?+rec.actualPP||0:0;
+      isForecast=false;
+    } else if(i<=lastPaidInstallment){
+      // Past installment with no paidDate (gap) — treat as paid with no extra payment
+      pp=0;
       isForecast=false;
     } else {
+      // Future installment — forecast using average actual PP
       pp=avgActualPP;
+      isForecast=true;
     }
     if(bal>0.005){
       pp=Math.min(pp,bal);
