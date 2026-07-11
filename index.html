@@ -45,7 +45,8 @@ input:focus,select:focus{outline:none;border-color:var(--bluel)}
 .pp-note{font-size:.74rem;color:var(--green);margin-top:10px;padding:8px 12px;background:#dcfce7;border-radius:8px;line-height:1.6}
 .sav-bar{background:linear-gradient(135deg,#166534,#16a34a);color:#fff;border-radius:10px;padding:12px 18px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
 .sav-item{text-align:center}.sav-lbl{font-size:.7rem;opacity:.85;margin-bottom:2px}.sav-val{font-size:1rem;font-weight:800}
-.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.sum-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:900px){.sum-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){.sum-grid{grid-template-columns:repeat(2,1fr)}}
 .stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:var(--sh);border-top:3px solid var(--bluel)}
 .stat.g{border-color:var(--greenl)}.stat.r{border-color:var(--red)}.stat.o{border-color:#f97316}.stat.pur{border-color:var(--pur)}
@@ -305,6 +306,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
 
 <div id="res" class="hidden fade">
   <div class="sum-grid">
+    <div class="stat pur"><div class="stat-lbl">เงินดาวน์</div><div class="stat-val" id="sDown"></div></div>
     <div class="stat"><div class="stat-lbl">ยอดจัดไฟแนนซ์</div><div class="stat-val" id="sLoan"></div></div>
     <div class="stat g"><div class="stat-lbl">ค่างวดต่อเดือน</div><div class="stat-val" id="sMo"></div></div>
     <div class="stat r"><div class="stat-lbl">ดอกเบี้ยรวม</div><div class="stat-val" id="sInt"></div></div>
@@ -769,6 +771,7 @@ function calculate(){
 
   const totInt=sched.reduce((a,r)=>a+r.int,0);
   const totPP=sched.reduce((a,r)=>a+r.pp,0);
+  document.getElementById('sDown').textContent=fmt(down)+' บาท';
   document.getElementById('sLoan').textContent=fmt(loan)+' บาท';
   document.getElementById('sMo').textContent=fmt(sched[0].pay)+' บาท';
   document.getElementById('sInt').textContent=fmt(totInt)+' บาท';
