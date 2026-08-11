@@ -239,6 +239,21 @@ td:nth-child(2){text-align:left;color:#4b5563}
   text-align:right;background:#f5f3ff;color:#4c1d95;font-weight:600}
 .pt input.fund-in:focus{outline:none;border-color:var(--pur);background:#ede9fe}
 .pt input.fund-in:disabled{border-color:var(--border);background:#f9fafb;color:var(--grayl)}
+/* ---- กลุ่มตั้งค่าแยกตามเฟส (สีตรงกับ .ec-tier-card ของการ์ดเฟส) ---- */
+.set-group{border:1.5px solid var(--border);border-left-width:4px;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.set-group.sg-base{border-left-color:var(--grayl);background:#f9fafb}
+.set-group.sg-1{border-left-color:#93c5fd;background:#eff6ff}
+.set-group.sg-2{border-left-color:#86efac;background:#f0fdf4}
+.set-group.sg-3{border-left-color:#c4b5fd;background:#f5f3ff}
+.sg-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+.sg-title{font-size:.84rem;font-weight:800}
+.sg-base .sg-title{color:var(--gray)}
+.sg-1 .sg-title{color:#1d4ed8}
+.sg-2 .sg-title{color:#15803d}
+.sg-3 .sg-title{color:#7c3aed}
+.sg-when{font-size:.72rem;color:var(--grayl);font-weight:600;font-variant-numeric:tabular-nums}
+.sg-desc{font-size:.73rem;color:#6b7280;line-height:1.6;margin-bottom:10px}
+.set-group input{background:#fff}
 .ph-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700;white-space:nowrap}
 .ph-1{background:#dbeafe;color:#1d4ed8}.ph-2{background:#dcfce7;color:#15803d}
 .ph-3{background:#ede9fe;color:#7c3aed}.ph-x{background:#fef3c7;color:#92400e}
@@ -617,28 +632,51 @@ td:nth-child(2){text-align:left;color:#4b5563}
         เงินก้อนนี้ต้องปลอดภัย 100% เพราะมีวันครบกำหนดที่แน่นอน · เมื่อกองปิดรถเต็มแล้ว
         เงินใหม่จะถูกโยกไปพอร์ตเติบโตแทน และหลังปิดบัญชีค่างวดที่ไม่ต้องจ่ายก็เข้าพอร์ตต่อ
       </div>
+      <div id="fundSummary"></div>
       <div class="card" style="padding:16px">
-        <div class="card-title">⚙️ ตั้งค่ากองเงิน</div>
-        <div class="g4" style="margin-bottom:10px">
-          <div><label>เริ่มเก็บเดือน</label><input type="month" id="fSaveStart" onchange="onPlanInputChange()"></div>
-          <div><label>เงินตั้งต้นที่มีอยู่</label><div class="iw"><input type="number" id="fSeed" min="0" step="1000" onchange="onPlanInputChange()"><span>บาท</span></div></div>
-          <div><label>เก็บได้ต่อเดือน <span style="font-weight:400;color:var(--grayl)">(0 = ให้คำนวณให้)</span></label><div class="iw"><input type="number" id="fMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
-          <div><label>ผลตอบแทนพอร์ตเติบโต</label><div class="iw"><input type="number" id="fRateGrow" step="0.5" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+        <div class="card-title">⚙️ ตั้งค่ากองเงิน · แยกตามเฟส</div>
+
+        <div class="set-group sg-base">
+          <div class="sg-head"><span class="sg-title">🧱 พื้นฐาน · ใช้กับทุกเฟส</span><span class="sg-when" id="sgWhenBase">—</span></div>
+          <div class="sg-desc">จุดเริ่มต้นและเงินที่ใส่เข้าระบบในแต่ละเดือน ตัวเลขสามช่องนี้เป็นฐานของการคำนวณทั้งแผน</div>
+          <div class="g3">
+            <div><label>เริ่มเก็บเดือน</label><input type="month" id="fSaveStart" onchange="onPlanInputChange()"></div>
+            <div><label>เงินตั้งต้นที่มีอยู่</label><div class="iw"><input type="number" id="fSeed" min="0" step="1000" onchange="onPlanInputChange()"><span>บาท</span></div></div>
+            <div><label>เก็บได้ต่อเดือน <span style="font-weight:400;color:var(--grayl)">(0 = ให้คำนวณให้)</span></label><div class="iw"><input type="number" id="fMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
+          </div>
         </div>
-        <div class="g4">
-          <div><label>เข้าฝากประจำต่อเดือน</label><div class="iw"><input type="number" id="fFdMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
-          <div><label>ระยะฝากประจำ</label><div class="iw"><input type="number" id="fFdMonths" min="0" max="120" onchange="onPlanInputChange()"><span>เดือน</span></div></div>
-          <div><label>ผลตอบแทนฝากประจำ</label><div class="iw"><input type="number" id="fRateFD" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
-          <div><label>ผลตอบแทนกองตลาดเงิน</label><div class="iw"><input type="number" id="fRateMM" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+
+        <div class="set-group sg-1">
+          <div class="sg-head"><span class="sg-title">🔵 เฟส 1 · สะสมกองปิดรถ</span><span class="sg-when" id="sgWhen1">—</span></div>
+          <div class="sg-desc">เงินทุกบาทเข้ากองที่ปลอดภัย 100% จนกว่าจะถึงยอดปิดบัญชี แบ่งเป็นฝากประจำตามจำนวนที่ตั้งไว้ ส่วนที่เหลือเข้ากองตลาดเงิน</div>
+          <div class="g4">
+            <div><label>เข้าฝากประจำต่อเดือน</label><div class="iw"><input type="number" id="fFdMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
+            <div><label>ระยะฝากประจำ</label><div class="iw"><input type="number" id="fFdMonths" min="0" max="120" onchange="onPlanInputChange()"><span>เดือน</span></div></div>
+            <div><label>ผลตอบแทนฝากประจำ</label><div class="iw"><input type="number" id="fRateFD" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+            <div><label>ผลตอบแทนกองตลาดเงิน <span style="font-weight:400;color:var(--grayl)">(ใช้ต่อถึงเฟส 2)</span></label><div class="iw"><input type="number" id="fRateMM" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+          </div>
         </div>
-        <div class="g4" style="margin-top:10px">
-          <div><label>หุ้นโลก / S&amp;P500</label><div class="iw"><input type="number" id="fAllocEq" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
-          <div><label>Thai ESG</label><div class="iw"><input type="number" id="fAllocEsg" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
-          <div><label>ทองคำ</label><div class="iw"><input type="number" id="fAllocAu" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
-          <div><label>โอนค่างวดเข้าพอร์ตหลังปิด</label><div class="iw"><input type="number" id="fRedirect" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+
+        <div class="set-group sg-2">
+          <div class="sg-head"><span class="sg-title">🟢 เฟส 2–3 · พอร์ตเติบโต</span><span class="sg-when" id="sgWhen2">—</span></div>
+          <div class="sg-desc">เมื่อกองปิดรถเต็มแล้ว เงินใหม่ทุกเดือนจะมาเข้าพอร์ตนี้แทน และใช้สัดส่วนเดียวกันนี้ต่อไปจนจบแผน</div>
+          <div class="g4">
+            <div><label>ผลตอบแทนพอร์ตเติบโต</label><div class="iw"><input type="number" id="fRateGrow" step="0.5" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+            <div><label>หุ้นโลก / S&amp;P500</label><div class="iw"><input type="number" id="fAllocEq" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+            <div><label>Thai ESG</label><div class="iw"><input type="number" id="fAllocEsg" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+            <div><label>ทองคำ</label><div class="iw"><input type="number" id="fAllocAu" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+          </div>
         </div>
+
+        <div class="set-group sg-3">
+          <div class="sg-head"><span class="sg-title">🟣 เฟส 3 · หลังปิดบัญชี</span><span class="sg-when" id="sgWhen3">—</span></div>
+          <div class="sg-desc" id="sgDesc3">ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก จะโอนค่างวดเดิมกี่เปอร์เซ็นต์เข้าพอร์ตต่อ</div>
+          <div class="g4">
+            <div><label>โอนค่างวดเข้าพอร์ตหลังปิด</label><div class="iw"><input type="number" id="fRedirect" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+          </div>
+        </div>
+
         <div class="note" style="margin-top:8px">ผลตอบแทนคิดแบบทบต้นรายเดือนจากอัตราต่อปีหารสิบสอง (เท่ากับวิธีที่ตารางผ่อนใช้) และถือว่าฝากเงินต้นเดือนแล้วโตปลายเดือน</div>
-        <div id="fundSummary" style="margin-top:12px"></div>
       </div>
       <div class="ec-tier-grid" id="fundPhases"></div>
       <div class="pp-chart-card" id="fundChartSection">
@@ -2327,6 +2365,14 @@ function onPlanInputChange(){
 }
 
 // ---- \u0E41\u0E17\u0E47\u0E1A \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 ----
+// \u0E40\u0E02\u0E35\u0E22\u0E19\u0E0A\u0E48\u0E27\u0E07\u0E40\u0E27\u0E25\u0E32\u0E01\u0E33\u0E01\u0E31\u0E1A\u0E2B\u0E31\u0E27\u0E02\u0E49\u0E2D\u0E01\u0E25\u0E38\u0E48\u0E21\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 \u2014 \u0E41\u0E15\u0E30\u0E40\u0E09\u0E1E\u0E32\u0E30 <span> \u0E14\u0E49\u0E27\u0E22 textContent \u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19
+// \u0E2B\u0E49\u0E32\u0E21\u0E2A\u0E23\u0E49\u0E32\u0E07 innerHTML \u0E02\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E4C\u0E14\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32\u0E43\u0E2B\u0E21\u0E48 \u0E44\u0E21\u0E48\u0E07\u0E31\u0E49\u0E19 cursor \u0E08\u0E30\u0E2B\u0E25\u0E38\u0E14\u0E15\u0E2D\u0E19\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49 tab \u0E02\u0E49\u0E32\u0E21\u0E0A\u0E48\u0E2D\u0E07
+function setGroupWhen(base,p1,p2,p3,desc3){
+  const put=(id,t)=>{const el=document.getElementById(id);if(el)el.textContent=t;};
+  put('sgWhenBase',base);put('sgWhen1',p1);put('sgWhen2',p2);put('sgWhen3',p3);
+  if(desc3!==undefined)put('sgDesc3',desc3);
+}
+
 function renderFundTab(){
   const sum=document.getElementById('fundSummary');
   const phases=document.getElementById('fundPhases');
@@ -2334,14 +2380,38 @@ function renderFundTab(){
   const p=calcPayoffPlan();
   if(!p){
     sum.innerHTML='<div class="note">\u0E22\u0E31\u0E07\u0E04\u0E33\u0E19\u0E27\u0E13\u0E41\u0E1C\u0E19\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E23\u0E2D\u0E01\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E41\u0E25\u0E49\u0E27\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19</div>';
-    phases.innerHTML='';return;
+    phases.innerHTML='';
+    setGroupWhen('\u2014','\u2014','\u2014','\u2014');
+    return;
   }
   const monthly=effectiveMonthly();
   const s=buildFundSchedule(monthly);
-  if(!s){sum.innerHTML='';phases.innerHTML='';return;}
+  if(!s){sum.innerHTML='';phases.innerHTML='';setGroupWhen('\u2014','\u2014','\u2014','\u2014');return;}
   const gap=s.atPayoff-p.closureAmt;
   const al=normAlloc();
   const auto=!(+planCfg.monthly>0);
+
+  // ขอบเขตของแต่ละเฟส — ใช้ร่วมกันทั้งหัวข้อกลุ่มตั้งค่าและการ์ด 3 เฟสด้านล่าง
+  const fdEnd=planCfg.fdMonths>0&&planCfg.fdMonthly>0?monthAdd(p.saveStart,planCfg.fdMonths-1):null;
+  const p1End=s.phase1End&&monthDiff(p.saveStart,s.phase1End)>=0?s.phase1End:monthAdd(p.payoffMonth,-1);
+  const p2Len=monthDiff(p1End,p.payoffMonth)-1;
+  const fdPart=Math.min(+planCfg.fdMonthly||0,monthly);
+  const redirectAmt=p.freedPay*(Math.max(0,Math.min(100,+planCfg.redirectPct??100))/100);
+
+  if(p.k<=0){
+    setGroupWhen('ถึงกำหนดปิดบัญชีแล้ว','ไม่มีช่วงสะสม','ไม่มีช่วงสะสม',
+      `${monthLabel(p.payoffMonth)} – ${monthLabel(p.contractEnd)} · ${p.skipped} เดือน`);
+  } else {
+    setGroupWhen(
+      `เก็บ ${p.k} เดือน · ${monthLabel(p.saveStart)} – ${monthLabel(p.payoffMonth)}`,
+      `${monthLabel(p.saveStart)} – ${monthLabel(p1End)} · ${Math.max(0,monthDiff(p.saveStart,p1End)+1)} เดือน`,
+      p2Len>0?`${monthLabel(monthAdd(p1End,1))} – ${monthLabel(p.contractEnd)}`:`${monthLabel(p.payoffMonth)} – ${monthLabel(p.contractEnd)}`,
+      `${monthLabel(p.payoffMonth)} – ${monthLabel(p.contractEnd)} · ${p.skipped} เดือน`,
+      redirectAmt>=p.freedPay-0.005
+        ?`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก ตั้งไว้ 100% คือโอนค่างวดเดิมทั้งก้อน ฿${fmt(p.freedPay)} เข้าพอร์ตทุกเดือน`
+        :`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก ตั้งไว้ ${planCfg.redirectPct}% ของค่างวดเดิม ฿${fmt(p.freedPay)} คือโอนเดือนละ ฿${fmt(redirectAmt)} เข้าพอร์ต`
+    );
+  }
 
   let h='';
   if(p.k<=0){
@@ -2371,11 +2441,7 @@ function renderFundTab(){
   }
   sum.innerHTML=h;
 
-  // ---- \u0E01\u0E32\u0E23\u0E4C\u0E14 3 \u0E40\u0E1F\u0E2A ----
-  const fdEnd=planCfg.fdMonths>0&&planCfg.fdMonthly>0?monthAdd(p.saveStart,planCfg.fdMonths-1):null;
-  const p1End=s.phase1End&&monthDiff(p.saveStart,s.phase1End)>=0?s.phase1End:monthAdd(p.payoffMonth,-1);
-  const p2Len=monthDiff(p1End,p.payoffMonth)-1;
-  const fdPart=Math.min(+planCfg.fdMonthly||0,monthly);
+  // ---- \u0E01\u0E32\u0E23\u0E4C\u0E14 3 \u0E40\u0E1F\u0E2A ---- (\u0E02\u0E2D\u0E1A\u0E40\u0E02\u0E15\u0E40\u0E1F\u0E2A\u0E04\u0E33\u0E19\u0E27\u0E13\u0E44\u0E27\u0E49\u0E14\u0E49\u0E32\u0E19\u0E1A\u0E19\u0E41\u0E25\u0E49\u0E27 \u0E43\u0E0A\u0E49\u0E23\u0E48\u0E27\u0E21\u0E01\u0E31\u0E1A\u0E2B\u0E31\u0E27\u0E02\u0E49\u0E2D\u0E01\u0E25\u0E38\u0E48\u0E21\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32)
   phases.innerHTML=`
     <div class="ec-tier-card t1">
       <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 1 \u00B7 \u0E2A\u0E30\u0E2A\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16</div>
