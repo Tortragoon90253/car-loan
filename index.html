@@ -173,7 +173,10 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .btn-sm{padding:4px 10px;background:#f5f3ff;color:var(--pur);border:1.5px solid #c4b5fd;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer}
 /* ---- Print / PDF ---- */
 @media print{
-  .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto{display:none!important}
+  .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto,.btn-sm{display:none!important}
+  .odo-strip{page-break-inside:avoid}
+  #p2tPlan,#p2tFund,#p2tTrack{page-break-before:always}
+  .warn-box,.info-box,.odo-tick{print-color-adjust:exact;-webkit-print-color-adjust:exact}
   .page{display:none!important}
   body.print-p1 #page1{display:block!important}
   body.print-p2 #page2{display:block!important}
@@ -206,6 +209,39 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .ec-tier-card.t1 .ec-tier-savings{background:#dbeafe;color:#1d4ed8}
 .ec-tier-card.t2 .ec-tier-savings{background:#dcfce7;color:#15803d}
 .ec-tier-card.t3 .ec-tier-savings{background:#ede9fe;color:#7c3aed}
+/* ---- Odometer (เส้นทางงวดตามสัญญา) ---- */
+.odo-strip{display:flex;flex-wrap:wrap;gap:3px;align-items:flex-end;padding:6px 2px}
+.odo-tick{width:9px;height:18px;border-radius:2px;background:var(--border);position:relative}
+.odo-tick.paid{background:var(--greenl)}
+.odo-tick.over{background:var(--red)}
+.odo-tick.cur{background:var(--bluel);box-shadow:0 0 0 2px #bfdbfe}
+.odo-tick.target{background:var(--pur);width:12px;height:26px;box-shadow:0 0 0 2px #ddd6fe}
+.odo-tick.skip{background:repeating-linear-gradient(45deg,#e5e7eb 0 2px,#f9fafb 2px 4px)}
+.odo-tick:hover::after{content:attr(data-t);position:absolute;bottom:calc(100% + 5px);left:50%;
+  transform:translateX(-50%);background:var(--gray);color:#fff;font-size:.65rem;padding:3px 7px;
+  border-radius:5px;white-space:nowrap;z-index:5;font-weight:600}
+.pl-base{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.pl-skip{background:#f3f4f6;color:var(--grayl);border:1px dashed var(--grayl)}
+/* ---- กล่องเตือน (คู่แดงของ .verdict) ---- */
+.warn-box{background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px 16px;
+  font-size:.8rem;line-height:1.7;color:#991b1b;font-weight:600;margin-top:10px}
+.info-box{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 16px;
+  font-size:.8rem;line-height:1.7;color:#1d4ed8;font-weight:600;margin-top:10px}
+/* ---- เช็คลิสต์ (ต่อยอด .pp-toggle) ---- */
+.chk-item{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:9px;
+  background:#f8faff;border:1px solid var(--border);margin-bottom:7px;cursor:pointer;font-size:.8rem;line-height:1.6}
+.chk-item:hover{border-color:var(--bluel)}
+.chk-item input{margin-top:3px;width:16px;height:16px;accent-color:var(--pur);cursor:pointer;flex-shrink:0}
+.chk-item.done{background:#f0fdf4;border-color:#86efac}
+.chk-item.done span{text-decoration:line-through;color:var(--grayl)}
+/* ---- ตารางกองเงิน (ใช้ .pt เดิม) ---- */
+.pt input.fund-in{padding:5px 8px;font-size:.77rem;border-radius:6px;border:1.5px solid #a78bfa;width:96px;
+  text-align:right;background:#f5f3ff;color:#4c1d95;font-weight:600}
+.pt input.fund-in:focus{outline:none;border-color:var(--pur);background:#ede9fe}
+.pt input.fund-in:disabled{border-color:var(--border);background:#f9fafb;color:var(--grayl)}
+.ph-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700;white-space:nowrap}
+.ph-1{background:#dbeafe;color:#1d4ed8}.ph-2{background:#dcfce7;color:#15803d}
+.ph-3{background:#ede9fe;color:#7c3aed}.ph-x{background:#fef3c7;color:#92400e}
 </style>
 </head>
 <body>
@@ -319,12 +355,12 @@ td:nth-child(2){text-align:left;color:#4b5563}
     <div class="sav-item"><div class="sav-lbl">จาก → เหลือ</div><div class="sav-val" id="savTerm">-</div></div>
     <div class="sav-item"><div class="sav-lbl">ยอดโปะเพิ่มรวม</div><div class="sav-val" id="savPPTot">-</div></div>
   </div>
-  <div class="card" style="padding-bottom:8px">
+  <div class="card" style="padding-bottom:8px" data-tabs="p1">
     <div class="tabs">
       <div class="tab on" onclick="showTab('tTable',this)">📋 ตารางรายงวด</div>
       <div class="tab" onclick="showTab('tChart',this)">📊 กราฟ</div>
       <div class="tab" onclick="showTab('tCompare',this)">⚖️ เปรียบเทียบ 2 ข้อเสนอ</div>
-      <div class="tab" onclick="showTab('tEC',this)">🏁 ปิดบัญชีก่อนกำหนด</div>
+      <div class="tab" id="tabEC" onclick="showTab('tEC',this)">🏁 ปิดบัญชีก่อนกำหนด</div>
     </div>
     <div id="tTable" class="tab-content on">
       <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px;flex-wrap:wrap">
@@ -436,6 +472,32 @@ td:nth-child(2){text-align:left;color:#4b5563}
       <div class="stat o"><div class="stat-lbl">โปะเพิ่มจริง vs แผน</div><div class="stat-val" id="p2PPDiff">-</div></div>
     </div>
 
+    <!-- Odometer: หนึ่งขีดต่อหนึ่งงวดตามสัญญา (schedBase) -->
+    <div class="card" id="odoCard" style="padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+        <span style="font-size:.82rem;font-weight:700;color:var(--blue)">🏁 เส้นทางงวดตามสัญญา</span>
+        <span class="prog-label" id="odoStatus">-</span>
+      </div>
+      <div class="odo-strip" id="odoStrip"></div>
+      <div class="pp-legend" style="margin:10px 0 0">
+        <div class="pp-leg-item pl-plan">🟢 จ่ายแล้ว</div>
+        <div class="pp-leg-item pl-diff">🔴 เกินกำหนด</div>
+        <div class="pp-leg-item pl-base">🔵 งวดถัดไป</div>
+        <div class="pp-leg-item pl-actual">🟣 งวดเป้าหมายปิดบัญชี</div>
+        <div class="pp-leg-item pl-skip">⬜ ไม่ต้องจ่าย</div>
+      </div>
+    </div>
+
+    <div data-tabs="p2">
+    <div class="tabs">
+      <div class="tab on" onclick="showTab('p2tPay',this)">📅 บันทึกการจ่าย</div>
+      <div class="tab" onclick="showTab('p2tPlan',this)">🎯 แผนปิดรถ</div>
+      <div class="tab" onclick="showTab('p2tFund',this)">💰 กองปิดรถ</div>
+      <div class="tab" onclick="showTab('p2tTrack',this)">📊 ติดตามพอร์ต</div>
+    </div>
+
+    <div id="p2tPay" class="tab-content on">
+
     <!-- Progress -->
     <div class="card" style="padding:14px 18px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -508,6 +570,125 @@ td:nth-child(2){text-align:left;color:#4b5563}
       </table>
     </div>
     <p class="note" style="margin-top:8px">💾 ข้อมูลบันทึกอัตโนมัติ · 🟢 จ่ายแล้ว · ⚠️ จ่ายช้า · 🔵 รอชำระ · 🔴 เกินกำหนด</p>
+    </div><!-- /p2tPay -->
+
+    <!-- ========== แท็บ: แผนปิดรถ ========== -->
+    <div id="p2tPlan" class="tab-content">
+      <div class="ec-info">
+        <strong>🎯 แผนปิดบัญชีก่อนกำหนด</strong> — เลือกงวดที่จะหยุดผ่อนแล้วจ่ายปิดทีเดียว
+        ยิ่งจ่ายค่างวดมามาก ส่วนลดดอกเบี้ยตาม สคบ. ยิ่งสูง โดยงวดที่เกิน 2 ใน 3 ของสัญญาจะได้ส่วนลด
+        <strong>100%</strong> คือจ่ายแค่เงินต้นคงเหลือ · ค่าเริ่มต้นด้านล่างคืองวดแรกที่เข้าเกณฑ์นั้น
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="card-title">🔢 งวดเป้าหมายที่จะปิดบัญชี</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+          <div>
+            <label>ปิดบัญชีหลังจ่ายครบงวดที่</label>
+            <div class="iw"><input type="number" id="poTargetN" min="1" style="max-width:110px" onchange="onTargetNChange()"><span>งวด</span></div>
+          </div>
+          <button class="btn-sm" style="padding:8px 14px" onclick="resetTargetN()">↺ ใช้งวดที่ได้ส่วนลด 100%</button>
+        </div>
+        <div id="poWarn"></div>
+      </div>
+      <div class="sum-grid-p2" id="poHead" style="margin-top:12px"></div>
+      <div class="card" style="padding:16px">
+        <div class="card-title">📊 เทียบขั้นบันไดส่วนลด ณ จุดต่าง ๆ</div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>ปิดที่งวด</th><th style="text-align:left">วันครบกำหนด</th><th>กรณีที่</th>
+            <th>ส่วนลด</th><th>เงินต้นคงเหลือ</th><th style="color:#22c55e">ยอดส่วนลด</th>
+            <th>ยอดปิดบัญชี</th><th style="color:#22c55e">ประหยัดดอกเบี้ย</th>
+          </tr></thead>
+          <tbody id="poTierTbody"></tbody>
+        </table></div>
+        <div class="note" style="margin-top:6px">ดูยอดปิดบัญชีครบทุกงวดได้ที่หน้า 1 แท็บ 🏁 ปิดบัญชีก่อนกำหนด</div>
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="card-title">✅ เช็คลิสต์วันปิดบัญชี</div>
+        <div id="poChecklist"></div>
+        <div class="note" style="margin-top:10px">ลำดับสำคัญมาก — สิทธิ์ส่วนลดเต็มจำนวนเกิดขึ้นเมื่อ<strong>จ่ายค่างวดเป้าหมายเรียบร้อยแล้ว</strong> ถ้าขอใบเสนอราคาก่อนจ่าย อาจถูกคิดเป็นขั้นก่อนหน้า</div>
+      </div>
+    </div><!-- /p2tPlan -->
+
+    <!-- ========== แท็บ: กองปิดรถ ========== -->
+    <div id="p2tFund" class="tab-content">
+      <div class="ec-info">
+        <strong>💰 กองเงินสำหรับปิดบัญชี</strong> — เก็บเงินให้ถึงยอดปิดบัญชีภายในเดือนเป้าหมาย
+        เงินก้อนนี้ต้องปลอดภัย 100% เพราะมีวันครบกำหนดที่แน่นอน · เมื่อกองปิดรถเต็มแล้ว
+        เงินใหม่จะถูกโยกไปพอร์ตเติบโตแทน และหลังปิดบัญชีค่างวดที่ไม่ต้องจ่ายก็เข้าพอร์ตต่อ
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="card-title">⚙️ ตั้งค่ากองเงิน</div>
+        <div class="g4" style="margin-bottom:10px">
+          <div><label>เริ่มเก็บเดือน</label><input type="month" id="fSaveStart" onchange="onPlanInputChange()"></div>
+          <div><label>เงินตั้งต้นที่มีอยู่</label><div class="iw"><input type="number" id="fSeed" min="0" step="1000" onchange="onPlanInputChange()"><span>บาท</span></div></div>
+          <div><label>เก็บได้ต่อเดือน <span style="font-weight:400;color:var(--grayl)">(0 = ให้คำนวณให้)</span></label><div class="iw"><input type="number" id="fMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
+          <div><label>ผลตอบแทนพอร์ตเติบโต</label><div class="iw"><input type="number" id="fRateGrow" step="0.5" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+        </div>
+        <div class="g4">
+          <div><label>เข้าฝากประจำต่อเดือน</label><div class="iw"><input type="number" id="fFdMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
+          <div><label>ระยะฝากประจำ</label><div class="iw"><input type="number" id="fFdMonths" min="0" max="120" onchange="onPlanInputChange()"><span>เดือน</span></div></div>
+          <div><label>ผลตอบแทนฝากประจำ</label><div class="iw"><input type="number" id="fRateFD" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+          <div><label>ผลตอบแทนกองตลาดเงิน</label><div class="iw"><input type="number" id="fRateMM" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
+        </div>
+        <div class="g4" style="margin-top:10px">
+          <div><label>หุ้นโลก / S&amp;P500</label><div class="iw"><input type="number" id="fAllocEq" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+          <div><label>Thai ESG</label><div class="iw"><input type="number" id="fAllocEsg" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+          <div><label>ทองคำ</label><div class="iw"><input type="number" id="fAllocAu" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+          <div><label>โอนค่างวดเข้าพอร์ตหลังปิด</label><div class="iw"><input type="number" id="fRedirect" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+        </div>
+        <div class="note" style="margin-top:8px">ผลตอบแทนคิดแบบทบต้นรายเดือนจากอัตราต่อปีหารสิบสอง (เท่ากับวิธีที่ตารางผ่อนใช้) และถือว่าฝากเงินต้นเดือนแล้วโตปลายเดือน</div>
+        <div id="fundSummary" style="margin-top:12px"></div>
+      </div>
+      <div class="ec-tier-grid" id="fundPhases"></div>
+      <div class="pp-chart-card" id="fundChartSection">
+        <div class="pp-chart-header">
+          <span class="pp-chart-title">📈 เส้นทางกองเงินถึงวันปิดบัญชีและหลังจากนั้น</span>
+        </div>
+        <div class="chart-wrap"><canvas id="fundChart"></canvas></div>
+      </div>
+    </div><!-- /p2tFund -->
+
+    <!-- ========== แท็บ: ติดตามพอร์ต ========== -->
+    <div id="p2tTrack" class="tab-content">
+      <div class="ec-info">
+        <strong>📊 บันทึกยอดจริงทุกสิ้นเดือน</strong> — กรอกยอดคงเหลือจริงของแต่ละกอง
+        ระบบจะเทียบกับเป้าหมายให้ ช่องที่ยังไม่ถึงเฟสของมันจะถูกปิดไว้
+      </div>
+      <div class="pp-legend">
+        <div class="pp-leg-item pl-plan">🟢 เป้าหมาย = ยอดที่ควรมีตามแผน</div>
+        <div class="pp-leg-item pl-actual">🟣 ยอดจริง = กรอกเอง</div>
+        <div class="pp-leg-item pl-diff">🟡 ส่วนต่าง = จริง − เป้า</div>
+      </div>
+      <div class="act-row">
+        <button class="btn-exp" onclick="exportFundCSV()">⬇ Export CSV</button>
+        <button class="btn-danger" onclick="clearFundData()">🗑 ล้างยอดที่กรอก</button>
+      </div>
+      <div class="ptw">
+        <table class="pt" id="fundTable">
+          <thead>
+            <tr class="hdr-top">
+              <th class="th-base" colspan="3">📋 เดือน</th>
+              <th class="th-plan" colspan="1">🟢 เป้าหมาย</th>
+              <th class="th-actual" colspan="3">🟣 กองปิดรถ (จริง)</th>
+              <th class="th-actual" colspan="4">🟣 พอร์ตเติบโต (จริง)</th>
+              <th class="th-diff" colspan="1">🟡 ส่วนต่าง</th>
+            </tr>
+            <tr class="hdr-sub">
+              <th>เดือน</th><th>งวดที่</th><th>เฟส</th>
+              <th style="background:#15803d">เป้ารวมทั้งพอร์ต</th>
+              <th style="background:#6d28d9">ฝากประจำ</th><th style="background:#6d28d9">ตลาดเงิน</th><th style="background:#4c1d95">รวมกองปิดรถ</th>
+              <th style="background:#6d28d9">หุ้นโลก</th><th style="background:#6d28d9">Thai ESG</th><th style="background:#6d28d9">ทองคำ</th><th style="background:#4c1d95">รวมพอร์ตโต</th>
+              <th style="background:#b45309">ส่วนต่าง</th>
+            </tr>
+          </thead>
+          <tbody id="fundTbody"></tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:8px">💾 บันทึกอัตโนมัติ · เป้าหมายคำนวณจากสมมติฐานผลตอบแทนในแท็บ 💰 กองปิดรถ ของจริงจะแกว่งกว่านี้</p>
+    </div><!-- /p2tTrack -->
+
+    </div><!-- /data-tabs=p2 -->
   </div>
 </div>
 
@@ -533,12 +714,32 @@ let payRec={}; // { [i]: { paidDate, note, actualPP } }
 let schedInfo={rate:0,term:0,method:'flat'};
 const SKEY='car_loan_pay_v2';
 const FKEY='car_loan_form_v1';
+const PKEY='car_loan_plan_v1';
+const FDKEY='car_loan_fund_v1';
+// ค่าตั้งต้นแผนปิดบัญชี — planCfg จะถูก spread ทับค่านี้เสมอ ข้อมูลเก่าจึงได้ field ใหม่อัตโนมัติ
+const DEFAULT_PLAN={
+  targetN:null,        // null = ใช้งวดแรกที่ได้ส่วนลด 100% อัตโนมัติ
+  saveStart:'',        // 'YYYY-MM'; '' = เดือนปัจจุบัน
+  seed:0,
+  monthly:0,           // 0 = ให้ระบบคำนวณให้
+  fdMonthly:0, fdMonths:24,
+  rateFD:1.5, rateMM:1.8, rateGrow:7,
+  allocEq:50, allocEsg:30, allocAu:20,
+  redirectPct:100,
+  checklist:{}
+};
+let planCfg={...DEFAULT_PLAN};
+// { 'YYYY-MM': {fd,mm,eq,esg,au} } — ค่าเก็บเป็น string เหมือน payRec.actualPP
+// เพื่อให้ '' (ยังไม่กรอก) ต่างจาก 0 (กรอกว่าศูนย์)
+let fundRec={};
 
 // ---- Init ----
 const todayD=new Date(); todayD.setHours(0,0,0,0);
 const defDate=new Date(); defDate.setMonth(defDate.getMonth()+1);
 document.getElementById('startDate').value=defDate.toISOString().split('T')[0];
 loadPayments();
+loadPlan();
+loadFund();
 loadFormData();
 
 // ---- Form persistence ----
@@ -622,6 +823,24 @@ function loadPayments(){
 }
 function savePayments(){
   try{localStorage.setItem(SKEY,JSON.stringify(payRec));showToast();}
+  catch(e){console.error(e);}
+  scheduleFirebaseSync();
+}
+function loadPlan(){
+  try{const r=localStorage.getItem(PKEY);if(r)planCfg={...DEFAULT_PLAN,...JSON.parse(r)};}
+  catch(e){planCfg={...DEFAULT_PLAN};}
+}
+function savePlan(quiet){
+  try{localStorage.setItem(PKEY,JSON.stringify(planCfg));if(!quiet)showToast();}
+  catch(e){console.error(e);}
+  scheduleFirebaseSync();
+}
+function loadFund(){
+  try{const r=localStorage.getItem(FDKEY);if(r)fundRec=JSON.parse(r);}
+  catch(e){fundRec={};}
+}
+function saveFund(quiet){
+  try{localStorage.setItem(FDKEY,JSON.stringify(fundRec));if(!quiet)showToast();}
   catch(e){console.error(e);}
   scheduleFirebaseSync();
 }
@@ -827,11 +1046,16 @@ function renderTable(rows,prepay,origTerm,method){
 
 // ---- Tabs ----
 function showTab(id,el){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  // จำกัดขอบเขตแค่ชุดแท็บที่ถูกกด — หน้า 1 กับหน้า 2 มีแท็บคนละชุด ต้องไม่ปิดของกันและกัน
+  const root=el.closest('[data-tabs]')||document;
+  root.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('on'));
+  root.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById(id).classList.add('on');el.classList.add('on');
+  // canvas ที่อยู่ใน display:none จะได้ความสูง 0 ถาวร ต้องสร้างกราฟหลังแท็บโผล่แล้ว
   if(id==='tChart')setTimeout(()=>buildChart(),50);
   if(id==='tEC')setTimeout(()=>renderECTab(),50);
+  if(id==='p2tPay')setTimeout(()=>{buildPPChart();buildForecastChart();},50);
+  if(id==='p2tFund')setTimeout(()=>{renderFundTab();buildFundChart();},50);
 }
 
 // ---- Chart ----
@@ -902,8 +1126,20 @@ function dl(csv,fname){const a=document.createElement('a');a.href=URL.createObje
 // ---- Export PDF ----
 function exportPDF(n){
   document.body.classList.add('print-p'+n);
+  const restore=()=>{
+    document.querySelectorAll('.print-tmp').forEach(t=>t.classList.remove('on','print-tmp'));
+    document.body.classList.remove('print-p1','print-p2');
+  };
+  if(n===2){
+    // print CSS เปิดทุก .tab-content อยู่แล้ว แต่ canvas ที่ยังไม่เคยถูกวาดตอนมองเห็น
+    // จะพิมพ์ออกมาว่าง จึงต้องเปิดแท็บชั่วคราวแล้วสร้างกราฟใหม่ก่อนสั่งพิมพ์
+    document.querySelectorAll('#page2 .tab-content:not(.on)').forEach(t=>t.classList.add('on','print-tmp'));
+    buildPPChart();buildForecastChart();buildFundChart();
+    setTimeout(()=>{window.print();setTimeout(restore,600);},250);
+    return;
+  }
   window.print();
-  setTimeout(()=>{document.body.classList.remove('print-p1','print-p2');},600);
+  setTimeout(restore,600);
 }
 
 // ---- CSV line parser ----
@@ -993,8 +1229,11 @@ function scheduleFirebaseSync(){
     try{
       const code=localStorage.getItem(FB_CODE_KEY);
       const formData=JSON.parse(localStorage.getItem(FKEY)||'{}');
-      const payload={formData:formData,payments:payRec,deviceId:FB_DEVICE_ID,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+      const payload={formData:formData,payments:payRec,plan:planCfg,fund:fundRec,deviceId:FB_DEVICE_ID,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
       if(sched.length)payload.schedule=sched;
+      // schedBase คือตารางแบบไม่โปะ ซึ่งเป็นฐานของจำนวนงวดตามสัญญาและงวดเป้าหมายปิดบัญชี
+      // ถ้าไม่ส่งไปด้วย ฝั่งรับจะเอา sched (แบบโปะ ซึ่งสั้นกว่า) มาใช้แทนแล้วงวดเป้าหมายจะเลื่อน
+      if(schedBase.length)payload.scheduleBase=schedBase;
       await db.collection('car-loan-sync').doc(code).set(payload,{merge:true});
       document.getElementById('fbStatus').textContent='✅ Sync อัตโนมัติ: '+new Date().toLocaleTimeString('th-TH');
     }catch(e){document.getElementById('fbStatus').textContent='❌ Auto-sync ล้มเหลว';}
@@ -1040,7 +1279,10 @@ async function applyFirebaseData(data){
   isLoadingFromFirebase=true;
   try{
     if(data.schedule&&data.schedule.length){
-      sched=data.schedule;schedBase=data.schedule;
+      sched=data.schedule;
+      // ใช้ scheduleBase ถ้ามี — ตารางแบบไม่โปะคือฐานของจำนวนงวดตามสัญญา
+      // เอกสารเก่าไม่มี key นี้ จึง fallback เป็น schedule เหมือนเดิม
+      schedBase=(data.scheduleBase&&data.scheduleBase.length)?data.scheduleBase:data.schedule;
       renderTable(sched,sched.some(r=>r.pp>0)?{amt:1}:null,sched.length,'flat');
       document.getElementById('res').classList.remove('hidden');
     }
@@ -1048,10 +1290,19 @@ async function applyFirebaseData(data){
       payRec=data.payments;
       try{localStorage.setItem(SKEY,JSON.stringify(payRec));}catch(e){}
     }
+    if(data.plan){
+      planCfg={...DEFAULT_PLAN,...data.plan};
+      try{localStorage.setItem(PKEY,JSON.stringify(planCfg));}catch(e){}
+    }
+    if(data.fund){
+      fundRec=data.fund;
+      try{localStorage.setItem(FDKEY,JSON.stringify(fundRec));}catch(e){}
+    }
     if(data.formData&&Object.keys(data.formData).length){
       localStorage.setItem(FKEY,JSON.stringify(data.formData));
       loadFormData();
     }
+    syncPlanInputs();
     renderPage2();buildPPChart();
   }catch(e){
     document.getElementById('fbStatus').textContent='⚠ โหลดไม่สำเร็จ: '+e.message;
@@ -1086,9 +1337,14 @@ async function syncToFirebase(){
   try{
     const code=localStorage.getItem(FB_CODE_KEY);
     const formData=JSON.parse(localStorage.getItem(FKEY)||'{}');
+    // หมายเหตุ: .set() นี้ไม่มี {merge:true} จึงเขียนทับทั้งเอกสาร — key ใหม่ทุกตัวต้องอยู่ในนี้ด้วย
+    // ไม่งั้นการกดปุ่มนี้จะลบแผนและยอดกองเงินบนเซิร์ฟเวอร์ทิ้ง
     await db.collection('car-loan-sync').doc(code).set({
       schedule:sched,
+      scheduleBase:schedBase,
       payments:payRec,
+      plan:planCfg,
+      fund:fundRec,
       formData:formData,
       deviceId:FB_DEVICE_ID,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -1117,6 +1373,14 @@ async function syncFromFirebase(){
 }
 
 // ========== EARLY CLOSURE (สคบ.) ==========
+// สีและชื่อขั้นบันได — ใช้ร่วมกันทั้งหน้า 1 (แท็บ ปิดบัญชีก่อนกำหนด) และหน้า 2 (แท็บ แผนปิดรถ)
+const EC_FG=['#1d4ed8','#15803d','#7c3aed'];
+const EC_BG=['#eff6ff','#f0fdf4','#f5f3ff'];
+const EC_CHIP=['#dbeafe','#dcfce7','#ede9fe'];
+const EC_NAMES=['กรณีที่ 1 (ผ่อนมาแล้วไม่เกิน 1/3)','กรณีที่ 2 (ผ่อนมาแล้ว 1/3 – 2/3)','กรณีที่ 3 (ผ่อนมาแล้วเกิน 2/3)'];
+// ขอบเขตขั้นบันได: งวด 1..t1 = กรณี 1, t1+1..t2 = กรณี 2, t2+1..T-1 = กรณี 3 (ส่วนลด 100%)
+function tierBoundaries(T){return{t1:Math.floor(T/3),t2:Math.floor(2*T/3),T:T};}
+
 function calcEarlyClosure(n){
   if(!schedBase.length)return null;
   const T=schedBase.length;
@@ -1145,7 +1409,7 @@ function calcEarlyClosure(n){
 function renderECTab(){
   if(!schedBase.length)return;
   const T=schedBase.length;
-  const t1=Math.floor(T/3),t2=Math.floor(2*T/3);
+  const {t1,t2}=tierBoundaries(T);
   const ex=(n)=>{const r=calcEarlyClosure(n);return r?`ตัวอย่างปิดที่งวด ${n}: ประหยัด ฿${fmt(r.savings)}`:''};
   document.getElementById('ecTierCards').innerHTML=`
     <div class="ec-tier-card t1">
@@ -1178,9 +1442,9 @@ function renderEC(){
   const r=calcEarlyClosure(n);
   const el=document.getElementById('ecResult');
   if(!r){el.classList.add('hidden');return;}
-  const tc=['#1d4ed8','#15803d','#7c3aed'][r.tier-1];
-  const tb=['#eff6ff','#f0fdf4','#f5f3ff'][r.tier-1];
-  const tNames=['กรณีที่ 1 (ผ่อนมาแล้วไม่เกิน 1/3)','กรณีที่ 2 (ผ่อนมาแล้ว 1/3 – 2/3)','กรณีที่ 3 (ผ่อนมาแล้วเกิน 2/3)'];
+  const tc=EC_FG[r.tier-1];
+  const tb=EC_BG[r.tier-1];
+  const tNames=EC_NAMES;
   el.innerHTML=`
     <div style="background:${tb};border:2px solid ${tc};border-radius:12px;padding:16px">
       <div style="font-size:.85rem;font-weight:800;color:${tc};margin-bottom:14px">
@@ -1222,8 +1486,8 @@ function renderECTable(){
   const tb=document.getElementById('ecTbody');
   if(!schedBase.length||!tb)return;
   const T=schedBase.length;
-  const tierBg=['#dbeafe','#dcfce7','#ede9fe'];
-  const tierFg=['#1d4ed8','#15803d','#7c3aed'];
+  const tierBg=EC_CHIP;
+  const tierFg=EC_FG;
   tb.innerHTML='';
   for(let n=1;n<T;n++){
     const r=calcEarlyClosure(n);
@@ -1409,6 +1673,13 @@ function renderPage2(){
   tb.appendChild(tf);
   buildPPChart();
   buildForecastChart();
+  // แท็บใหม่ของหน้า 2 — แต่ละตัว self-guard เองเมื่อยังไม่มีตารางที่ใช้ได้
+  renderOdometer();
+  renderPayoffTab();
+  renderFundTab();
+  renderFundTable();
+  // กราฟกองเงินสร้างเฉพาะตอนแท็บเปิดอยู่จริง ไม่งั้น canvas จะได้ความสูง 0
+  if(document.getElementById('p2tFund').classList.contains('on'))buildFundChart();
 }
 
 // ---- Page2 event handlers ----
@@ -1670,6 +1941,604 @@ function exportPayCSV(){
   });
   dl('\uFEFF'+[hdr.join(','),...rows].join('\n'),'car_loan_payments.csv');
 }
+
+// ========== PAYOFF PLAN (\u0E41\u0E1C\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16) ==========
+// ---- month helpers ----
+// addMonths() \u0E14\u0E49\u0E32\u0E19\u0E1A\u0E19\u0E17\u0E33\u0E07\u0E32\u0E19\u0E01\u0E31\u0E1A\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48 \u0E2A\u0E48\u0E27\u0E19\u0E0A\u0E38\u0E14\u0E19\u0E35\u0E49\u0E17\u0E33\u0E07\u0E32\u0E19\u0E01\u0E31\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E49\u0E27\u0E19 'YYYY-MM'
+function monthKey(iso){return iso?String(iso).slice(0,7):'';}
+function monthAdd(m,n){
+  const [y,mo]=m.split('-').map(Number);
+  const t=(y*12+(mo-1))+n;
+  return Math.floor(t/12)+'-'+String(t%12+1).padStart(2,'0');
+}
+function monthDiff(a,b){
+  const [ay,am]=a.split('-').map(Number),[by,bm]=b.split('-').map(Number);
+  return (by*12+bm)-(ay*12+am);
+}
+function monthLabel(m){
+  const [y,mo]=m.split('-').map(Number);
+  // ปีพุทธศักราชเต็ม ให้ตรงกับที่ตารางผ่อนแสดง (เช่น "ต.ค. 2576") — แบบย่อ 2 หลักอ่านกำกวม
+  return new Date(y,mo-1,1).toLocaleDateString('th-TH',{year:'numeric',month:'short'});
+}
+function thisMonth(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+// ---- \u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22 ----
+// \u0E07\u0E27\u0E14\u0E41\u0E23\u0E01\u0E17\u0E35\u0E48\u0E44\u0E14\u0E49\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14 100%: \u0E08\u0E33\u0E19\u0E27\u0E19\u0E40\u0E15\u0E47\u0E21\u0E19\u0E49\u0E2D\u0E22\u0E2A\u0E38\u0E14\u0E17\u0E35\u0E48 3n > 2T \u0E0B\u0E36\u0E48\u0E07\u0E15\u0E23\u0E07\u0E01\u0E31\u0E1A\u0E40\u0E07\u0E37\u0E48\u0E2D\u0E19\u0E44\u0E02 tier 3
+// \u0E43\u0E19 calcEarlyClosure \u0E1E\u0E2D\u0E14\u0E35 \u0E41\u0E25\u0E30\u0E16\u0E39\u0E01\u0E15\u0E49\u0E2D\u0E07\u0E01\u0E31\u0E1A\u0E17\u0E38\u0E01\u0E04\u0E48\u0E32 T \u0E44\u0E21\u0E48\u0E27\u0E48\u0E32\u0E2B\u0E32\u0E23\u0E2A\u0E32\u0E21\u0E25\u0E07\u0E15\u0E31\u0E27\u0E2B\u0E23\u0E37\u0E2D\u0E44\u0E21\u0E48 (T=84 -> 57)
+function defaultTargetN(){
+  const T=schedBase.length;
+  return T?Math.min(T-1,Math.floor(2*T/3)+1):0;
+}
+function getTargetN(){
+  const T=schedBase.length;
+  if(!T)return 0;
+  const n=planCfg.targetN||defaultTargetN();
+  return Math.max(1,Math.min(T-1,n));   // calcEarlyClosure \u0E04\u0E37\u0E19 null \u0E40\u0E21\u0E37\u0E48\u0E2D n>=T
+}
+
+// \u0E15\u0E32\u0E23\u0E32\u0E07\u0E17\u0E35\u0E48 import \u0E21\u0E32\u0E08\u0E32\u0E01 CSV \u0E2D\u0E32\u0E08\u0E44\u0E21\u0E48\u0E21\u0E35 dateISO \u2014 \u0E17\u0E38\u0E01 renderer \u0E43\u0E2B\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E1C\u0E48\u0E32\u0E19 guard \u0E19\u0E35\u0E49\u0E01\u0E48\u0E2D\u0E19
+function planReady(){
+  return schedBase.length>=3&&!!(schedBase[0]&&schedBase[0].dateISO);
+}
+
+function calcPayoffPlan(){
+  if(!planReady())return null;
+  const T=schedBase.length, targetN=getTargetN();
+  const ec=calcEarlyClosure(targetN);
+  if(!ec)return null;
+  const payoffMonth=monthKey(schedBase[targetN-1].dateISO);
+  const contractEnd=monthKey(schedBase[T-1].dateISO);
+  if(!payoffMonth||!contractEnd)return null;
+  const saveStart=planCfg.saveStart||thisMonth();
+  const autoN=defaultTargetN();
+  const autoEc=calcEarlyClosure(autoN);
+  // สัญญาสั้นมาก (T=3) ไม่มีงวดไหนเข้าเกณฑ์ส่วนลด 100% เลย เพราะต้อง 3n>2T และ n<T พร้อมกัน
+  const has100=!!(autoEc&&autoEc.rebatePct>=1);
+  const skipped=T-targetN;
+  // \u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E41\u0E23\u0E01\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E41\u0E25\u0E49\u0E27 (flat rate \u0E17\u0E38\u0E01\u0E07\u0E27\u0E14\u0E40\u0E17\u0E48\u0E32\u0E01\u0E31\u0E19\u0E2D\u0E22\u0E39\u0E48\u0E41\u0E25\u0E49\u0E27)
+  const freedPay=schedBase[targetN]?schedBase[targetN].pay:schedBase[0].pay;
+  return{
+    T,targetN,ec,payoffMonth,contractEnd,saveStart,skipped,freedPay,
+    closureAmt:ec.closureAmt,
+    futureTotal:schedBase.slice(targetN).reduce((a,r)=>a+r.pay,0),
+    k:monthDiff(saveStart,payoffMonth),
+    autoN,has100
+  };
+}
+
+// ---- Odometer ----
+function renderOdometer(){
+  const card=document.getElementById('odoCard');
+  const host=document.getElementById('odoStrip');
+  if(!card||!host)return;
+  if(!schedBase.length){card.classList.add('hidden');return;}
+  card.classList.remove('hidden');
+  const T=schedBase.length, targetN=planReady()?getTargetN():0;
+  // \u0E07\u0E27\u0E14\u0E16\u0E31\u0E14\u0E44\u0E1B = \u0E07\u0E27\u0E14\u0E41\u0E23\u0E01\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E27\u0E48\u0E32\u0E08\u0E48\u0E32\u0E22
+  let next=0;
+  for(let i=1;i<=T;i++){if(!(payRec[i]&&payRec[i].paidDate)){next=i;break;}}
+  let paidCnt=0,html='';
+  for(let i=1;i<=T;i++){
+    const rec=payRec[i]||{};
+    const row=schedBase[i-1];
+    let cls='odo-tick',label='\u0E07\u0E27\u0E14 '+i;
+    if(row&&row.date)label+=' \u00B7 '+row.date;
+    if(rec.paidDate){
+      cls+=' paid';paidCnt++;label+=' \u00B7 \u0E08\u0E48\u0E32\u0E22\u0E41\u0E25\u0E49\u0E27';
+    } else if(targetN&&i>targetN){
+      cls+=' skip';label+=' \u00B7 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22';
+    } else if(i===next){
+      cls+=' cur';label+=' \u00B7 \u0E07\u0E27\u0E14\u0E16\u0E31\u0E14\u0E44\u0E1B';
+    } else if(row&&row.dateISO&&new Date(row.dateISO)<todayD){
+      cls+=' over';label+=' \u00B7 \u0E40\u0E01\u0E34\u0E19\u0E01\u0E33\u0E2B\u0E19\u0E14';
+    }
+    if(targetN&&i===targetN){cls+=' target';label='\u0E07\u0E27\u0E14 '+i+' \u00B7 \u0E08\u0E38\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35';}
+    html+=`<div class="${cls}" data-t="${label}"></div>`;
+  }
+  host.innerHTML=html;
+  const st=document.getElementById('odoStatus');
+  if(!targetN){st.textContent=`\u0E08\u0E48\u0E32\u0E22\u0E41\u0E25\u0E49\u0E27 ${paidCnt} / ${T} \u0E07\u0E27\u0E14`;}
+  else if(paidCnt>=targetN){st.textContent=`\u0E16\u0E36\u0E07\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E41\u0E25\u0E49\u0E27 \u2014 \u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E44\u0E14\u0E49\u0E17\u0E31\u0E19\u0E17\u0E35`;}
+  else{st.textContent=`\u0E08\u0E48\u0E32\u0E22\u0E41\u0E25\u0E49\u0E27 ${paidCnt} / ${T} \u0E07\u0E27\u0E14 \u00B7 \u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E2D\u0E35\u0E01 ${targetN-paidCnt} \u0E07\u0E27\u0E14\u0E16\u0E36\u0E07\u0E08\u0E38\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35`;}
+}
+
+// ---- \u0E41\u0E17\u0E47\u0E1A \u0E41\u0E1C\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16 ----
+function resetTargetN(){
+  planCfg.targetN=null;savePlan();
+  syncPlanInputs();renderPage2();
+}
+function onTargetNChange(){
+  const T=schedBase.length;
+  let v=parseInt(document.getElementById('poTargetN').value,10);
+  if(!v||isNaN(v))v=defaultTargetN();
+  planCfg.targetN=Math.max(1,Math.min(Math.max(1,T-1),v));
+  savePlan();syncPlanInputs();renderPage2();
+}
+
+const PO_CHECKS=[
+  ['c1','\u0E08\u0E48\u0E32\u0E22\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E43\u0E2B\u0E49\u0E40\u0E23\u0E35\u0E22\u0E1A\u0E23\u0E49\u0E2D\u0E22\u0E01\u0E48\u0E2D\u0E19 \u0E41\u0E25\u0E49\u0E27\u0E40\u0E01\u0E47\u0E1A\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19\u0E01\u0E32\u0E23\u0E08\u0E48\u0E32\u0E22\u0E44\u0E27\u0E49'],
+  ['c2','\u0E02\u0E2D "\u0E43\u0E1A\u0E41\u0E2A\u0E14\u0E07\u0E22\u0E2D\u0E14\u0E2B\u0E19\u0E35\u0E49\u0E04\u0E07\u0E40\u0E2B\u0E25\u0E37\u0E2D / \u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35" \u0E40\u0E1B\u0E47\u0E19\u0E25\u0E32\u0E22\u0E25\u0E31\u0E01\u0E29\u0E13\u0E4C\u0E2D\u0E31\u0E01\u0E29\u0E23 (\u0E2A\u0E04\u0E1A. \u0E01\u0E33\u0E2B\u0E19\u0E14\u0E43\u0E2B\u0E49\u0E44\u0E1F\u0E41\u0E19\u0E19\u0E0B\u0E4C\u0E2D\u0E2D\u0E01\u0E43\u0E2B\u0E49\u0E20\u0E32\u0E22\u0E43\u0E19 7 \u0E27\u0E31\u0E19\u0E17\u0E33\u0E01\u0E32\u0E23)'],
+  ['c3','\u0E15\u0E23\u0E27\u0E08\u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32\u0E27\u0E48\u0E32\u0E43\u0E2B\u0E49\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E14\u0E2D\u0E01\u0E40\u0E1A\u0E35\u0E49\u0E22\u0E15\u0E23\u0E07\u0E15\u0E32\u0E21\u0E02\u0E31\u0E49\u0E19\u0E17\u0E35\u0E48\u0E04\u0E27\u0E23\u0E44\u0E14\u0E49\u0E08\u0E23\u0E34\u0E07 \u0E16\u0E49\u0E32\u0E19\u0E49\u0E2D\u0E22\u0E01\u0E27\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19\u0E43\u0E2B\u0E49\u0E17\u0E31\u0E01\u0E17\u0E49\u0E27\u0E07\u0E17\u0E31\u0E19\u0E17\u0E35'],
+  ['c4','\u0E0A\u0E33\u0E23\u0E30\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 \u0E41\u0E25\u0E49\u0E27\u0E02\u0E2D\u0E43\u0E1A\u0E40\u0E2A\u0E23\u0E47\u0E08\u0E41\u0E25\u0E30\u0E2B\u0E19\u0E31\u0E07\u0E2A\u0E37\u0E2D\u0E1B\u0E25\u0E14\u0E20\u0E32\u0E23\u0E30\u0E1C\u0E39\u0E01\u0E1E\u0E31\u0E19'],
+  ['c5','\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21\u0E40\u0E25\u0E48\u0E21\u0E17\u0E30\u0E40\u0E1A\u0E35\u0E22\u0E19\u0E41\u0E25\u0E30\u0E01\u0E32\u0E23\u0E42\u0E2D\u0E19\u0E01\u0E23\u0E23\u0E21\u0E2A\u0E34\u0E17\u0E18\u0E34\u0E4C\u0E43\u0E2B\u0E49\u0E40\u0E23\u0E35\u0E22\u0E1A\u0E23\u0E49\u0E2D\u0E22'],
+  ['c6','\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01\u0E01\u0E32\u0E23\u0E15\u0E31\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34 \u0E41\u0E25\u0E49\u0E27\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E44\u0E1B\u0E15\u0E31\u0E14\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E25\u0E07\u0E17\u0E38\u0E19\u0E41\u0E17\u0E19']
+];
+
+function renderPayoffTab(){
+  const head=document.getElementById('poHead');
+  const tbody=document.getElementById('poTierTbody');
+  const warn=document.getElementById('poWarn');
+  const chk=document.getElementById('poChecklist');
+  if(!head||!tbody)return;
+  const p=calcPayoffPlan();
+  if(!p){
+    head.innerHTML='';tbody.innerHTML='';
+    if(warn)warn.innerHTML='<div class="note" style="margin-top:10px">\u0E22\u0E31\u0E07\u0E04\u0E33\u0E19\u0E27\u0E13\u0E41\u0E1C\u0E19\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E23\u0E2D\u0E01\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E41\u0E25\u0E49\u0E27\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19 (\u0E15\u0E49\u0E2D\u0E07\u0E21\u0E35\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E19\u0E49\u0E2D\u0E22 3 \u0E07\u0E27\u0E14\u0E41\u0E25\u0E30\u0E21\u0E35\u0E27\u0E31\u0E19\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14)</div>';
+    if(chk)chk.innerHTML='';
+    return;
+  }
+  const ec=p.ec;
+  // ตอน boot ยังไม่มีตาราง ช่องนี้จึงว่าง ต้องเติมให้หลังคำนวณเสร็จ
+  // แต่ห้ามเขียนทับขณะผู้ใช้กำลังพิมพ์อยู่ในช่องนั้น
+  const tnEl=document.getElementById('poTargetN');
+  if(tnEl){
+    tnEl.max=p.T-1;
+    if(document.activeElement!==tnEl)tnEl.value=p.targetN;
+  }
+
+  head.innerHTML=`
+    <div class="stat pur"><div class="stat-lbl">\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22</div><div class="stat-val">\u0E07\u0E27\u0E14 ${p.targetN}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">${ec.date}</div></div>
+    <div class="stat o"><div class="stat-lbl">\u0E22\u0E2D\u0E14\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35</div><div class="stat-val">\u0E3F${fmt(ec.closureAmt)}</div></div>
+    <div class="stat g"><div class="stat-lbl">\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E14\u0E2D\u0E01\u0E40\u0E1A\u0E35\u0E49\u0E22 ${(ec.rebatePct*100).toFixed(0)}%</div><div class="stat-val">\u0E3F${fmt(ec.savings)}</div></div>
+    <div class="stat"><div class="stat-lbl">\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22</div><div class="stat-val">${p.skipped} \u0E07\u0E27\u0E14</div></div>
+    <div class="stat r"><div class="stat-lbl">\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E23\u0E27\u0E21</div><div class="stat-val">\u0E3F${fmt(p.futureTotal)}</div></div>`;
+
+  // \u0E15\u0E32\u0E23\u0E32\u0E07\u0E40\u0E17\u0E35\u0E22\u0E1A: \u0E02\u0E2D\u0E1A\u0E1A\u0E19\u0E02\u0E2D\u0E07\u0E41\u0E15\u0E48\u0E25\u0E30\u0E02\u0E31\u0E49\u0E19 + \u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22
+  const {t1,t2}=tierBoundaries(p.T);
+  const marks=[...new Set([t1,t2,Math.min(t2+1,p.T-1),p.targetN])].filter(n=>n>=1&&n<p.T).sort((a,b)=>a-b);
+  tbody.innerHTML=marks.map(n=>{
+    const r=calcEarlyClosure(n);
+    if(!r)return '';
+    const isT=n===p.targetN;
+    return `<tr style="background:${EC_CHIP[r.tier-1]}${isT?';outline:2px solid '+EC_FG[r.tier-1]+';outline-offset:-2px':''}">
+      <td style="text-align:center;font-weight:${isT?'800':'700'}">${n}${isT?' \uD83C\uDFAF':''}</td>
+      <td style="text-align:left;white-space:nowrap">${r.date}</td>
+      <td style="text-align:center;font-weight:800;color:${EC_FG[r.tier-1]}">\u0E01\u0E23\u0E13\u0E35 ${r.tier}</td>
+      <td style="text-align:center;font-weight:800;color:${EC_FG[r.tier-1]}">${(r.rebatePct*100).toFixed(0)}%</td>
+      <td style="text-align:right">${fmt(r.remainingPrincipal)}</td>
+      <td style="text-align:right;color:#16a34a;font-weight:700">\u2212${fmt(r.rebateAmt)}</td>
+      <td style="text-align:right;font-weight:800">${fmt(r.closureAmt)}</td>
+      <td style="text-align:right;color:#16a34a;font-weight:700">+${fmt(r.savings)}</td>
+    </tr>`;
+  }).join('');
+
+  // \u0E04\u0E33\u0E40\u0E15\u0E37\u0E2D\u0E19 / \u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22\u0E40\u0E07\u0E37\u0E48\u0E2D\u0E19\u0E44\u0E02
+  let w='';
+  if(ec.rebatePct>=1){
+    w+=`<div class="verdict" style="margin-top:10px">\u2705 \u0E07\u0E27\u0E14\u0E17\u0E35\u0E48 ${p.targetN} \u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E01\u0E23\u0E13\u0E35\u0E17\u0E35\u0E48 3 \u2014 \u0E44\u0E14\u0E49\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E14\u0E2D\u0E01\u0E40\u0E1A\u0E35\u0E49\u0E22\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E01\u0E33\u0E2B\u0E19\u0E14 <strong>100%</strong> \u0E08\u0E48\u0E32\u0E22\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E40\u0E07\u0E34\u0E19\u0E15\u0E49\u0E19\u0E04\u0E07\u0E40\u0E2B\u0E25\u0E37\u0E2D \u0E3F${fmt(ec.remainingPrincipal)}</div>`;
+  } else if(!p.has100){
+    w+=`<div class="info-box">\u2139\uFE0F \u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E19\u0E35\u0E49\u0E2A\u0E31\u0E49\u0E19\u0E40\u0E01\u0E34\u0E19\u0E01\u0E27\u0E48\u0E32\u0E08\u0E30\u0E21\u0E35\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E40\u0E02\u0E49\u0E32\u0E40\u0E01\u0E13\u0E11\u0E4C\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14 100% (\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E40\u0E01\u0E34\u0E19 2 \u0E43\u0E19 3 \u0E02\u0E2D\u0E07\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E41\u0E15\u0E48\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E07\u0E27\u0E14\u0E2A\u0E38\u0E14\u0E17\u0E49\u0E32\u0E22)
+      \u0E07\u0E27\u0E14\u0E17\u0E35\u0E48 ${p.targetN} \u0E40\u0E1B\u0E47\u0E19\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E43\u0E2B\u0E49\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E2A\u0E39\u0E07\u0E2A\u0E38\u0E14\u0E40\u0E17\u0E48\u0E32\u0E17\u0E35\u0E48\u0E40\u0E1B\u0E47\u0E19\u0E44\u0E1B\u0E44\u0E14\u0E49\u0E41\u0E25\u0E49\u0E27\u0E17\u0E35\u0E48 ${(ec.rebatePct*100).toFixed(0)}%</div>`;
+  } else {
+    const best=calcEarlyClosure(p.autoN);
+    const lost=best?best.savings-ec.savings:0;
+    w+=`<div class="warn-box">\u26A0\uFE0F \u0E07\u0E27\u0E14\u0E17\u0E35\u0E48 ${p.targetN} \u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E01\u0E23\u0E13\u0E35\u0E17\u0E35\u0E48 ${ec.tier} \u2014 \u0E44\u0E14\u0E49\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E41\u0E04\u0E48 ${(ec.rebatePct*100).toFixed(0)}%
+      \u0E16\u0E49\u0E32\u0E23\u0E2D\u0E16\u0E36\u0E07\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48 ${p.autoN} \u0E08\u0E30\u0E44\u0E14\u0E49\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14 100% \u0E41\u0E25\u0E30\u0E1B\u0E23\u0E30\u0E2B\u0E22\u0E31\u0E14\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E2D\u0E35\u0E01 <strong>\u0E3F${fmt(lost)}</strong></div>`;
+  }
+  if(p.futureTotal>ec.closureAmt&&p.skipped>0){
+    const ratio=Math.pow(p.futureTotal/ec.closureAmt,12/p.skipped)-1;
+    w+=`<div class="info-box">\uD83D\uDCA1 \u0E08\u0E48\u0E32\u0E22 \u0E3F${fmt(ec.closureAmt)} \u0E27\u0E31\u0E19\u0E19\u0E35\u0E49 \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E2D\u0E35\u0E01 \u0E3F${fmt(p.futureTotal)} \u0E43\u0E19 ${p.skipped} \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E02\u0E49\u0E32\u0E07\u0E2B\u0E19\u0E49\u0E32
+      \u0E04\u0E34\u0E14\u0E40\u0E1B\u0E47\u0E19\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E17\u0E1A\u0E15\u0E49\u0E19\u0E23\u0E32\u0E27 <strong>${(ratio*100).toFixed(1)}% \u0E15\u0E48\u0E2D\u0E1B\u0E35</strong> \u0E41\u0E1A\u0E1A\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E25\u0E38\u0E49\u0E19\u0E15\u0E25\u0E32\u0E14 \u2014 \u0E19\u0E35\u0E48\u0E04\u0E37\u0E2D\u0E40\u0E2B\u0E15\u0E38\u0E1C\u0E25\u0E17\u0E35\u0E48\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19\u0E01\u0E49\u0E2D\u0E19\u0E19\u0E35\u0E49\u0E2B\u0E49\u0E32\u0E21\u0E40\u0E2D\u0E32\u0E44\u0E1B\u0E40\u0E2A\u0E35\u0E48\u0E22\u0E07</div>`;
+  }
+  if(schedInfo.method==='reduce'){
+    w+=`<div class="note" style="margin-top:8px">* \u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E19\u0E35\u0E49\u0E15\u0E31\u0E49\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E41\u0E1A\u0E1A\u0E25\u0E14\u0E15\u0E49\u0E19\u0E25\u0E14\u0E14\u0E2D\u0E01 \u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E02\u0E31\u0E49\u0E19\u0E1A\u0E31\u0E19\u0E44\u0E14\u0E02\u0E2D\u0E07 \u0E2A\u0E04\u0E1A. \u0E40\u0E1B\u0E47\u0E19\u0E01\u0E15\u0E34\u0E01\u0E32\u0E02\u0E2D\u0E07\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E40\u0E0A\u0E48\u0E32\u0E0B\u0E37\u0E49\u0E2D (Flat Rate) \u0E15\u0E31\u0E27\u0E40\u0E25\u0E02\u0E17\u0E35\u0E48\u0E41\u0E2A\u0E14\u0E07\u0E08\u0E36\u0E07\u0E43\u0E0A\u0E49\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E01\u0E32\u0E23\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19</div>`;
+  }
+  warn.innerHTML=w;
+
+  chk.innerHTML=PO_CHECKS.map(([k,txt])=>{
+    const on=!!planCfg.checklist[k];
+    return `<label class="chk-item${on?' done':''}">
+      <input type="checkbox" ${on?'checked':''} onchange="onCheckChange('${k}')">
+      <span>${txt}</span></label>`;
+  }).join('');
+}
+
+function onCheckChange(k){
+  planCfg.checklist[k]=!planCfg.checklist[k];
+  savePlan(true);
+  renderPayoffTab();   // \u0E41\u0E04\u0E48\u0E27\u0E32\u0E14\u0E40\u0E0A\u0E47\u0E04\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E43\u0E2B\u0E21\u0E48 \u0E44\u0E21\u0E48\u0E41\u0E15\u0E30\u0E15\u0E32\u0E23\u0E32\u0E07\u0E01\u0E32\u0E23\u0E08\u0E48\u0E32\u0E22
+}
+
+// ========== FUND ENGINE (\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16) ==========
+// \u0E2D\u0E31\u0E15\u0E23\u0E32\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19 = \u0E2D\u0E31\u0E15\u0E23\u0E32\u0E15\u0E48\u0E2D\u0E1B\u0E35 / 12 (nominal \u0E17\u0E1A\u0E15\u0E49\u0E19\u0E23\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19) \u2014 \u0E27\u0E34\u0E18\u0E35\u0E40\u0E14\u0E35\u0E22\u0E27\u0E01\u0E31\u0E1A\u0E17\u0E35\u0E48\u0E15\u0E32\u0E23\u0E32\u0E07\u0E1C\u0E48\u0E2D\u0E19\u0E43\u0E0A\u0E49
+function mRate(annualPct){return (annualPct||0)/100/12;}
+function normAlloc(){
+  let eq=+planCfg.allocEq||0, esg=+planCfg.allocEsg||0, au=+planCfg.allocAu||0;
+  const s=eq+esg+au;
+  if(s<=0)return{eq:.5,esg:.3,au:.2,sum:0};
+  return{eq:eq/s,esg:esg/s,au:au/s,sum:s};
+}
+
+// \u0E40\u0E07\u0E34\u0E19\u0E1D\u0E32\u0E01\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E43\u0E0A\u0E49 (annuity-DUE: \u0E1D\u0E32\u0E01\u0E15\u0E49\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E41\u0E25\u0E49\u0E27\u0E42\u0E15\u0E1B\u0E25\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19)
+//   FV = seed(1+i)^k + D(1+i)((1+i)^k - 1)/i
+// \u0E43\u0E0A\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E01\u0E23\u0E2D\u0E1A\u0E15\u0E31\u0E49\u0E07\u0E15\u0E49\u0E19\u0E43\u0E2B\u0E49\u0E15\u0E31\u0E27\u0E41\u0E01\u0E49\u0E2A\u0E21\u0E01\u0E32\u0E23 \u0E2A\u0E48\u0E27\u0E19\u0E15\u0E31\u0E27\u0E40\u0E25\u0E02\u0E17\u0E35\u0E48\u0E41\u0E2A\u0E14\u0E07\u0E08\u0E23\u0E34\u0E07\u0E21\u0E32\u0E08\u0E32\u0E01 buildFundSchedule \u0E40\u0E2A\u0E21\u0E2D
+function calcRequiredDeposit(target,seed,i,k){
+  if(k<=0)return Math.max(0,target-seed);
+  if(Math.abs(i)<1e-12)return Math.max(0,(target-seed)/k);
+  const g=Math.pow(1+i,k);
+  const need=target-seed*g;
+  if(need<=0)return 0;
+  return need/((1+i)*(g-1)/i);
+}
+
+// \u0E08\u0E33\u0E25\u0E2D\u0E07\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19 \u2014 \u0E41\u0E2B\u0E25\u0E48\u0E07\u0E04\u0E27\u0E32\u0E21\u0E08\u0E23\u0E34\u0E07\u0E40\u0E14\u0E35\u0E22\u0E27\u0E02\u0E2D\u0E07\u0E17\u0E31\u0E49\u0E07\u0E01\u0E23\u0E32\u0E1F \u0E2A\u0E23\u0E38\u0E1B \u0E41\u0E25\u0E30\u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21
+// \u0E25\u0E33\u0E14\u0E31\u0E1A\u0E43\u0E19\u0E41\u0E15\u0E48\u0E25\u0E30\u0E40\u0E14\u0E37\u0E2D\u0E19: \u0E1D\u0E32\u0E01\u0E40\u0E07\u0E34\u0E19\u0E15\u0E49\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19 -> \u0E42\u0E15\u0E1B\u0E25\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19 -> (\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35) \u0E2B\u0E31\u0E01\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14
+function buildFundSchedule(monthly){
+  const p=calcPayoffPlan();
+  if(!p)return null;
+  const iFD=mRate(planCfg.rateFD), iMM=mRate(planCfg.rateMM), iG=mRate(planCfg.rateGrow);
+  const al=normAlloc();
+  const fdMonthly=Math.max(0,+planCfg.fdMonthly||0);
+  const fdMonths=Math.max(0,+planCfg.fdMonths||0);
+  const redirect=Math.max(0,Math.min(100,+planCfg.redirectPct??100))/100;
+  const budget=Math.max(0,monthly||0);
+  const target=p.closureAmt;
+
+  let fd=0,mm=Math.max(0,+planCfg.seed||0),eq=0,esg=0,au=0;
+  let fdOpen=fdMonths>0&&fdMonthly>0;
+  let fundedMonth=null,phase1End=null;
+  const rows=[];
+  // \u0E40\u0E14\u0E34\u0E19\u0E08\u0E32\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E40\u0E23\u0E34\u0E48\u0E21\u0E40\u0E01\u0E47\u0E1A \u0E16\u0E36\u0E07\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E2A\u0E34\u0E49\u0E19\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E40\u0E14\u0E34\u0E21 \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E47\u0E19\u0E17\u0E31\u0E49\u0E07\u0E0A\u0E48\u0E27\u0E07\u0E01\u0E48\u0E2D\u0E19\u0E41\u0E25\u0E30\u0E2B\u0E25\u0E31\u0E07\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35
+  // clamp \u0E17\u0E35\u0E48 0 \u0E40\u0E1C\u0E37\u0E48\u0E2D\u0E01\u0E23\u0E13\u0E35\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E1C\u0E48\u0E32\u0E19\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 \u0E08\u0E30\u0E44\u0E14\u0E49\u0E22\u0E31\u0E07\u0E21\u0E35\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E19\u0E49\u0E2D\u0E22\u0E2B\u0E19\u0E36\u0E48\u0E07\u0E41\u0E16\u0E27\u0E41\u0E17\u0E19\u0E17\u0E35\u0E48\u0E08\u0E30\u0E27\u0E48\u0E32\u0E07\u0E40\u0E1B\u0E25\u0E48\u0E32
+  const total=Math.max(0,p.k,monthDiff(p.saveStart,p.contractEnd));
+  for(let t=0;t<=total;t++){
+    const m=monthAdd(p.saveStart,t);
+    const beforePayoff=t<p.k;
+    const safeNow=fd+mm;
+    let phase;
+    if(beforePayoff){
+      // \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E40\u0E15\u0E47\u0E21 -> \u0E40\u0E1F\u0E2A 1 (\u0E40\u0E15\u0E34\u0E21\u0E40\u0E07\u0E34\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22)
+      // \u0E40\u0E15\u0E47\u0E21\u0E41\u0E25\u0E49\u0E27 -> \u0E40\u0E1F\u0E2A 2 (\u0E1E\u0E31\u0E01\u0E01\u0E2D\u0E07\u0E44\u0E27\u0E49\u0E40\u0E09\u0E22 \u0E46 \u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48\u0E44\u0E1B\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15)
+      phase=safeNow>=target-0.005?2:1;
+      if(phase===1){
+        let toFD=0;
+        if(fdOpen&&t<fdMonths)toFD=Math.min(fdMonthly,budget);
+        fd+=toFD;
+        mm+=budget-toFD;
+      } else {
+        eq+=budget*al.eq;esg+=budget*al.esg;au+=budget*al.au;
+      }
+    } else {
+      phase=3;
+      const add=budget+redirect*p.freedPay;
+      eq+=add*al.eq;esg+=add*al.esg;au+=add*al.au;
+    }
+    // \u0E42\u0E15\u0E1B\u0E25\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19
+    fd*=(1+iFD);mm*=(1+iMM);
+    eq*=(1+iG);esg*=(1+iG);au*=(1+iG);
+    // \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 -> \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E31\u0E49\u0E07\u0E01\u0E49\u0E2D\u0E19
+    if(fdOpen&&t===fdMonths-1){mm+=fd;fd=0;fdOpen=false;}
+
+    // safeBefore = \u0E22\u0E2D\u0E14\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22\u0E01\u0E48\u0E2D\u0E19\u0E2B\u0E31\u0E01\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 \u2014 \u0E15\u0E31\u0E27\u0E40\u0E25\u0E02\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E27\u0E48\u0E32\u0E40\u0E01\u0E47\u0E1A\u0E1E\u0E2D\u0E2B\u0E23\u0E37\u0E2D\u0E02\u0E32\u0E14
+    const safeBefore=fd+mm;
+    let safe=safeBefore, grow=eq+esg+au, paidOff=false;
+    if(fundedMonth===null&&safe>=target-0.005){fundedMonth=m;}
+    if(phase1End===null&&phase===2)phase1End=monthAdd(m,-1);
+    if(t===p.k){
+      // \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35: \u0E08\u0E48\u0E32\u0E22\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E42\u0E22\u0E01\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15
+      paidOff=true;
+      const left=safeBefore-target;
+      if(left>0){eq+=left*al.eq;esg+=left*al.esg;au+=left*al.au;}
+      fd=0;mm=0;safe=0;grow=eq+esg+au;
+    }
+    rows.push({m,t,phase,safe,safeBefore,grow,fd,mm,eq,esg,au,paidOff,
+      inst:monthDiff(monthKey(schedBase[0].dateISO),m)+1});
+  }
+  const atRow=rows[p.k];
+  return{
+    rows,plan:p,target,
+    atPayoff:atRow?atRow.safeBefore:0,
+    fundedMonth,phase1End,
+    finalTotal:rows.length?rows[rows.length-1].safe+rows[rows.length-1].grow:0
+  };
+}
+
+// \u0E2B\u0E32\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E17\u0E33\u0E43\u0E2B\u0E49\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E1E\u0E2D\u0E14\u0E35\u0E01\u0E31\u0E1A\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35
+// \u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E39\u0E15\u0E23\u0E1B\u0E34\u0E14\u0E23\u0E39\u0E1B \u0E40\u0E1E\u0E23\u0E32\u0E30\u0E21\u0E35\u0E01\u0E32\u0E23\u0E41\u0E22\u0E01\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33/\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E41\u0E25\u0E30\u0E01\u0E32\u0E23\u0E42\u0E2D\u0E19\u0E15\u0E2D\u0E19\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 \u0E08\u0E36\u0E07 bisect \u0E1A\u0E19\u0E15\u0E31\u0E27\u0E08\u0E33\u0E25\u0E2D\u0E07
+function solveMonthlyDeposit(){
+  const p=calcPayoffPlan();
+  if(!p)return 0;
+  if(p.k<=0)return Math.max(0,p.closureAmt-(+planCfg.seed||0));
+  const probe=(d)=>{
+    const s=buildFundSchedule(d);
+    return (s?s.atPayoff:0)-p.closureAmt;
+  };
+  let lo=0,hi=Math.max(1000,p.closureAmt);
+  for(let n=0;n<80;n++){
+    const mid=(lo+hi)/2;
+    if(probe(mid)<0)lo=mid;else hi=mid;
+  }
+  return hi;
+}
+
+// \u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E15\u0E48\u0E2D\u0E1B\u0E35\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E44\u0E14\u0E49 \u0E16\u0E49\u0E32\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E04\u0E07\u0E17\u0E35\u0E48 (\u0E17\u0E34\u0E28\u0E01\u0E25\u0E31\u0E1A\u0E02\u0E2D\u0E07 solveMonthlyDeposit)
+function calcRequiredRate(target,seed,pmt,k){
+  if(k<=0)return 0;
+  const fv=(annual)=>{
+    const i=annual/100/12;
+    let b=seed;
+    for(let t=0;t<k;t++){b=(b+pmt)*(1+i);}
+    return b;
+  };
+  if(fv(100)<target)return null;   // \u0E15\u0E48\u0E2D\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49 100%/\u0E1B\u0E35 \u0E01\u0E47\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07
+  let lo=-50,hi=100;
+  for(let n=0;n<80;n++){
+    const mid=(lo+hi)/2;
+    if(fv(mid)<target)lo=mid;else hi=mid;
+  }
+  return hi;
+}
+
+// ---- \u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49\u0E08\u0E23\u0E34\u0E07: \u0E17\u0E35\u0E48\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E01\u0E23\u0E2D\u0E01 \u0E2B\u0E23\u0E37\u0E2D\u0E43\u0E2B\u0E49\u0E23\u0E30\u0E1A\u0E1A\u0E04\u0E33\u0E19\u0E27\u0E13\u0E43\u0E2B\u0E49\u0E40\u0E21\u0E37\u0E48\u0E2D\u0E01\u0E23\u0E2D\u0E01 0 ----
+function effectiveMonthly(){
+  const m=+planCfg.monthly||0;
+  return m>0?m:solveMonthlyDeposit();
+}
+
+// ---- \u0E0B\u0E34\u0E07\u0E01\u0E4C\u0E04\u0E48\u0E32\u0E08\u0E32\u0E01 planCfg \u0E25\u0E07\u0E0A\u0E48\u0E2D\u0E07\u0E01\u0E23\u0E2D\u0E01 (\u0E40\u0E23\u0E35\u0E22\u0E01\u0E15\u0E2D\u0E19 boot \u0E41\u0E25\u0E30\u0E15\u0E2D\u0E19\u0E42\u0E2B\u0E25\u0E14\u0E08\u0E32\u0E01 Firebase \u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19
+//      \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E44\u0E21\u0E48\u0E43\u0E2B\u0E49 renderer \u0E40\u0E02\u0E35\u0E22\u0E19\u0E17\u0E31\u0E1A input \u0E17\u0E35\u0E48\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E01\u0E33\u0E25\u0E31\u0E07\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E2D\u0E22\u0E39\u0E48) ----
+function syncPlanInputs(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  const p=planReady()?calcPayoffPlan():null;
+  set('poTargetN',planReady()?getTargetN():'');
+  const tn=document.getElementById('poTargetN');
+  if(tn&&schedBase.length)tn.max=schedBase.length-1;
+  set('fSaveStart',planCfg.saveStart||(p?p.saveStart:thisMonth()));
+  set('fSeed',planCfg.seed);
+  set('fMonthly',planCfg.monthly);
+  set('fFdMonthly',planCfg.fdMonthly);
+  set('fFdMonths',planCfg.fdMonths);
+  set('fRateFD',planCfg.rateFD);
+  set('fRateMM',planCfg.rateMM);
+  set('fRateGrow',planCfg.rateGrow);
+  set('fAllocEq',planCfg.allocEq);
+  set('fAllocEsg',planCfg.allocEsg);
+  set('fAllocAu',planCfg.allocAu);
+  set('fRedirect',planCfg.redirectPct);
+}
+
+function onPlanInputChange(){
+  const num=(id,def)=>{const el=document.getElementById(id);const v=parseFloat(el&&el.value);return isNaN(v)?def:v;};
+  const ss=document.getElementById('fSaveStart');
+  planCfg.saveStart=ss&&ss.value?ss.value:'';
+  planCfg.seed=Math.max(0,num('fSeed',0));
+  planCfg.monthly=Math.max(0,num('fMonthly',0));
+  planCfg.fdMonthly=Math.max(0,num('fFdMonthly',0));
+  planCfg.fdMonths=Math.max(0,Math.min(120,num('fFdMonths',24)));
+  planCfg.rateFD=num('fRateFD',1.5);
+  planCfg.rateMM=num('fRateMM',1.8);
+  planCfg.rateGrow=num('fRateGrow',7);
+  planCfg.allocEq=Math.max(0,num('fAllocEq',50));
+  planCfg.allocEsg=Math.max(0,num('fAllocEsg',30));
+  planCfg.allocAu=Math.max(0,num('fAllocAu',20));
+  planCfg.redirectPct=Math.max(0,Math.min(100,num('fRedirect',100)));
+  savePlan();
+  renderFundTab();renderFundTable();buildFundChart();
+}
+
+// ---- \u0E41\u0E17\u0E47\u0E1A \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 ----
+function renderFundTab(){
+  const sum=document.getElementById('fundSummary');
+  const phases=document.getElementById('fundPhases');
+  if(!sum||!phases)return;
+  const p=calcPayoffPlan();
+  if(!p){
+    sum.innerHTML='<div class="note">\u0E22\u0E31\u0E07\u0E04\u0E33\u0E19\u0E27\u0E13\u0E41\u0E1C\u0E19\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E23\u0E2D\u0E01\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E41\u0E25\u0E49\u0E27\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19</div>';
+    phases.innerHTML='';return;
+  }
+  const monthly=effectiveMonthly();
+  const s=buildFundSchedule(monthly);
+  if(!s){sum.innerHTML='';phases.innerHTML='';return;}
+  const gap=s.atPayoff-p.closureAmt;
+  const al=normAlloc();
+  const auto=!(+planCfg.monthly>0);
+
+  let h='';
+  if(p.k<=0){
+    h+=`<div class="warn-box">\u23F0 \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 (${monthLabel(p.payoffMonth)}) \u0E21\u0E32\u0E16\u0E36\u0E07\u0E41\u0E25\u0E49\u0E27\u0E2B\u0E23\u0E37\u0E2D\u0E1C\u0E48\u0E32\u0E19\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27
+      \u0E15\u0E49\u0E2D\u0E07\u0E40\u0E15\u0E23\u0E35\u0E22\u0E21\u0E40\u0E07\u0E34\u0E19 <strong>\u0E3F${fmt(Math.max(0,p.closureAmt-(+planCfg.seed||0)))}</strong> \u0E17\u0E31\u0E19\u0E17\u0E35 \u0E44\u0E21\u0E48\u0E21\u0E35\u0E40\u0E27\u0E25\u0E32\u0E17\u0E22\u0E2D\u0E22\u0E40\u0E01\u0E47\u0E1A</div>`;
+  } else {
+    h+=`<div class="sum-grid-p2" style="margin-bottom:0">
+      <div class="stat"><div class="stat-lbl">\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E01\u0E47\u0E1A\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49</div><div class="stat-val">\u0E3F${fmt(p.closureAmt)}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">\u0E20\u0E32\u0E22\u0E43\u0E19 ${monthLabel(p.payoffMonth)}</div></div>
+      <div class="stat pur"><div class="stat-lbl">\u0E21\u0E35\u0E40\u0E27\u0E25\u0E32\u0E40\u0E01\u0E47\u0E1A</div><div class="stat-val">${p.k} \u0E40\u0E14\u0E37\u0E2D\u0E19</div></div>
+      <div class="stat ${auto?'g':''}"><div class="stat-lbl">\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30${auto?' (\u0E04\u0E33\u0E19\u0E27\u0E13\u0E43\u0E2B\u0E49)':''}</div><div class="stat-val">\u0E3F${fmt(monthly)}</div></div>
+      <div class="stat ${gap>=0?'g':'r'}"><div class="stat-lbl">${gap>=0?'\u0E04\u0E32\u0E14\u0E27\u0E48\u0E32\u0E08\u0E30\u0E40\u0E2B\u0E25\u0E37\u0E2D':'\u0E04\u0E32\u0E14\u0E27\u0E48\u0E32\u0E08\u0E30\u0E02\u0E32\u0E14'}</div><div class="stat-val">\u0E3F${fmt(Math.abs(gap))}</div></div>
+      <div class="stat o"><div class="stat-lbl">\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E23\u0E27\u0E21 ${monthLabel(p.contractEnd)}</div><div class="stat-val">\u0E3F${fmt(s.finalTotal)}</div></div>
+    </div>`;
+    if(gap<-1){
+      const need=solveMonthlyDeposit();
+      const rr=calcRequiredRate(p.closureAmt,+planCfg.seed||0,monthly,p.k);
+      h+=`<div class="warn-box">\u26A0\uFE0F \u0E14\u0E49\u0E27\u0E22\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)} \u0E08\u0E30\u0E02\u0E32\u0E14\u0E2D\u0E22\u0E39\u0E48 <strong>\u0E3F${fmt(-gap)}</strong> \u0E13 \u0E27\u0E31\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35<br>
+        \u0E17\u0E32\u0E07\u0E41\u0E01\u0E49: \u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 <strong>\u0E3F${fmt(need)}</strong>
+        ${rr!==null?`\u0E2B\u0E23\u0E37\u0E2D\u0E2B\u0E32\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E19\u0E49\u0E2D\u0E22 <strong>${rr.toFixed(2)}% \u0E15\u0E48\u0E2D\u0E1B\u0E35</strong>`:'(\u0E25\u0E33\u0E1E\u0E31\u0E07\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E14\u0E35\u0E22\u0E27\u0E44\u0E21\u0E48\u0E1E\u0E2D \u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E07\u0E34\u0E19\u0E15\u0E49\u0E19)'}
+        \u0E2B\u0E23\u0E37\u0E2D\u0E40\u0E25\u0E37\u0E48\u0E2D\u0E19\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E2D\u0E2D\u0E01\u0E44\u0E1B</div>`;
+    } else {
+      h+=`<div class="verdict" style="margin-top:10px">\u2705 \u0E41\u0E1C\u0E19\u0E19\u0E35\u0E49\u0E44\u0E1B\u0E16\u0E36\u0E07\u0E40\u0E1B\u0E49\u0E32 \u2014 \u0E16\u0E36\u0E07\u0E27\u0E31\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E08\u0E30\u0E21\u0E35\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(s.atPayoff)} \u0E08\u0E48\u0E32\u0E22\u0E1B\u0E34\u0E14 \u0E3F${fmt(p.closureAmt)} \u0E40\u0E2B\u0E25\u0E37\u0E2D \u0E3F${fmt(gap)} \u0E42\u0E22\u0E01\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15\u0E15\u0E48\u0E2D${s.fundedMonth?` \u00B7 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E40\u0E15\u0E47\u0E21\u0E15\u0E31\u0E49\u0E07\u0E41\u0E15\u0E48 ${monthLabel(s.fundedMonth)}`:''}</div>`;
+    }
+  }
+  if(al.sum>0&&Math.abs(al.sum-100)>0.01){
+    h+=`<div class="warn-box">\u26A0\uFE0F \u0E2A\u0E31\u0E14\u0E2A\u0E48\u0E27\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E23\u0E27\u0E21\u0E01\u0E31\u0E19\u0E44\u0E14\u0E49 ${al.sum}% \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48 100% \u2014 \u0E23\u0E30\u0E1A\u0E1A\u0E1B\u0E23\u0E31\u0E1A\u0E43\u0E2B\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E2A\u0E31\u0E14\u0E2A\u0E48\u0E27\u0E19\u0E42\u0E14\u0E22\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34\u0E41\u0E25\u0E49\u0E27 (${(al.eq*100).toFixed(0)}/${(al.esg*100).toFixed(0)}/${(al.au*100).toFixed(0)}) \u0E41\u0E15\u0E48\u0E04\u0E27\u0E23\u0E41\u0E01\u0E49\u0E43\u0E2B\u0E49\u0E04\u0E23\u0E1A 100</div>`;
+  }
+  sum.innerHTML=h;
+
+  // ---- \u0E01\u0E32\u0E23\u0E4C\u0E14 3 \u0E40\u0E1F\u0E2A ----
+  const fdEnd=planCfg.fdMonths>0&&planCfg.fdMonthly>0?monthAdd(p.saveStart,planCfg.fdMonths-1):null;
+  const p1End=s.phase1End&&monthDiff(p.saveStart,s.phase1End)>=0?s.phase1End:monthAdd(p.payoffMonth,-1);
+  const p2Len=monthDiff(p1End,p.payoffMonth)-1;
+  const fdPart=Math.min(+planCfg.fdMonthly||0,monthly);
+  phases.innerHTML=`
+    <div class="ec-tier-card t1">
+      <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 1 \u00B7 \u0E2A\u0E30\u0E2A\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16</div>
+      <div class="ec-tier-range">${monthLabel(p.saveStart)} \u2013 ${monthLabel(p1End)} \u00B7 ${Math.max(0,monthDiff(p.saveStart,p1End)+1)} \u0E40\u0E14\u0E37\u0E2D\u0E19</div>
+      <div class="ec-tier-desc">\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)} \u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 100%${fdPart>0?`<br>\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 \u0E3F${fmt(fdPart)} + \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(monthly-fdPart)}`:'<br>\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19'}</div>
+      ${fdEnd?`<span class="ec-tier-savings">\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 ${monthLabel(fdEnd)} \u2192 \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19</span>`:''}
+    </div>
+    <div class="ec-tier-card t2">
+      <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 2 \u00B7 \u0E1E\u0E31\u0E01\u0E01\u0E2D\u0E07 + \u0E40\u0E23\u0E34\u0E48\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15</div>
+      <div class="ec-tier-range">${p2Len>0?`${monthLabel(monthAdd(p1End,1))} \u2013 ${monthLabel(monthAdd(p.payoffMonth,-1))} \u00B7 ${p2Len} \u0E40\u0E14\u0E37\u0E2D\u0E19`:'\u0E44\u0E21\u0E48\u0E21\u0E35\u0E0A\u0E48\u0E27\u0E07\u0E19\u0E35\u0E49 (\u0E40\u0E01\u0E47\u0E1A\u0E1E\u0E2D\u0E14\u0E35\u0E16\u0E36\u0E07\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35)'}</div>
+      <div class="ec-tier-desc">${p2Len>0?`\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E40\u0E15\u0E47\u0E21\u0E41\u0E25\u0E49\u0E27 \u0E2B\u0E22\u0E38\u0E14\u0E40\u0E15\u0E34\u0E21 \u0E1B\u0E25\u0E48\u0E2D\u0E22\u0E1E\u0E31\u0E01\u0E44\u0E27\u0E49\u0E40\u0E09\u0E22 \u0E46<br>\u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)} \u0E44\u0E1B\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15\u0E41\u0E17\u0E19`:'\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E16\u0E39\u0E01\u0E43\u0E0A\u0E49\u0E44\u0E1B\u0E01\u0E31\u0E1A\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E19\u0E16\u0E36\u0E07\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E2A\u0E38\u0E14\u0E17\u0E49\u0E32\u0E22'}</div>
+      ${p2Len>0?`<span class="ec-tier-savings">\u0E2B\u0E38\u0E49\u0E19\u0E42\u0E25\u0E01 ${(al.eq*100).toFixed(0)}% \u00B7 ESG ${(al.esg*100).toFixed(0)}% \u00B7 \u0E17\u0E2D\u0E07 ${(al.au*100).toFixed(0)}%</span>`:''}
+    </div>
+    <div class="ec-tier-card t3">
+      <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 3 \u00B7 \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E47\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15</div>
+      <div class="ec-tier-range">${monthLabel(p.payoffMonth)} \u2013 ${monthLabel(p.contractEnd)} \u00B7 ${p.skipped} \u0E40\u0E14\u0E37\u0E2D\u0E19</div>
+      <div class="ec-tier-desc">\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E41\u0E25\u0E49\u0E27\u0E44\u0E21\u0E48\u0E21\u0E35\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E2D\u0E35\u0E01 \u0E42\u0E2D\u0E19\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E14\u0E34\u0E21 \u0E3F${fmt(p.freedPay*(planCfg.redirectPct/100))} \u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E17\u0E38\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19<br>\u0E23\u0E27\u0E21\u0E01\u0E31\u0E1A\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E34\u0E21\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly+p.freedPay*(planCfg.redirectPct/100))}</div>
+      <span class="ec-tier-savings">\u0E08\u0E1A\u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E40\u0E14\u0E34\u0E21\u0E04\u0E27\u0E23\u0E08\u0E30\u0E08\u0E1A\u0E1E\u0E2D\u0E14\u0E35</span>
+    </div>`;
+}
+
+// ---- \u0E01\u0E23\u0E32\u0E1F\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19 ----
+let fundChartInst=null;
+function buildFundChart(){
+  const cv=document.getElementById('fundChart');
+  const sec=document.getElementById('fundChartSection');
+  if(!cv||!sec)return;
+  // Chart.js มาจาก CDN — ถ้าโหลดไม่ได้ (ออฟไลน์) ให้ซ่อนกราฟไปเงียบ ๆ ไม่ต้องพังทั้งหน้า
+  if(typeof Chart==='undefined'){sec.style.display='none';return;}
+  const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
+  if(!s||!s.rows.length){sec.style.display='none';return;}
+  sec.style.display='';
+  const p=s.plan;
+  const labels=s.rows.map(r=>monthLabel(r.m));
+  if(fundChartInst)fundChartInst.destroy();
+  fundChartInst=new Chart(cv,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16',data:s.rows.map(r=>Math.round(r.safe)),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.08)',borderWidth:2,pointRadius:0,fill:true,tension:.15},
+      {label:'\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15',data:s.rows.map(r=>Math.round(r.grow)),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',borderWidth:2,pointRadius:0,fill:true,tension:.15},
+      {label:'\u0E23\u0E27\u0E21\u0E17\u0E31\u0E49\u0E07\u0E1E\u0E2D\u0E23\u0E4C\u0E15',data:s.rows.map(r=>Math.round(r.safe+r.grow)),borderColor:'#1e3a8a',borderWidth:2.5,pointRadius:0,fill:false,tension:.15},
+      {label:'\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35',data:s.rows.map(()=>Math.round(p.closureAmt)),borderColor:'#ea580c',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{
+          title:(it)=>{
+            const r=s.rows[it[0].dataIndex];
+            return monthLabel(r.m)+(r.paidOff?' \u00B7 \uD83D\uDCA5 \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':' \u00B7 \u0E40\u0E1F\u0E2A '+r.phase);
+          },
+          label:(c)=>c.dataset.label+': \u0E3F'+fmt(c.parsed.y)
+        }}
+      },
+      scales:{
+        y:{ticks:{callback:v=>(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'#eef2f7'}},
+        x:{ticks:{maxTicksLimit:14,font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ---- \u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15 ----
+const FUND_FIELDS=['fd','mm','eq','esg','au'];
+function fundVal(m,f){
+  const r=fundRec[m];
+  if(!r)return null;
+  const v=r[f];
+  return (v!==undefined&&v!=='')?+v:null;
+}
+function fundGroupTotal(m,group){
+  const fs=group==='safe'?['fd','mm']:['eq','esg','au'];
+  let any=false,t=0;
+  fs.forEach(f=>{const v=fundVal(m,f);if(v!==null){any=true;t+=v;}});
+  return any?t:null;
+}
+
+function renderFundTable(){
+  const tb=document.getElementById('fundTbody');
+  if(!tb)return;
+  const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
+  if(!s){tb.innerHTML='<tr><td colspan="12" style="padding:18px;color:var(--grayl)">\u0E22\u0E31\u0E07\u0E04\u0E33\u0E19\u0E27\u0E13\u0E41\u0E1C\u0E19\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19</td></tr>';return;}
+  if(s.plan.k<=0){
+    tb.innerHTML='<tr><td colspan="12" style="padding:18px;color:var(--grayl)">\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E1C\u0E48\u0E32\u0E19\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 \u0E08\u0E36\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E0A\u0E48\u0E27\u0E07\u0E40\u0E27\u0E25\u0E32\u0E43\u0E2B\u0E49\u0E17\u0E22\u0E2D\u0E22\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E07\u0E34\u0E19 \u2014 \u0E1B\u0E23\u0E31\u0E1A "\u0E40\u0E23\u0E34\u0E48\u0E21\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19" \u0E2B\u0E23\u0E37\u0E2D\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E21\u0E32\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E43\u0E19\u0E41\u0E17\u0E47\u0E1A \uD83C\uDFAF \u0E41\u0E1C\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16</td></tr>';
+    return;
+  }
+  const phName={1:'\u0E40\u0E1F\u0E2A 1',2:'\u0E40\u0E1F\u0E2A 2',3:'\u0E40\u0E1F\u0E2A 3'};
+  tb.innerHTML=s.rows.map(r=>{
+    // \u0E40\u0E1F\u0E2A 1 = \u0E01\u0E23\u0E2D\u0E01\u0E44\u0E14\u0E49\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22, \u0E40\u0E1F\u0E2A 2-3 = \u0E01\u0E23\u0E2D\u0E01\u0E44\u0E14\u0E49\u0E17\u0E31\u0E49\u0E07\u0E2A\u0E2D\u0E07\u0E1D\u0E31\u0E48\u0E07 (\u0E22\u0E01\u0E40\u0E27\u0E49\u0E19\u0E2B\u0E25\u0E31\u0E07\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E1A\u0E41\u0E25\u0E49\u0E27)
+    const canSafe=r.phase<=2&&r.t<=s.plan.k;
+    const canGrow=r.phase>=2;
+    const cell=(f,on)=>{
+      const v=fundRec[r.m]&&fundRec[r.m][f]!==undefined?fundRec[r.m][f]:'';
+      return `<td class="col-actual-input"><input type="number" class="fund-in" id="fu_${r.m}_${f}"
+        value="${v}" ${on?'':'disabled'} min="0" step="1000"
+        onchange="onFundChange('${r.m}','${f}')" aria-label="${f} ${monthLabel(r.m)}"></td>`;
+    };
+    const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
+    const tgt=r.safeBefore+r.grow;
+    const act=(aSafe||0)+(aGrow||0);
+    const has=aSafe!==null||aGrow!==null;
+    const diff=act-tgt;
+    const dCls=!has?'col-diff-zero':(diff>=-tgt*0.03?'col-diff-pos':'col-diff-neg');
+    return `<tr${r.paidOff?' class="rowmark" style="background:#fef3c7"':''}>
+      <td class="tdl" style="white-space:nowrap">${monthLabel(r.m)}${r.paidOff?' \uD83D\uDCA5':''}</td>
+      <td>${r.inst>=1&&r.inst<=s.plan.T?r.inst:'-'}</td>
+      <td><span class="ph-pill ${r.paidOff?'ph-x':'ph-'+r.phase}">${r.paidOff?'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':phName[r.phase]}</span></td>
+      <td class="col-plan tdr">${fmt(tgt)}</td>
+      ${cell('fd',canSafe)}${cell('mm',canSafe)}
+      <td class="tdr" id="fs_${r.m}"><strong>${aSafe===null?'\u2014':fmt(aSafe)}</strong></td>
+      ${cell('eq',canGrow)}${cell('esg',canGrow)}${cell('au',canGrow)}
+      <td class="tdr" id="fgt_${r.m}"><strong>${aGrow===null?'\u2014':fmt(aGrow)}</strong></td>
+      <td class="${dCls} tdr diff-cell" id="fd_${r.m}" data-tgt="${tgt}">${has?fmtDiff(diff):'-'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// \u0E2D\u0E31\u0E1B\u0E40\u0E14\u0E15\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E0A\u0E48\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E40\u0E01\u0E35\u0E48\u0E22\u0E27\u0E02\u0E49\u0E2D\u0E07 \u0E44\u0E21\u0E48\u0E2A\u0E23\u0E49\u0E32\u0E07 innerHTML \u0E43\u0E2B\u0E21\u0E48 \u0E44\u0E21\u0E48\u0E07\u0E31\u0E49\u0E19 focus \u0E08\u0E30\u0E2B\u0E25\u0E38\u0E14\u0E15\u0E2D\u0E19\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E02\u0E49\u0E32\u0E21\u0E0A\u0E48\u0E2D\u0E07
+function onFundChange(m,f){
+  const el=document.getElementById(`fu_${m}_${f}`);
+  if(!el)return;
+  if(!fundRec[m])fundRec[m]={};
+  fundRec[m][f]=el.value;
+  if(FUND_FIELDS.every(x=>fundRec[m][x]===undefined||fundRec[m][x]===''))delete fundRec[m];
+  saveFund(true);
+  const aSafe=fundGroupTotal(m,'safe'), aGrow=fundGroupTotal(m,'grow');
+  const sc=document.getElementById('fs_'+m), gc=document.getElementById('fgt_'+m), dc=document.getElementById('fd_'+m);
+  if(sc)sc.innerHTML='<strong>'+(aSafe===null?'\u2014':fmt(aSafe))+'</strong>';
+  if(gc)gc.innerHTML='<strong>'+(aGrow===null?'\u2014':fmt(aGrow))+'</strong>';
+  if(dc){
+    const tgt=+dc.dataset.tgt||0;
+    const has=aSafe!==null||aGrow!==null;
+    const diff=(aSafe||0)+(aGrow||0)-tgt;
+    dc.textContent=has?fmtDiff(diff):'-';
+    dc.className='tdr diff-cell '+(!has?'col-diff-zero':(diff>=-tgt*0.03?'col-diff-pos':'col-diff-neg'));
+  }
+  renderFundTab();
+}
+
+function clearFundData(){
+  if(!confirm('\u0E25\u0E49\u0E32\u0E07\u0E22\u0E2D\u0E14\u0E08\u0E23\u0E34\u0E07\u0E17\u0E35\u0E48\u0E01\u0E23\u0E2D\u0E01\u0E44\u0E27\u0E49\u0E43\u0E19\u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14?'))return;
+  fundRec={};saveFund();
+  renderFundTable();renderFundTab();buildFundChart();
+}
+
+function exportFundCSV(){
+  const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
+  if(!s)return alert('\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E41\u0E1C\u0E19 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19');
+  const hdr=['\u0E40\u0E14\u0E37\u0E2D\u0E19','\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48','\u0E40\u0E1F\u0E2A','\u0E40\u0E1B\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16','\u0E40\u0E1B\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33','\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19','\u0E23\u0E27\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16','\u0E2B\u0E38\u0E49\u0E19\u0E42\u0E25\u0E01','Thai ESG','\u0E17\u0E2D\u0E07\u0E04\u0E33','\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07'];
+  const rows=s.rows.map(r=>{
+    const g=(f)=>{const v=fundVal(r.m,f);return v===null?'':v.toFixed(2);};
+    const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
+    const has=aSafe!==null||aGrow!==null;
+    const tgt=r.safeBefore+r.grow;
+    const diff=(aSafe||0)+(aGrow||0)-tgt;
+    return `"${r.m}",${r.inst>=1&&r.inst<=s.plan.T?r.inst:''},${r.paidOff?'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':r.phase},${r.safeBefore.toFixed(2)},${r.grow.toFixed(2)},${g('fd')},${g('mm')},${aSafe===null?'':aSafe.toFixed(2)},${g('eq')},${g('esg')},${g('au')},${aGrow===null?'':aGrow.toFixed(2)},${has?diff.toFixed(2):''}`;
+  });
+  dl('\uFEFF'+[hdr.join(','),...rows].join('\n'),'car_loan_fund.csv');
+}
+
+syncPlanInputs();
 </script>
 </body>
 </html>
