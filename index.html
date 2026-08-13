@@ -2341,7 +2341,9 @@ function renderFundTable(){
         onchange="onFundChange('${r.m}','${f}')" aria-label="${f} ${monthLabel(r.m)}"></td>`;
     };
     const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
-    const tgt=r.safeBefore+r.grow;
+    // เป้า = ยอดที่ควรมี "ณ สิ้นเดือน" จึงต้องใช้ safe (หลังจ่ายปิดบัญชีแล้ว) ไม่ใช่ safeBefore
+    // เดือนปิดบัญชี safe เป็น 0 เพราะเงินถูกจ่ายออกไป ส่วนเกินถูกโยกเข้าพอร์ตแล้ว
+    const tgt=r.safe+r.grow;
     const act=(aSafe||0)+(aGrow||0);
     const has=aSafe!==null||aGrow!==null;
     const diff=act-tgt;
@@ -2398,7 +2400,9 @@ function exportFundCSV(){
     const g=(f)=>{if(act&&!act[f])return '';const v=fundVal(r.m,f);return v===null?'':v.toFixed(2);};
     const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
     const has=aSafe!==null||aGrow!==null;
-    const tgt=r.safeBefore+r.grow;
+    // เป้า = ยอดที่ควรมี "ณ สิ้นเดือน" จึงต้องใช้ safe (หลังจ่ายปิดบัญชีแล้ว) ไม่ใช่ safeBefore
+    // เดือนปิดบัญชี safe เป็น 0 เพราะเงินถูกจ่ายออกไป ส่วนเกินถูกโยกเข้าพอร์ตแล้ว
+    const tgt=r.safe+r.grow;
     const diff=(aSafe||0)+(aGrow||0)-tgt;
     return `"${r.m}",${r.inst>=1&&r.inst<=s.plan.T?r.inst:''},${r.paidOff?'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':r.phase},${r.safeBefore.toFixed(2)},${r.grow.toFixed(2)},${g('fd')},${g('mm')},${aSafe===null?'':aSafe.toFixed(2)},${g('eq')},${g('esg')},${g('au')},${g('gm')},${aGrow===null?'':aGrow.toFixed(2)},${has?diff.toFixed(2):''}`;
   });
