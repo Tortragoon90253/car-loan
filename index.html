@@ -673,7 +673,9 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <div class="pp-leg-item pl-plan">🟢 เป้าหมาย = ยอดที่ควรมีตามแผน</div>
         <div class="pp-leg-item pl-actual">🟣 ยอดจริง = กรอกเอง</div>
         <div class="pp-leg-item pl-diff">🟡 ส่วนต่าง = จริง − เป้า</div>
+        <div class="pp-leg-item pl-skip">⬜ ช่องเทา = กองนั้นยังไม่เริ่มหรือปิดไปแล้ว</div>
       </div>
+      <div class="note" style="margin:0 0 10px">📌 <strong>ฝากประจำกรอกได้เฉพาะเฟส 1</strong> เพราะพอครบกำหนดยอดจะถูกโอนเข้ากองตลาดเงินทั้งก้อน เข้าเฟส 2 จึงไม่มีบัญชีนี้แล้ว · เฟส 2 ไม่มีเงินใหม่เข้ากองปิดรถ แต่ยังต้องบันทึกยอดกองตลาดเงินที่พักไว้ทุกสิ้นเดือน</div>
       <div class="act-row">
         <button class="btn-exp" onclick="exportFundCSV()">⬇ Export CSV</button>
         <button class="btn-danger" onclick="clearFundData()">🗑 ล้างยอดที่กรอก</button>
@@ -2169,6 +2171,9 @@ function buildFundChart(){
 
 // ---- \u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15 ----
 const FUND_FIELDS=['fd','mm','eq','esg','au'];
+// ช่องไหนของเดือนไหน "มีอยู่จริง" ตามแผน — สร้างตอน renderFundTable แล้วใช้ร่วมกับ
+// onFundChange และ exportFundCSV เพื่อไม่ให้นับยอดของกองที่ปิดไปแล้ว
+let fundActive={};
 function fundVal(m,f){
   const r=fundRec[m];
   if(!r)return null;
@@ -2177,8 +2182,13 @@ function fundVal(m,f){
 }
 function fundGroupTotal(m,group){
   const fs=group==='safe'?['fd','mm']:['eq','esg','au'];
+  const act=fundActive[m];
   let any=false,t=0;
-  fs.forEach(f=>{const v=fundVal(m,f);if(v!==null){any=true;t+=v;}});
+  fs.forEach(f=>{
+    if(act&&!act[f])return;      // กองนี้ไม่มีอยู่ในเดือนนั้นแล้ว ไม่ต้องเอามารวม
+    const v=fundVal(m,f);
+    if(v!==null){any=true;t+=v;}
+  });
   return any?t:null;
 }
 
@@ -2192,14 +2202,27 @@ function renderFundTable(){
     return;
   }
   const phName={1:'\u0E40\u0E1F\u0E2A 1',2:'\u0E40\u0E1F\u0E2A 2',3:'\u0E40\u0E1F\u0E2A 3'};
+  const fdMonths=Math.max(0,+planCfg.fdMonths||0);
+  const fdOn=(+planCfg.fdMonthly||0)>0&&fdMonths>0;
+  fundActive={};
   tb.innerHTML=s.rows.map(r=>{
-    // \u0E40\u0E1F\u0E2A 1 = \u0E01\u0E23\u0E2D\u0E01\u0E44\u0E14\u0E49\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22, \u0E40\u0E1F\u0E2A 2-3 = \u0E01\u0E23\u0E2D\u0E01\u0E44\u0E14\u0E49\u0E17\u0E31\u0E49\u0E07\u0E2A\u0E2D\u0E07\u0E1D\u0E31\u0E48\u0E07 (\u0E22\u0E01\u0E40\u0E27\u0E49\u0E19\u0E2B\u0E25\u0E31\u0E07\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E1A\u0E41\u0E25\u0E49\u0E27)
-    const canSafe=r.phase<=2&&r.t<=s.plan.k;
+    // \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33: \u0E21\u0E35\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E0A\u0E48\u0E27\u0E07\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E1D\u0E32\u0E01\u0E2D\u0E22\u0E39\u0E48 \u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27\u0E22\u0E2D\u0E14\u0E16\u0E39\u0E01\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E31\u0E49\u0E07\u0E01\u0E49\u0E2D\u0E19
+    //            \u0E40\u0E02\u0E49\u0E32\u0E40\u0E1F\u0E2A 2 \u0E08\u0E36\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E19\u0E35\u0E49\u0E43\u0E2B\u0E49\u0E01\u0E23\u0E2D\u0E01\u0E2D\u0E35\u0E01
+    // \u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19: \u0E40\u0E1F\u0E2A 2 \u0E44\u0E21\u0E48\u0E40\u0E15\u0E34\u0E21\u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48 \u0E41\u0E15\u0E48\u0E22\u0E2D\u0E14\u0E22\u0E31\u0E07\u0E1E\u0E31\u0E01\u0E2D\u0E22\u0E39\u0E48\u0E41\u0E25\u0E30\u0E40\u0E14\u0E34\u0E19\u0E14\u0E2D\u0E01\u0E15\u0E48\u0E2D \u0E08\u0E36\u0E07\u0E22\u0E31\u0E07\u0E15\u0E49\u0E2D\u0E07\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E22\u0E2D\u0E14\u0E2A\u0E34\u0E49\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19
+    // \u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15: \u0E40\u0E23\u0E34\u0E48\u0E21\u0E40\u0E1F\u0E2A 2 \u0E40\u0E1B\u0E47\u0E19\u0E15\u0E49\u0E19\u0E44\u0E1B
+    const canFD=fdOn&&r.phase===1&&r.t<fdMonths;
+    const canMM=r.phase<=2&&r.t<=s.plan.k;
     const canGrow=r.phase>=2;
-    const cell=(f,on)=>{
+    fundActive[r.m]={fd:canFD,mm:canMM,eq:canGrow,esg:canGrow,au:canGrow};
+    const why={
+      fd:!fdOn?'\u0E41\u0E1C\u0E19\u0E19\u0E35\u0E49\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E43\u0E0A\u0E49\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33':'\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27 \u0E22\u0E2D\u0E14\u0E16\u0E39\u0E01\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19',
+      mm:'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E23\u0E16\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E1A\u0E20\u0E32\u0E23\u0E01\u0E34\u0E08',
+      eq:'\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E40\u0E1F\u0E2A\u0E17\u0E35\u0E48\u0E40\u0E23\u0E34\u0E48\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15'
+    };
+    const cell=(f,on,tip)=>{
       const v=fundRec[r.m]&&fundRec[r.m][f]!==undefined?fundRec[r.m][f]:'';
       return `<td class="col-actual-input"><input type="number" class="fund-in" id="fu_${r.m}_${f}"
-        value="${v}" ${on?'':'disabled'} min="0" step="1000"
+        value="${v}" ${on?'':'disabled'} min="0" step="1000"${on?'':` title="${tip}"`}
         onchange="onFundChange('${r.m}','${f}')" aria-label="${f} ${monthLabel(r.m)}"></td>`;
     };
     const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
@@ -2213,9 +2236,9 @@ function renderFundTable(){
       <td>${r.inst>=1&&r.inst<=s.plan.T?r.inst:'-'}</td>
       <td><span class="ph-pill ${r.paidOff?'ph-x':'ph-'+r.phase}">${r.paidOff?'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':phName[r.phase]}</span></td>
       <td class="col-plan tdr">${fmt(tgt)}</td>
-      ${cell('fd',canSafe)}${cell('mm',canSafe)}
+      ${cell('fd',canFD,why.fd)}${cell('mm',canMM,why.mm)}
       <td class="tdr" id="fs_${r.m}"><strong>${aSafe===null?'\u2014':fmt(aSafe)}</strong></td>
-      ${cell('eq',canGrow)}${cell('esg',canGrow)}${cell('au',canGrow)}
+      ${cell('eq',canGrow,why.eq)}${cell('esg',canGrow,why.eq)}${cell('au',canGrow,why.eq)}
       <td class="tdr" id="fgt_${r.m}"><strong>${aGrow===null?'\u2014':fmt(aGrow)}</strong></td>
       <td class="${dCls} tdr diff-cell" id="fd_${r.m}" data-tgt="${tgt}">${has?fmtDiff(diff):'-'}</td>
     </tr>`;
@@ -2255,7 +2278,9 @@ function exportFundCSV(){
   if(!s)return alert('\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E41\u0E1C\u0E19 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19');
   const hdr=['\u0E40\u0E14\u0E37\u0E2D\u0E19','\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48','\u0E40\u0E1F\u0E2A','\u0E40\u0E1B\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16','\u0E40\u0E1B\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33','\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19','\u0E23\u0E27\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16','\u0E2B\u0E38\u0E49\u0E19\u0E42\u0E25\u0E01','Thai ESG','\u0E17\u0E2D\u0E07\u0E04\u0E33','\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07'];
   const rows=s.rows.map(r=>{
-    const g=(f)=>{const v=fundVal(r.m,f);return v===null?'':v.toFixed(2);};
+    // ข้ามช่องที่กองนั้นปิดไปแล้วในเดือนนั้น ให้ตรงกับที่ตารางแสดง
+    const act=fundActive[r.m];
+    const g=(f)=>{if(act&&!act[f])return '';const v=fundVal(r.m,f);return v===null?'':v.toFixed(2);};
     const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
     const has=aSafe!==null||aGrow!==null;
     const tgt=r.safeBefore+r.grow;
