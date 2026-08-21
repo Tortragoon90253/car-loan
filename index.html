@@ -173,7 +173,8 @@ td:nth-child(2){text-align:left;color:#4b5563}
 @media print{
   .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto,.btn-sm,.fund-del{display:none!important}
   .fund-scroll{overflow:visible}
-  .fund-row{min-width:0}
+  .fund-row{min-width:0;grid-template-columns:minmax(110px,2.4fr) 1fr 1fr 0}
+  .set-group{break-inside:avoid;page-break-inside:avoid}
   .odo-strip{page-break-inside:avoid}
   #p2tPlan,#p2tFund,#p2tTrack{page-break-before:always}
   .warn-box,.info-box,.odo-tick{print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -235,6 +236,8 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .chk-item.done{background:#f0fdf4;border-color:#86efac}
 .chk-item.done span{text-decoration:line-through;color:var(--grayl)}
 /* ---- ตารางกองเงิน (ใช้ .pt เดิม) ---- */
+.pt .th-ph{display:inline-block;font-size:.62rem;font-weight:800;opacity:.75;
+  border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:0 3px;margin-right:3px}
 .pt input.fund-in{padding:5px 8px;font-size:.77rem;border-radius:6px;border:1.5px solid #a78bfa;width:96px;
   text-align:right;background:#f5f3ff;color:#4c1d95;font-weight:600}
 .pt input.fund-in:focus{outline:none;border-color:var(--pur);background:#ede9fe}
@@ -255,17 +258,22 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .sg-desc{font-size:.73rem;color:#6b7280;line-height:1.6;margin-bottom:10px}
 .set-group input{background:#fff}
 .set-group input[readonly]{background:#f3f4f6;color:var(--gray);font-weight:700;cursor:default}
-/* ---- รายการกองทุน (ชุดเดียวใช้ร่วมทุกเฟส) ---- */
-.set-group.sg-funds{border-left-color:#fbbf24;background:#fffbeb}
-.sg-funds .sg-title{color:#b45309}
-/* เลื่อนแนวนอนแทนการยุบเป็นคอลัมน์เดียว — แถว 6 ช่องที่ยุบแล้วอ่านไม่รู้เรื่อง (แนวเดียวกับ .ptw ของตาราง) */
+/* ---- รายการกองทุนในแต่ละเฟส ---- */
+.fund-block{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border)}
+.fund-blk-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  flex-wrap:wrap;font-size:.78rem;font-weight:800;margin-bottom:8px}
+.fund-blk-sum{font-size:.72rem;font-weight:600;color:var(--grayl);font-variant-numeric:tabular-nums}
+/* เลื่อนแนวนอนแทนการยุบเป็นคอลัมน์เดียว — แถวหลายช่องที่ยุบแล้วอ่านไม่รู้เรื่อง (แนวเดียวกับ .ptw ของตาราง) */
 .fund-scroll{overflow-x:auto}
-.fund-row{display:grid;grid-template-columns:minmax(150px,2.2fr) 1fr 1fr 1fr 1fr 34px;
-  gap:8px;align-items:center;margin-bottom:7px;min-width:560px}
-.fund-row.fund-head{font-size:.71rem;font-weight:700;color:#92400e;margin-bottom:5px}
-.fund-row.fund-foot{font-size:.73rem;font-weight:700;color:var(--grayl);border-top:1px dashed #fcd34d;
+.fund-row{display:grid;grid-template-columns:minmax(130px,2.4fr) 1fr 1fr 34px;
+  gap:8px;align-items:center;margin-bottom:7px;min-width:340px}
+.fund-row.fund-head{font-size:.71rem;font-weight:700;color:var(--grayl);margin-bottom:5px}
+.fund-row.fund-foot{font-size:.73rem;font-weight:700;color:var(--grayl);border-top:1px dashed var(--border);
   padding-top:8px;margin-top:2px;font-variant-numeric:tabular-nums}
 .fund-row.fund-foot .bad{color:var(--red)}
+.sg-1 .fund-blk-head{color:#1d4ed8}
+.sg-2 .fund-blk-head{color:#15803d}
+.sg-3 .fund-blk-head{color:#7c3aed}
 .fund-row input{padding:6px 30px 6px 9px;font-size:.8rem}
 .fund-row input[type=text]{padding-right:9px}
 .fund-row .iw span{right:7px;font-size:.68rem}
@@ -640,7 +648,8 @@ td:nth-child(2){text-align:left;color:#4b5563}
 
         <div class="set-group sg-1">
           <div class="sg-head"><span class="sg-title">🔵 เฟส 1 · สะสมกองปิดรถ</span><span class="sg-when" id="sgWhen1">—</span></div>
-          <div class="sg-desc">เงินทุกบาทเข้ากองที่ปลอดภัย 100% แบ่งเป็นฝากประจำตามจำนวนที่ตั้งไว้ ส่วนที่เหลือเข้ากองตลาดเงิน · ครบจำนวนเดือนที่ตั้งไว้แล้วจะหยุดเติมแล้วพักกองรอ</div>
+          <div class="sg-desc">หักเงินเข้าฝากประจำก่อน แล้วแบ่งเข้ากองทุนรวมตาม % ที่ตั้งไว้ ที่เหลือเข้ากองตลาดเงิน · ครบจำนวนเดือนที่ตั้งไว้แล้วจะหยุดเติมแล้วพักกองรอ<br>
+            <strong>เงินที่เข้ากองทุนรวมไม่นับเป็นกองปิดรถ</strong> (กองปิดรถ = ฝากประจำ + กองตลาดเงิน เท่านั้น) ระบบจึงคำนวณเงินเก็บต่อเดือนให้สูงขึ้นเองเพื่อให้ยังปิดบัญชีได้ตามกำหนด</div>
           <div class="g4">
             <div><label>สะสมกี่เดือน <span style="font-weight:400;color:var(--grayl)">(= ความยาวเฟส 1)</span></label><div class="iw"><input type="number" id="fAccMonths" min="0" max="240" onchange="onPlanInputChange()"><span>เดือน</span></div></div>
             <div><label>เข้าฝากประจำต่อเดือน</label><div class="iw"><input type="number" id="fFdMonthly" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div></div>
@@ -648,6 +657,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
             <div><label>ผลตอบแทนฝากประจำ</label><div class="iw"><input type="number" id="fRateFD" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
           </div>
           <div class="g4" style="margin-top:10px">
+            <div><label>เข้ากองทุนรวม <span style="font-weight:400;color:var(--grayl)">(% ของเงินเก็บต่อเดือน)</span></label><div class="iw"><input type="number" id="fFundPct1" min="0" max="100" step="1" onchange="onPlanInputChange()"><span>%</span></div></div>
             <div><label>ผลตอบแทนกองตลาดเงิน</label><div class="iw"><input type="number" id="fRateMM" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
             <div><label>ผลตอบแทนช่วงพักกอง <span style="font-weight:400;color:var(--grayl)">(เฟส 2)</span></label><div class="iw"><input type="number" id="fRatePark" step="0.05" onchange="onPlanInputChange()"><span>%/ปี</span></div></div>
             <div><label>รูปแบบการลงทุน</label>
@@ -656,33 +666,23 @@ td:nth-child(2){text-align:left;color:#4b5563}
                 <option value="lump">ก้อนเดียวตอนเริ่มเฟส</option>
               </select></div>
           </div>
-        </div>
-
-        <div class="set-group sg-funds">
-          <div class="sg-head"><span class="sg-title">🧺 รายการกองทุนรวม · ใช้ร่วมทุกเฟส</span><span class="sg-when" id="sgWhenFunds">—</span></div>
-          <div class="sg-desc">เพิ่ม/ลบกองทุนได้เอง แล้วใส่สัดส่วนของแต่ละเฟส · ผลตอบแทนพอร์ตแต่ละเฟสถัวเฉลี่ยจากตารางนี้ให้อัตโนมัติ<br>
-            <strong>เฟส 1</strong> = % ของเงินที่เหลือ<em>หลังหักฝากประจำ</em> ส่วนที่ไม่ได้จัดสรรค้างในกองตลาดเงิน ·
-            <strong>เงินที่เข้ากองทุนในเฟส 1 ไม่นับเป็นกองปิดรถ</strong> จึงต้องเก็บต่อเดือนมากขึ้น<br>
-            <strong>เฟส 2 / เฟส 3</strong> = สัดส่วนพอร์ตเติบโต ควรรวมกันได้ 100%</div>
-          <div class="fund-scroll">
-            <div class="fund-row fund-head">
-              <div>ชื่อกองทุน</div><div>ผลตอบแทน</div><div>% เฟส 1</div><div>% เฟส 2</div><div>% เฟส 3</div><div></div>
+          <div class="fund-block">
+            <div class="fund-blk-head"><span>📈 กองทุนรวมในเฟส 1</span><span class="fund-blk-sum" id="sgFundsN1">—</span></div>
+            <div class="fund-scroll">
+              <div class="fund-row fund-head"><div>ชื่อกองทุน</div><div>ผลตอบแทน</div><div>สัดส่วน</div><div></div></div>
+              <div id="fundRows1"></div>
+              <div class="fund-row fund-foot"><div>รวมสัดส่วน</div><div id="fBlend1">—</div><div id="fSum1">—</div><div></div></div>
             </div>
-            <div id="fundListRows"></div>
-            <div class="fund-row fund-foot">
-              <div>รวม</div><div id="fSumRet">—</div>
-              <div id="fSum1">—</div><div id="fSum2">—</div><div id="fSum3">—</div><div></div>
+            <div class="act-row" style="margin:8px 0 0">
+              <button class="btn-sm" onclick="addFund(1)">➕ เพิ่มกองทุน</button>
+              <button class="btn-sm" onclick="resetFunds(1)">↺ ใช้ชุดเริ่มต้น</button>
             </div>
-          </div>
-          <div class="act-row" style="margin:10px 0 0">
-            <button class="btn-sm" onclick="addFund()">➕ เพิ่มกองทุน</button>
-            <button class="btn-sm" onclick="resetFunds()">↺ ใช้ชุดเริ่มต้น</button>
           </div>
         </div>
 
         <div class="set-group sg-2">
           <div class="sg-head"><span class="sg-title">🟢 เฟส 2 · เริ่มพอร์ตเติบโต</span><span class="sg-when" id="sgWhen2">—</span></div>
-          <div class="sg-desc">พอหยุดเติมกองปิดรถแล้ว เงินใหม่ทุกเดือนจะมาเข้าพอร์ตนี้แทน · ตั้งสัดส่วนได้ที่ช่อง "% เฟส 2" ในรายการกองทุนด้านบน</div>
+          <div class="sg-desc">พอหยุดเติมกองปิดรถแล้ว เงินใหม่ทุกเดือนจะเข้ากองทุนรวมของเฟสนี้ทั้งหมด · สัดส่วนด้านล่างคือ "เงินก้อนนั้นแบ่งเข้ากองไหนกี่ %" รวมกันควรได้ 100%</div>
           <div class="g3">
             <div><label>รูปแบบการลงทุน</label>
               <select id="fMode2" onchange="onPlanInputChange()">
@@ -691,6 +691,18 @@ td:nth-child(2){text-align:left;color:#4b5563}
               </select></div>
             <div><label>ผลตอบแทนพอร์ต <span style="font-weight:400;color:var(--grayl)">(ถัวเฉลี่ยจากรายการกอง)</span></label><div class="iw"><input type="text" id="fRateGrow2Out" readonly tabindex="-1"><span>%/ปี</span></div></div>
             <div><label>สัดส่วนที่ตั้งไว้รวม</label><div class="iw"><input type="text" id="fAllocSum2Out" readonly tabindex="-1"><span>%</span></div></div>
+          </div>
+          <div class="fund-block">
+            <div class="fund-blk-head"><span>📈 กองทุนรวมในเฟส 2</span><span class="fund-blk-sum" id="sgFundsN2">—</span></div>
+            <div class="fund-scroll">
+              <div class="fund-row fund-head"><div>ชื่อกองทุน</div><div>ผลตอบแทน</div><div>สัดส่วน</div><div></div></div>
+              <div id="fundRows2"></div>
+              <div class="fund-row fund-foot"><div>รวมสัดส่วน</div><div id="fBlend2">—</div><div id="fSum2">—</div><div></div></div>
+            </div>
+            <div class="act-row" style="margin:8px 0 0">
+              <button class="btn-sm" onclick="addFund(2)">➕ เพิ่มกองทุน</button>
+              <button class="btn-sm" onclick="resetFunds(2)">↺ ใช้ชุดเริ่มต้น</button>
+            </div>
           </div>
         </div>
 
@@ -707,7 +719,19 @@ td:nth-child(2){text-align:left;color:#4b5563}
             <div><label>ผลตอบแทนพอร์ต <span style="font-weight:400;color:var(--grayl)">(ถัวเฉลี่ยจากรายการกอง)</span></label><div class="iw"><input type="text" id="fRateGrow3Out" readonly tabindex="-1"><span>%/ปี</span></div></div>
             <div><label>สัดส่วนที่ตั้งไว้รวม</label><div class="iw"><input type="text" id="fAllocSum3Out" readonly tabindex="-1"><span>%</span></div></div>
           </div>
-          <div class="note" style="margin-top:8px">ค่างวดที่โอนเข้าพอร์ตเป็นเงินสดรายเดือนจริง จึงทยอยเข้าทุกเดือนเสมอ ไม่ว่าเงินเก็บส่วนของเราจะเลือกโหมดไหน</div>
+          <div class="note" style="margin-top:8px">ค่างวดที่โอนเข้าพอร์ตเป็นเงินสดรายเดือนจริง จึงทยอยเข้าทุกเดือนเสมอ ไม่ว่าเงินเก็บส่วนของเราจะเลือกโหมดไหน · เงินที่เหลือจากการปิดบัญชีจะถูกโยกเข้ากองของเฟสนี้</div>
+          <div class="fund-block">
+            <div class="fund-blk-head"><span>📈 กองทุนรวมในเฟส 3</span><span class="fund-blk-sum" id="sgFundsN3">—</span></div>
+            <div class="fund-scroll">
+              <div class="fund-row fund-head"><div>ชื่อกองทุน</div><div>ผลตอบแทน</div><div>สัดส่วน</div><div></div></div>
+              <div id="fundRows3"></div>
+              <div class="fund-row fund-foot"><div>รวมสัดส่วน</div><div id="fBlend3">—</div><div id="fSum3">—</div><div></div></div>
+            </div>
+            <div class="act-row" style="margin:8px 0 0">
+              <button class="btn-sm" onclick="addFund(3)">➕ เพิ่มกองทุน</button>
+              <button class="btn-sm" onclick="resetFunds(3)">↺ ใช้ชุดเริ่มต้น</button>
+            </div>
+          </div>
         </div>
 
         <div class="note" style="margin-top:8px">ผลตอบแทนคิดแบบทบต้นรายเดือนจากอัตราต่อปีหารสิบสอง (เท่ากับวิธีที่ตารางผ่อนใช้) และถือว่าฝากเงินต้นเดือนแล้วโตปลายเดือน</div>
@@ -780,15 +804,21 @@ const FKEY='car_loan_form_v1';
 const PKEY='car_loan_plan_v1';
 const FDKEY='car_loan_fund_v1';
 const RESERVED_FUND_IDS={fd:1,mm:1,cash:1};   // ชนกับคอลัมน์กองปลอดภัย/เงินพักในตารางติดตามไม่ได้
-const MAX_FUNDS=12;                           // เกินนี้ตารางติดตามกว้างจนใช้งานไม่ไหว
-// รายการกองทุนตั้งต้น — เป็นฟังก์ชันเพราะ planCfg ใช้ shallow spread
+const MAX_FUNDS=8;                            // ต่อเฟส — สามเฟสรวมกันแล้วตารางติดตามยังพอไหว
+const PHASES=[1,2,3];
+// รายการกองทุนตั้งต้นของแต่ละเฟส — เป็นฟังก์ชันเพราะ planCfg ใช้ shallow spread
 // ถ้าเก็บเป็น array literal ใน DEFAULT_PLAN แล้ว addFund/removeFund จะไปแก้ค่า default ทิ้ง
-function defaultFunds(){return [
-  {id:'eq', name:'หุ้นโลก / S&P500',ret:7,  a1:0,a2:50,a3:50},
-  {id:'esg',name:'Thai ESG',        ret:7,  a1:0,a2:30,a3:30},
-  {id:'au', name:'ทองคำ',           ret:7,  a1:0,a2:20,a3:20},
-  {id:'gm', name:'กองตลาดเงิน',      ret:1.8,a1:0,a2:0, a3:0}
-];}
+// pct = สัดส่วนของ "เงินที่เข้ากองทุนรวมในเฟสนั้น" รวมกันควรได้ 100%
+function defaultFunds(phase){
+  if(phase===1)return [];   // เฟส 1 เริ่มด้วยลิสต์ว่าง = ไม่ลงกองทุน กองปิดรถปลอดภัย 100%
+  const g=phase===3?'3':'';
+  return [
+    {id:'eq'+g, name:'หุ้นโลก / S&P500',ret:7,  pct:50},
+    {id:'esg'+g,name:'Thai ESG',        ret:7,  pct:30},
+    {id:'au'+g, name:'ทองคำ',           ret:7,  pct:20},
+    {id:'gm'+g, name:'กองตลาดเงิน',      ret:1.8,pct:0}
+  ];
+}
 // ค่าตั้งต้นแผนปิดบัญชี — planCfg จะถูก spread ทับค่านี้เสมอ ข้อมูลเก่าจึงได้ field ใหม่อัตโนมัติ
 // funds/checklist ต้องเป็น null ตรงนี้แล้วให้ freshPlan() เติม เพื่อไม่ให้ทุก planCfg ใช้ object เดียวกัน
 const DEFAULT_PLAN={
@@ -801,38 +831,49 @@ const DEFAULT_PLAN={
   rateFD:1.5, rateMM:1.8, ratePark:1.5,
   mode1:'dca', mode2:'dca', mode3:'dca',                 // dca = ทยอยเท่ากันทุกเดือน, lump = ก้อนเดียวต้นเฟส
   redirectPct:100,
-  funds:null,
+  fundPct1:0,          // % ของเงินเก็บต่อเดือน ที่เข้ากองทุนรวมในเฟส 1 (ที่เหลือเข้าฝากประจำ/กองตลาดเงิน)
+  funds1:null, funds2:null, funds3:null,
   checklist:null
 };
 function freshPlan(extra){
   const p={...DEFAULT_PLAN,...(extra||{})};
-  if(!Array.isArray(p.funds))p.funds=defaultFunds();
+  // ทุก array/object ต้องสร้างใหม่ตรงนี้ ไม่งั้นทุก planCfg จะใช้ก้อนเดียวกันเพราะ spread เป็น shallow
+  PHASES.forEach(n=>{if(!Array.isArray(p['funds'+n]))p['funds'+n]=defaultFunds(n);});
   if(!p.checklist||typeof p.checklist!=='object')p.checklist={};
   return p;
 }
 // id ใหม่: 'f' + base36 — เป็น [a-z0-9] เสมอ จึงปลอดภัยทั้งในฐานะชิ้นส่วน DOM id, key ของ fundRec และคอลัมน์ CSV
+// id ต้องไม่ซ้ำกัน "ข้ามทั้งสามเฟส" เพราะเป็นทั้ง key ของ fundRec และคอลัมน์ในตารางติดตาม
 function newFundId(seen){
   const used=Object.assign({},seen);
-  ((planCfg&&planCfg.funds)||[]).forEach(f=>{used[f.id]=1;});
+  if(planCfg)PHASES.forEach(n=>{(planCfg['funds'+n]||[]).forEach(f=>{used[f.id]=1;});});
   let id;
   do{id='f'+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36);}
   while(used[id]||RESERVED_FUND_IDS[id]);
   return id;
 }
 // กันรายการเสีย (มาจากอุปกรณ์อื่น/แก้ localStorage เอง) ให้อยู่ในรูปที่เครื่องคำนวณใช้ได้เสมอ
-function sanitizeFunds(list){
-  if(!Array.isArray(list))return defaultFunds();
-  const seen={}, out=[];
+// รับทั้งสามเฟสพร้อมกันเพราะต้องใช้ seen ก้อนเดียวกันเช็ก id ซ้ำข้ามเฟส
+// (ตอนถูกเรียกจาก migratePlan ค่า planCfg ยังเป็นของเก่า จึงพึ่ง newFundId อย่างเดียวไม่ได้)
+function sanitizeAllFunds(p){
+  const seen={};
   const n=(v,lo,hi,d)=>{const x=parseFloat(v);return isNaN(x)?d:Math.max(lo,Math.min(hi,x));};
-  list.forEach((f,i)=>{
-    if(!f||typeof f!=='object')return;
-    let id=String(f.id||'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,16);
-    if(!id||RESERVED_FUND_IDS[id]||seen[id])id=newFundId(seen);
-    seen[id]=1;
-    out.push({id,name:String(f.name==null?'':f.name).slice(0,40),
-      ret:n(f.ret,-50,100,0),a1:n(f.a1,0,100,0),a2:n(f.a2,0,100,0),a3:n(f.a3,0,100,0)});
+  PHASES.forEach(ph=>{
+    // ไม่ใช่ array -> ลิสต์ว่าง ไม่ใช่ค่าตั้งต้น มิฉะนั้นเอกสารที่เขียนมาไม่ครบ
+    // (เช่นมีแต่ funds1) จะถูกยัด 4 กองตั้งต้นกลับเข้าเฟสอื่นโดยที่ผู้ใช้ไม่ได้สั่ง
+    if(!Array.isArray(p['funds'+ph]))p['funds'+ph]=[];
+    const out=[];
+    (p['funds'+ph]||[]).forEach(f=>{
+      if(!f||typeof f!=='object')return;
+      let id=String(f.id||'').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,16);
+      if(!id||RESERVED_FUND_IDS[id]||seen[id])id=newFundId(seen);
+      seen[id]=1;
+      out.push({id,name:String(f.name==null?'':f.name).slice(0,40),
+        ret:n(f.ret,-50,100,0),pct:n(f.pct,0,100,0)});
+    });
+    p['funds'+ph]=out.slice(0,MAX_FUNDS);
   });
-  return out.slice(0,MAX_FUNDS);
+  return p;
 }
 // ย้ายค่าจากโครงเดิม (ผลตอบแทน/สัดส่วนชุดเดียวใช้ทั้งเฟส 2-3) มาเป็นแบบแยกเฟส แล้วต่อเป็นรายการกอง
 // ทุกสาขาต้อง idempotent — applyFirebaseData เรียกซ้ำทุกครั้งที่ snapshot มาถึง
@@ -843,29 +884,64 @@ function migratePlan(p){
     p.allocEsg2=p.allocEsg3=p.allocEsg;
     p.allocAu2=p.allocAu3=p.allocAu;
   }
-  // โครงเก่า 4 กองตายตัว -> รายการกองทุนที่แก้ไขได้
-  // id คงเดิมเป๊ะ (eq/esg/au/gm) ยอดจริงที่กรอกไว้ใน fundRec จึงใช้ต่อได้ทันทีโดยไม่ต้อง migrate
-  if(!Array.isArray(p.funds)){
-    const g2=p.rateGrow2!==undefined?+p.rateGrow2||0:7;
-    const mm=p.rateMM!==undefined?+p.rateMM||0:1.8;
-    const seeded=defaultFunds();
-    seeded[0].ret=seeded[1].ret=seeded[2].ret=g2;   // eq/esg/au <- rateGrow2
-    seeded[3].ret=mm;                              // gm        <- rateMM
-    [['Eq',0],['Esg',1],['Au',2],['Gm',3]].forEach(([k,i])=>{
-      if(p['alloc'+k+'2']!==undefined)seeded[i].a2=Math.max(0,+p['alloc'+k+'2']||0);
-      if(p['alloc'+k+'3']!==undefined)seeded[i].a3=Math.max(0,+p['alloc'+k+'3']||0);
-    });
-    p.funds=seeded;
+  // -> รายการกองทุนแยกอิสระต่อเฟส (โครงปัจจุบัน)
+  // ทำก็ต่อเมื่อยังไม่มี funds1/2/3 ครบ จึงรันซ้ำได้ไม่รู้จบ
+  // แปลงก็ต่อเมื่อ "ยังไม่มีลิสต์ใหม่เลยสักเฟส" — ถ้ามีบางเฟสแล้วแปลว่าแปลงไปแล้ว
+  // เอกสารที่มีไม่ครบจะถูก sanitizeAllFunds เติมเป็นลิสต์ว่าง ไม่ใช่ค่าตั้งต้น
+  if(!PHASES.some(n=>Array.isArray(p['funds'+n]))){
+    if(Array.isArray(p.funds)){
+      // โครงกลางทาง: ลิสต์เดียวมี a1/a2/a3 -> แตกเป็นสามลิสต์
+      // เฟส 2 เก็บ "ทุกกอง" พร้อม id เดิม เพราะ id เดิมคือกุญแจของยอดจริงใน fundRec
+      // ถ้าคัดเฉพาะกองที่ a2>0 กองที่ผู้ใช้เพิ่งเพิ่มแต่ยังไม่ใส่สัดส่วนจะหายไปทั้งชื่อและยอด
+      // เฟส 1/3 ต่อท้ายเลขเฟสกัน id ซ้ำ (ให้ตรงกับที่สาขา legacy สร้าง eq3/esg3/... เป๊ะ ๆ)
+      const seen={};
+      p.funds.forEach(f=>{if(f&&f.id)seen[String(f.id)]=1;});
+      const sfx=(f,ph)=>{
+        const base=String(f.id||'')+ph;
+        return seen[base]?newFundId(seen):(seen[base]=1,base);
+      };
+      p.funds2=p.funds.map(f=>({id:f.id,name:f.name,ret:+f.ret||0,pct:+f.a2||0}));
+      [1,3].forEach(ph=>{
+        p['funds'+ph]=p.funds.filter(f=>f&&(+f['a'+ph]||0)>0)
+          .map(f=>({id:sfx(f,ph),name:f.name,ret:+f.ret||0,pct:+f['a'+ph]||0}));
+      });
+      // a1 เดิมคิดจากเงิน "หลังหักฝากประจำ" ส่วน fundPct1 ใหม่คิดจากเงินเก็บทั้งก้อน
+      // จึงเป็นค่าประมาณ — เงินเข้ากองทุนจะมากกว่าเดิมเล็กน้อย ผู้ใช้ควรตรวจซ้ำ
+      if(p.fundPct1===undefined)
+        p.fundPct1=Math.max(0,Math.min(100,p.funds.reduce((a,f)=>a+(+f.a1||0),0)));
+    } else {
+      // โครงเดิมสุด: allocXxx2 -> เฟส 2 (id เดิม eq/esg/au/gm ยอดใน fundRec จึงใช้ต่อได้)
+      //              allocXxx3 -> เฟส 3 (id ใหม่ eq3/esg3/au3/gm3 เพราะ id ห้ามซ้ำข้ามเฟส)
+      const g2=p.rateGrow2!==undefined?+p.rateGrow2||0:7;
+      const g3=p.rateGrow3!==undefined?+p.rateGrow3||0:g2;
+      const mm=p.rateMM!==undefined?+p.rateMM||0:1.8;
+      const build=(ph,rate)=>{
+        const l=defaultFunds(ph);
+        l[0].ret=l[1].ret=l[2].ret=rate; l[3].ret=mm;
+        [['Eq',0],['Esg',1],['Au',2],['Gm',3]].forEach(([k,i])=>{
+          const v=p['alloc'+k+ph];
+          if(v!==undefined)l[i].pct=Math.max(0,+v||0);
+        });
+        return l;
+      };
+      p.funds1=[];
+      p.funds2=build(2,g2);
+      p.funds3=build(3,g3);
+      if(p.fundPct1===undefined)p.fundPct1=0;
+    }
   }
-  p.funds=sanitizeFunds(p.funds);
+  if(p.fundPct1===undefined)p.fundPct1=0;
+  p.fundPct1=Math.max(0,Math.min(100,+p.fundPct1||0));
+  sanitizeAllFunds(p);
+  p.v=2;   // ตรารุ่นของโครงข้อมูล เผื่อรอบหน้าต้องแยกว่าเอกสารมาจากบิลด์ไหน
   // ตัดคีย์ของโครงเก่าทิ้งถาวร ไม่งั้นจะค้างใน localStorage ตลอดไปทั้งที่ไม่มีอะไรอ่านแล้ว
   ['rateGrow','rateGrow2','rateGrow3','allocEq','allocEsg','allocAu',
    'allocEq2','allocEsg2','allocAu2','allocGm2',
-   'allocEq3','allocEsg3','allocAu3','allocGm3'].forEach(k=>{delete p[k];});
+   'allocEq3','allocEsg3','allocAu3','allocGm3','funds'].forEach(k=>{delete p[k];});
   return p;
 }
 let planCfg=freshPlan();
-// { 'YYYY-MM': {fd,mm,eq,esg,au,gm} } — ค่าเก็บเป็น string
+// { 'YYYY-MM': {fd,mm,<fundId>,...} } — ค่าเก็บเป็น string
 // เพื่อให้ '' (ยังไม่กรอก) ต่างจาก 0 (กรอกว่าศูนย์)
 let fundRec={};
 
@@ -1965,36 +2041,49 @@ function onCheckChange(k){
 // ========== FUND ENGINE (\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16) ==========
 // \u0E2D\u0E31\u0E15\u0E23\u0E32\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19 = \u0E2D\u0E31\u0E15\u0E23\u0E32\u0E15\u0E48\u0E2D\u0E1B\u0E35 / 12 (nominal \u0E17\u0E1A\u0E15\u0E49\u0E19\u0E23\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19) \u2014 \u0E27\u0E34\u0E18\u0E35\u0E40\u0E14\u0E35\u0E22\u0E27\u0E01\u0E31\u0E1A\u0E17\u0E35\u0E48\u0E15\u0E32\u0E23\u0E32\u0E07\u0E1C\u0E48\u0E2D\u0E19\u0E43\u0E0A\u0E49
 function mRate(annualPct){return (annualPct||0)/100/12;}
-function fundList(){return Array.isArray(planCfg.funds)?planCfg.funds:[];}
-// สัดส่วนเงินของเฟสที่ระบุ (1/2/3) คำนวณจากรายการกองทุน
-//   เฟส 1  = % ของเงินที่เหลือ "หลังหักฝากประจำ" จึงไม่ normalize (รวมเกิน 100 ค่อยย่อลงพอดี 100)
-//            ส่วนที่ไม่ได้จัดสรร (resid) ค้างในกองตลาดเงิน mm ซึ่งยังนับเป็นกองปิดรถ 100%
-//   เฟส 2/3 = สัดส่วนพอร์ต normalize ให้รวม 100 เหมือนเดิม
-//            ถ้าไม่ได้ตั้งเลย เงินจะไปพักที่ ratePark แทนที่จะเดาสัดส่วนให้ (ของเดิมเดา 50/30/20)
+function fundsOf(phase){const a=planCfg['funds'+phase];return Array.isArray(a)?a:[];}
+function fundPct1(){return Math.max(0,Math.min(100,+planCfg.fundPct1||0));}
+// รายการกองของทุกเฟสเรียงต่อกัน = คอลัมน์ของตารางติดตาม/กราฟ/CSV
+function allFundCols(){
+  const out=[];
+  PHASES.forEach(ph=>fundsOf(ph).forEach((f,i)=>out.push({phase:ph,id:f.id,name:fundName(f,i),ret:+f.ret||0,pct:+f.pct||0})));
+  return out;
+}
+// การแบ่งเงินของเฟสหนึ่ง ๆ คิดเป็นสองชั้น
+//   ชั้น 1 toFunds = เงินของเฟสนั้นเข้ากองทุนรวมกี่ส่วน (เฟส 1 = fundPct1, เฟส 2/3 = ทั้งหมด)
+//   ชั้น 2 w[id]   = toFunds x (pct ของกองนั้น / ผลรวม pct)  <- normalize ภายในเฟส รวมเป็น 100%
+// resid = ส่วนที่ไม่ได้เข้ากองทุน — เฟส 1 ค้างในกองตลาดเงินที่ปลอดภัย, เฟส 2/3 พักที่ ratePark
+// เฟส 1 ที่ยังไม่มีกองเลย ให้ toFunds = 0 เงินจึงอยู่ในกองปิดรถทั้งหมด (เฟส 2/3 ไม่มีที่ปลอดภัยให้ตก)
 function phaseAlloc(phase){
-  const key='a'+phase, fs=fundList();
-  const raw=fs.map(f=>({id:f.id,name:f.name,ret:+f.ret||0,pct:Math.max(0,+f[key]||0)}));
+  const fs=fundsOf(phase);
+  const raw=fs.map((f,i)=>({id:f.id,name:fundName(f,i),ret:+f.ret||0,pct:Math.max(0,+f.pct||0)}));
   const sum=raw.reduce((a,x)=>a+x.pct,0);
-  const residRate=phase===1?(+planCfg.rateMM||0):(+planCfg.ratePark||0);
+  const toFunds=phase===1?(fs.length?fundPct1()/100:0):1;
   const w={}, parts=[];
-  let invested=0, capped=false;
-  if(phase===1){
-    const scale=sum>100?100/sum:1; capped=sum>100;
-    raw.forEach(x=>{if(x.pct<=0)return;const f=x.pct*scale/100;w[x.id]=f;invested+=f;parts.push({name:x.name,pct:f*100});});
-  } else if(sum>0){
-    raw.forEach(x=>{if(x.pct<=0)return;const f=x.pct/sum;w[x.id]=f;invested+=f;parts.push({name:x.name,pct:f*100});});
+  let invested=0;
+  if(sum>0&&toFunds>0){
+    raw.forEach(x=>{
+      if(x.pct<=0)return;
+      const f=toFunds*x.pct/sum;
+      w[x.id]=f;invested+=f;parts.push({name:x.name,pct:x.pct/sum*100});
+    });
   }
   const resid=Math.max(0,1-invested);
-  let blended=resid*residRate;
-  raw.forEach(x=>{if(w[x.id])blended+=w[x.id]*x.ret;});
-  return {phase,w,ids:Object.keys(w),sum,resid,invested,capped,blended,parts};
+  const residRate=phase===1?(+planCfg.rateMM||0):(+planCfg.ratePark||0);
+  // ผลตอบแทนถัวเฉลี่ยเฉพาะ "ส่วนที่เข้ากองทุน" — ใช้โชว์บนการ์ดเฟสแทนช่องที่เคยกรอกเอง
+  let fundBlend=0;
+  if(invested>0)raw.forEach(x=>{if(w[x.id])fundBlend+=(w[x.id]/invested)*x.ret;});
+  // ผลตอบแทนของเงินทั้งเฟส (รวมส่วนที่ไม่ได้ลงทุน) — เฟส 2/3 ใช้ตัวนี้เป็นผลตอบแทนพอร์ต
+  const blended=fundBlend*invested+resid*residRate;
+  return {phase,w,ids:Object.keys(w),sum,resid,invested,toFunds,blended,fundBlend,parts,
+          empty:fs.length===0};
 }
 function phaseMode(phase){return planCfg['mode'+phase]==='lump'?'lump':'dca';}
 function modeText(phase){return phaseMode(phase)==='lump'?'ลงก้อนเดียวตอนเริ่มเฟส':'DCA ทุกเดือน';}
-function fundName(f,i){return (f&&f.name&&f.name.trim())||('กองที่ '+(i+1));}
+function fundName(f,i){return (f&&f.name&&String(f.name).trim())||('กองที่ '+(i+1));}
 function allocText(a){
-  const parts=a.parts.map((x,i)=>`${x.name&&x.name.trim()?x.name:'กองที่ '+(i+1)} ${x.pct.toFixed(0)}%`);
-  if(a.resid>0.0005)parts.push((a.phase===1?'ค้างกองตลาดเงิน ':'พักรอจัดสรร ')+(a.resid*100).toFixed(0)+'%');
+  const parts=a.parts.map(x=>`${x.name} ${x.pct.toFixed(0)}%`);
+  if(a.phase!==1&&a.resid>0.0005)parts.push('พักรอจัดสรร '+(a.resid*100).toFixed(0)+'%');
   return parts.join(' · ')||'ยังไม่ได้ตั้งสัดส่วน';
 }
 
@@ -2016,10 +2105,12 @@ function buildFundSchedule(monthly){
   const p=calcPayoffPlan();
   if(!p)return null;
   const iFD=mRate(planCfg.rateFD), iMM=mRate(planCfg.rateMM), iPark=mRate(planCfg.ratePark);
-  const funds=fundList().filter(f=>f&&f.id);
-  const ids=funds.map(f=>f.id);
-  const iF={}; funds.forEach(f=>{iF[f.id]=mRate(+f.ret||0);});   // แต่ละกองมีอัตราของตัวเอง
-  const AL=[null,phaseAlloc(1),phaseAlloc(2),phaseAlloc(3)];     // index = เฟส (เฟส 1 ใช้จริงแล้ว)
+  // รวมกองของทั้งสามเฟสเป็นชุดเดียว — ยอดของทุกกองต้องโตทุกเดือน ไม่ใช่เฉพาะเฟสของมัน
+  // กองที่ซื้อไว้ตั้งแต่เฟส 1 จึงยังโตต่อในเฟส 2 และ 3 แม้ไม่มีเงินใหม่เข้า
+  const cols=allFundCols();
+  const ids=cols.map(f=>f.id);
+  const iF={}; cols.forEach(f=>{iF[f.id]=mRate(f.ret);});
+  const AL=[null,phaseAlloc(1),phaseAlloc(2),phaseAlloc(3)];     // index = เฟส
   const fdMonthly=Math.max(0,+planCfg.fdMonthly||0);
   const fdMonths=Math.max(0,+planCfg.fdMonths||0);
   const redirect=Math.max(0,Math.min(100,+planCfg.redirectPct??100))/100;
@@ -2055,13 +2146,16 @@ function buildFundSchedule(monthly){
     if(t<accM){
       // \u0E40\u0E1F\u0E2A 1 \u2014 \u0E40\u0E15\u0E34\u0E21\u0E40\u0E07\u0E34\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E41\u0E1A\u0E48\u0E07\u0E40\u0E02\u0E49\u0E32\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E01\u0E48\u0E2D\u0E19 \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19
       phase=1;
+      // ฝากประจำเป็นภาระผูกพันที่ตั้งใจไว้ จึงหักก่อนเสมอ แล้วค่อยแบ่งเข้ากองทุนตาม % ของเงินเก็บ
+      // ถ้า % ที่ตั้งไว้กินเกินเงินที่เหลือ ให้ย่อส่วนกองทุนลงพอดี — ฝากประจำไม่ถูกเบียด
+      // เงินที่เข้ากองทุนไม่นับเป็นกองปิดรถ กองปิดรถจึงยังเป็น fd+mm ที่ปลอดภัย 100%
       const a=AL[1], cash=put(1,t);
       const toFD=(fdOpen&&t<fdMonths)?Math.min(fdMonthly,cash):0;
-      const rest=cash-toFD;
+      const avail=Math.max(0,cash-toFD), want=cash*a.invested;
+      const sc=want>avail?(want>0?avail/want:0):1;
       let toFunds=0;
-      for(let j=0;j<a.ids.length;j++){const id=a.ids[j];const x=rest*a.w[id];bal[id]+=x;toFunds+=x;}
-      // เงินที่เข้ากองทุนไม่นับเป็นกองปิดรถ ที่เหลือค้างในกองตลาดเงินซึ่งยังปลอดภัย 100%
-      fd+=toFD;mm+=rest-toFunds;
+      for(let j=0;j<a.ids.length;j++){const id=a.ids[j];const x=cash*a.w[id]*sc;bal[id]+=x;toFunds+=x;}
+      fd+=toFD;mm+=cash-toFD-toFunds;
       invest[0]+=cash;
     } else if(t<=p.k){
       // \u0E40\u0E1F\u0E2A 2 \u2014 \u0E2B\u0E22\u0E38\u0E14\u0E40\u0E15\u0E34\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 \u0E1B\u0E25\u0E48\u0E2D\u0E22\u0E1E\u0E31\u0E01\u0E44\u0E27\u0E49 \u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48\u0E44\u0E1B\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15
@@ -2096,10 +2190,17 @@ function buildFundSchedule(monthly){
     if(t===p.k){
       // \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35: \u0E08\u0E48\u0E32\u0E22\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E42\u0E22\u0E01\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15
       paidOff=true;
-      const a=AL[2], left=safeBefore-target;
+      // เงินเหลือจากการปิดบัญชีอยู่ยาวไปถึงหลังปิด จึงต้องเข้าสัดส่วนของเฟส 3
+      // (เดิมเข้าเฟส 2 ซึ่งพอแยกรายการกองต่อเฟสแล้วกลายเป็นซื้อกองที่เลิกใช้ไปแล้ว)
+      // ถ้าเฟส 3 ยังไม่ได้ตั้งกอง ถอยไปใช้เฟส 2 ถ้าไม่มีทั้งคู่ก็พักไว้เป็นเงินสด
+      const aRoll=AL[3].ids.length?AL[3]:(AL[2].ids.length?AL[2]:null);
+      const left=safeBefore-target;
       if(left>0){
-        for(let j=0;j<a.ids.length;j++)bal[a.ids[j]]+=left*a.w[a.ids[j]];
-        if(a.resid>0)cashRes+=left*a.resid;
+        if(!aRoll)cashRes+=left;
+        else{
+          for(let j=0;j<aRoll.ids.length;j++)bal[aRoll.ids[j]]+=left*aRoll.w[aRoll.ids[j]];
+          if(aRoll.resid>0)cashRes+=left*aRoll.resid;
+        }
       }
       fd=0;mm=0;safe=0;grow=growTotal();
     }
@@ -2114,7 +2215,7 @@ function buildFundSchedule(monthly){
     rows,plan:p,target,accM,
     atPayoff:atRow?atRow.safeBefore:0,
     fundedMonth,
-    invest,redirectTotal,funds,alloc:AL,
+    invest,redirectTotal,cols,alloc:AL,
     phases:[span(1),span(2),span(3)],
     finalTotal:rows.length?rows[rows.length-1].safe+rows[rows.length-1].grow:0
   };
@@ -2131,8 +2232,9 @@ function solveMonthlyDeposit(){
     return (s?s.atPayoff:0)-p.closureAmt;
   };
   let lo=0,hi=Math.max(1000,p.closureAmt);
-  // ถ้าเฟส 1 จัดสรรเข้ากองทุนเต็ม 100% และไม่มีเงินเข้าฝากประจำ จะไม่มีเงินไหลเข้ากองปิดรถเลย
-  // ตอนนั้น atPayoff คงที่ไม่ว่าฝากเท่าไร การ bisect จะได้ขอบบนที่ไม่มีความหมาย จึงต้องดักไว้
+  // ถ้าแบ่งเข้ากองทุนไว้มาก เงินที่ต้องเก็บอาจสูงกว่ายอดปิดบัญชีหลายเท่า ขอบบนเดิมจึงแคบไป
+  // ต้องขยายก่อน แล้วค่อยสรุปว่าไปไม่ถึงจริง (เช่น เฟส 1 เข้ากองทุน 100% และไม่มีฝากประจำ)
+  for(let n=0;n<20&&probe(hi)<0;n++)hi*=4;
   if(probe(hi)<0)return Infinity;
   for(let n=0;n<80;n++){
     const mid=(lo+hi)/2;
@@ -2184,9 +2286,19 @@ function syncPlanInputs(){
   set('fRateFD',planCfg.rateFD);
   set('fRateMM',planCfg.rateMM);
   set('fRatePark',planCfg.ratePark);
-  [1,2,3].forEach(n=>set('fMode'+n,phaseMode(n)));
+  PHASES.forEach(n=>set('fMode'+n,phaseMode(n)));
   set('fRedirect',planCfg.redirectPct);
-  renderFundList();
+  set('fFundPct1',planCfg.fundPct1);
+  // ฟังก์ชันนี้ถูกเรียกทุกครั้งที่ snapshot จาก Firebase มาถึง ซึ่งอาจตรงกับตอนผู้ใช้กำลังพิมพ์อยู่
+  // จึงต้องจำช่องที่โฟกัสไว้แล้วคืนให้หลังสร้างลิสต์ใหม่ ไม่งั้นพิมพ์ค้างกลางคัน
+  const ae=document.activeElement, aid=ae&&ae.id;
+  const ss=aid?ae.selectionStart:null, se=aid?ae.selectionEnd:null;
+  renderAllFundLists();
+  updateFundSums();
+  if(aid){
+    const back=document.getElementById(aid);
+    if(back){back.focus();try{if(ss!=null)back.setSelectionRange(ss,se);}catch(e){}}
+  }
 }
 
 function onPlanInputChange(){
@@ -2198,10 +2310,14 @@ function onPlanInputChange(){
   planCfg.accMonths=Math.max(0,Math.min(240,num('fAccMonths',24)));
   planCfg.fdMonthly=Math.max(0,num('fFdMonthly',0));
   planCfg.fdMonths=Math.max(0,Math.min(120,num('fFdMonths',24)));
-  planCfg.rateFD=num('fRateFD',1.5);
-  planCfg.rateMM=num('fRateMM',1.8);
-  planCfg.ratePark=num('fRatePark',1.5);
-  [1,2,3].forEach(n=>{
+  // clamp เท่ากับที่ผลตอบแทนรายกองถูก clamp ไว้ — อัตราติดลบมาก ๆ ทำให้ (1+i) ติดลบ
+  // ยอดจะสลับเครื่องหมายทุกเดือน แล้ว bisection ใน solveMonthlyDeposit จะไม่ monotonic อีกต่อไป
+  const rate=(id,d)=>Math.max(-50,Math.min(100,num(id,d)));
+  planCfg.rateFD=rate('fRateFD',1.5);
+  planCfg.rateMM=rate('fRateMM',1.8);
+  planCfg.ratePark=rate('fRatePark',1.5);
+  planCfg.fundPct1=Math.max(0,Math.min(100,num('fFundPct1',0)));
+  PHASES.forEach(n=>{
     const el=document.getElementById('fMode'+n);
     planCfg['mode'+n]=el&&el.value==='lump'?'lump':'dca';
   });
@@ -2220,63 +2336,67 @@ function setGroupWhen(base,p1,p2,p3,desc3){
   if(desc3!==undefined)put('sgDesc3',desc3);
 }
 
-// ---- รายการกองทุน ----
-// กฎเดียวกับ setGroupWhen/onFundChange: #fundListRows จะถูกสร้างใหม่ทั้งก้อนเฉพาะตอน
-// เพิ่ม/ลบ/รีเซ็ตกอง และตอน syncPlanInputs เท่านั้น — ห้ามเรียกจาก handler ของช่องกรอก
-// ไม่งั้น cursor จะหลุดตอนพิมพ์ชื่อกอง ระหว่างพิมพ์ให้แตะแค่ textContent ของแถวรวม
-function renderFundList(){
-  const host=document.getElementById('fundListRows');
+// ---- รายการกองทุนของแต่ละเฟส ----
+// กฎเดียวกับ setGroupWhen/onFundChange: #fundRows{N} จะถูกสร้างใหม่ทั้งก้อนเฉพาะตอน
+// เพิ่ม/ลบ/รีเซ็ตกองของเฟสนั้น และตอน syncPlanInputs เท่านั้น
+// ห้ามเรียกจาก handler ของช่องกรอกเด็ดขาด ไม่งั้น cursor จะหลุดตอนพิมพ์ชื่อกอง
+// และ addFund(2) ต้องสร้างใหม่เฉพาะลิสต์เฟส 2 ไม่ใช่ทั้งสามลิสต์ ไม่งั้นแก้เฟสหนึ่งจะไปล้างโฟกัสของอีกเฟส
+function renderFundList(phase){
+  const host=document.getElementById('fundRows'+phase);
   if(!host)return;
-  const fs=fundList();
+  const fs=fundsOf(phase);
   host.innerHTML=fs.length?fs.map((f,i)=>`
     <div class="fund-row" data-fid="${esc(f.id)}">
       <div><input type="text" id="fn_${f.id}" maxlength="40" value="${esc(f.name)}"
-        placeholder="กองที่ ${i+1}" onchange="onFundDefChange('${f.id}','name')"></div>
+        placeholder="กองที่ ${i+1}" onchange="onFundDefChange(${phase},'${f.id}','name')"></div>
       <div class="iw"><input type="number" id="fr_${f.id}" step="0.5" value="${f.ret}"
-        onchange="onFundDefChange('${f.id}','ret')"><span>%/ปี</span></div>
-      ${[1,2,3].map(n=>`<div class="iw"><input type="number" id="fa${n}_${f.id}" min="0" max="100" step="1"
-        value="${f['a'+n]}" oninput="updateFundSums()"
-        onchange="onFundDefChange('${f.id}','a${n}')"><span>%</span></div>`).join('')}
+        oninput="updateFundSums()" onchange="onFundDefChange(${phase},'${f.id}','ret')"><span>%/ปี</span></div>
+      <div class="iw"><input type="number" id="fp_${f.id}" min="0" max="100" step="1" value="${f.pct}"
+        oninput="updateFundSums()" onchange="onFundDefChange(${phase},'${f.id}','pct')"><span>%</span></div>
       <div><button class="fund-del" title="ลบกองทุนนี้" aria-label="ลบ ${esc(fundName(f,i))}"
-        onclick="removeFund('${f.id}')">✕</button></div>
+        onclick="removeFund(${phase},'${f.id}')">✕</button></div>
     </div>`).join('')
-    :'<div class="note" style="margin:6px 0">ยังไม่มีกองทุน — เงินของเฟส 2/3 จะถูกพักไว้ที่อัตราพักกอง</div>';
-  updateFundSums();
+    :`<div class="note" style="margin:6px 0">${phase===1
+       ?'ยังไม่มีกองทุน — เฟส 1 จะเก็บเงินไว้ในฝากประจำและกองตลาดเงินที่ปลอดภัย 100%'
+       :'ยังไม่มีกองทุน — เงินของเฟสนี้จะถูกพักไว้ที่อัตราพักกอง ยังไม่ได้ลงทุน'}</div>`;
 }
+function renderAllFundLists(){PHASES.forEach(renderFundList);}
 
-// อ่านค่าสด ๆ จากช่องกรอก (ไม่ใช่จาก planCfg) เพื่อให้ยอดรวมขยับทันทีระหว่างพิมพ์
+// อ่านค่าสด ๆ จากช่องกรอก (ไม่ใช่จาก planCfg) ทั้งสัดส่วนและผลตอบแทน
+// ยอดรวมกับผลตอบแทนถัวเฉลี่ยจึงขยับทันทีระหว่างพิมพ์ ไม่ต้องรอ blur
+function liveFunds(phase){
+  return fundsOf(phase).map((f,i)=>{
+    const pe=document.getElementById('fp_'+f.id), re=document.getElementById('fr_'+f.id);
+    const pv=pe?parseFloat(pe.value):+f.pct, rv=re?parseFloat(re.value):+f.ret;
+    return {id:f.id,name:fundName(f,i),pct:isNaN(pv)?0:Math.max(0,pv),ret:isNaN(rv)?0:rv};
+  });
+}
 function updateFundSums(){
   const put=(id,t,bad)=>{const el=document.getElementById(id);
     if(!el)return;el.textContent=t;el.classList.toggle('bad',!!bad);};
   const setVal=(id,t)=>{const el=document.getElementById(id);if(el)el.value=t;};
-  const fs=fundList();
-  const live=(n)=>fs.reduce((a,f)=>{
-    const el=document.getElementById('fa'+n+'_'+f.id);
-    const v=el?parseFloat(el.value):+f['a'+n];
-    return a+(isNaN(v)?0:Math.max(0,v));},0);
-  [1,2,3].forEach(n=>{
-    const s=live(n);
-    // เฟส 1 ไม่ครบ 100 ถือว่าปกติ (ที่เหลืออยู่ในกองตลาดเงิน) เกิน 100 เท่านั้นที่ผิด
-    const bad=n===1?s>100.01:(s>0&&Math.abs(s-100)>0.01);
-    put('fSum'+n,s.toFixed(0)+'%'+(bad?' ⚠':''),bad);
+  PHASES.forEach(n=>{
+    const live=liveFunds(n);
+    const sum=live.reduce((a,x)=>a+x.pct,0);
+    // สัดส่วนต้องรวมกันได้ 100% ภายในเฟส · ยังไม่มีกองเลยถือว่าปกติ ไม่ใช่ error
+    const bad=live.length>0&&Math.abs(sum-100)>0.01;
+    put('fSum'+n,live.length?sum.toFixed(0)+'%'+(bad?' ⚠':''):'—',bad);
+    const blend=sum>0?live.reduce((a,x)=>a+x.ret*x.pct/sum,0):0;
+    put('fBlend'+n,live.length?blend.toFixed(2)+'%/ปี':'—',false);
+    const seen={};
+    const dup=live.some(x=>{const k=x.name.trim();if(seen[k])return true;seen[k]=1;return false;});
+    put('sgFundsN'+n,`${live.length} กอง${dup?' · ⚠ ชื่อซ้ำ':''}`,false);
+    if(n>1){
+      setVal('fRateGrow'+n+'Out',blend.toFixed(2));
+      setVal('fAllocSum'+n+'Out',sum.toFixed(0));
+    }
   });
-  const A2=phaseAlloc(2),A3=phaseAlloc(3);
-  put('fSumRet',`ฟ2 ${A2.blended.toFixed(2)}% · ฟ3 ${A3.blended.toFixed(2)}%`,false);
-  setVal('fRateGrow2Out',A2.blended.toFixed(2));
-  setVal('fRateGrow3Out',A3.blended.toFixed(2));
-  setVal('fAllocSum2Out',live(2).toFixed(0));
-  setVal('fAllocSum3Out',live(3).toFixed(0));
-  const seenName={};
-  const dup=fs.some(f=>{const k=(f.name||'').trim();if(!k)return false;
-    if(seenName[k])return true;seenName[k]=1;return false;});
-  put('sgWhenFunds',`${fs.length} กอง${dup?' · ⚠ ชื่อซ้ำ':''}`,false);
 }
 
-function onFundDefChange(id,key){
-  const f=fundList().find(x=>x.id===id);
+function onFundDefChange(phase,id,key){
+  const f=fundsOf(phase).find(x=>x.id===id);
   if(!f)return;
-  const domId=(key==='name'?'fn_':key==='ret'?'fr_':'fa'+key[1]+'_')+id;
-  const el=document.getElementById(domId);
+  const el=document.getElementById((key==='name'?'fn_':key==='ret'?'fr_':'fp_')+id);
   if(!el)return;
   if(key==='name'){f.name=String(el.value).slice(0,40);}
   else{
@@ -2286,29 +2406,32 @@ function onFundDefChange(id,key){
   }
   savePlan();
   updateFundSums();
-  renderFundTab();renderFundTable();buildFundChart();   // container อื่นทั้งหมด ไม่แตะ #fundListRows
+  renderFundTab();renderFundTable();buildFundChart();   // container อื่นทั้งหมด ไม่แตะ #fundRows{N}
 }
 
-function addFund(){
-  if(!Array.isArray(planCfg.funds))planCfg.funds=[];
-  if(planCfg.funds.length>=MAX_FUNDS)return alert('เพิ่มได้สูงสุด '+MAX_FUNDS+' กองทุน');
+function addFund(phase){
+  if(!Array.isArray(planCfg['funds'+phase]))planCfg['funds'+phase]=[];
+  const list=planCfg['funds'+phase];
+  if(list.length>=MAX_FUNDS)return alert('เพิ่มได้สูงสุด '+MAX_FUNDS+' กองทุนต่อเฟส');
   const id=newFundId();
-  planCfg.funds.push({id,name:'',ret:5,a1:0,a2:0,a3:0});
-  savePlan();renderFundList();
+  // กองแรกของเฟสให้ 100% ไปเลย จะได้ใช้งานได้ทันทีโดยไม่ต้องมานั่งไล่ปรับ
+  list.push({id,name:'',ret:5,pct:list.length?0:100});
+  savePlan();renderFundList(phase);updateFundSums();
   renderFundTab();renderFundTable();buildFundChart();
   const el=document.getElementById('fn_'+id);
   if(el){el.focus();el.select();}
 }
 
-function removeFund(id){
-  const fs=fundList(), f=fs.find(x=>x.id===id);
+function removeFund(phase,id){
+  const fs=fundsOf(phase), f=fs.find(x=>x.id===id);
   if(!f)return;
   const idx=fs.indexOf(f);
   const months=Object.keys(fundRec).filter(m=>fundRec[m]&&fundRec[m][id]!==undefined&&fundRec[m][id]!=='');
-  if(!confirm(`ลบ "${fundName(f,idx)}" ออกจากรายการกองทุน?`+
+  if(!confirm(`ลบ "${fundName(f,idx)}" ออกจากกองทุนของเฟส ${phase}?`+
     (months.length?`\n\nยอดจริงที่เคยกรอกไว้ ${months.length} เดือนของกองนี้จะถูกลบไปด้วย`:'')))return;
-  planCfg.funds=fs.filter(x=>x.id!==id);
+  planCfg['funds'+phase]=fs.filter(x=>x.id!==id);
   if(months.length){
+    // id ไม่ซ้ำกันข้ามเฟส การลบคีย์นี้ทุกเดือนจึงกระทบเฉพาะกองนี้กองเดียว
     Object.keys(fundRec).forEach(m=>{
       if(!fundRec[m])return;
       delete fundRec[m][id];
@@ -2316,14 +2439,14 @@ function removeFund(id){
     });
     saveFund(true);
   }
-  savePlan();renderFundList();
+  savePlan();renderFundList(phase);updateFundSums();
   renderFundTab();renderFundTable();buildFundChart();
 }
 
-function resetFunds(){
-  if(!confirm('กลับไปใช้รายการกองทุนชุดเริ่มต้น 4 กอง?'))return;
-  planCfg.funds=defaultFunds();
-  savePlan();renderFundList();
+function resetFunds(phase){
+  if(!confirm(`กลับไปใช้รายการกองทุนชุดเริ่มต้นของเฟส ${phase}?`))return;
+  planCfg['funds'+phase]=defaultFunds(phase);
+  savePlan();renderFundList(phase);updateFundSums();
   renderFundTab();renderFundTable();buildFundChart();
 }
 
@@ -2350,8 +2473,10 @@ function renderFundTab(){
   const fdEnd=planCfg.fdMonths>0&&planCfg.fdMonthly>0?monthAdd(p.saveStart,planCfg.fdMonths-1):null;
   const fdPart=Math.min(+planCfg.fdMonthly||0,monthly);
   // เฟส 1: หักฝากประจำก่อน ที่เหลือค่อยแบ่งเข้ากองทุนตาม % ส่วนที่ไม่ได้จัดสรรค้างในกองตลาดเงิน
-  const p1Rest=Math.max(0,monthly-fdPart);
-  const p1ToFunds=p1Rest*A1.invested, p1ToMM=p1Rest-p1ToFunds;
+  // ต้องคิดลำดับเดียวกับ buildFundSchedule เป๊ะ ๆ ไม่งั้นตัวเลขบนการ์ดจะไม่ตรงกับที่จำลองไว้
+  const p1Avail=Math.max(0,monthly-fdPart), p1Want=monthly*A1.invested;
+  const p1ToFunds=Math.min(p1Want,p1Avail), p1ToMM=Math.max(0,monthly-fdPart-p1ToFunds);
+  const p1Squeezed=p1Want>p1Avail+0.005;
   const redirectAmt=p.freedPay*(Math.max(0,Math.min(100,+planCfg.redirectPct??100))/100);
   const rng=(x)=>x?`${monthLabel(x.from)} – ${monthLabel(x.to)} · ${x.months} เดือน`:'ไม่มีช่วงนี้';
 
@@ -2380,6 +2505,12 @@ function renderFundTab(){
     if(gap<-1){
       const need=solveMonthlyDeposit();
       const rr=calcRequiredRate(p.closureAmt,+planCfg.seed||0,monthly,p.k);
+      if(!isFinite(need)){
+        // fmt(Infinity) พิมพ์ออกมาเป็น ฿∞ จึงต้องดักไว้แล้วบอกสาเหตุจริงแทน
+        h+=`<div class="warn-box">🚫 แผนนี้ไปไม่ถึงเป้าไม่ว่าจะเก็บเดือนละเท่าไร — เงินทุกบาทของเฟส 1 ถูกแบ่งเข้ากองทุนรวมหมด จึงไม่มีเงินสะสมในกองปิดรถเลย<br>
+          ลดช่อง "เข้ากองทุนรวม" ของเฟส 1 ลง (ตอนนี้ ${fundPct1()}%) หรือกำหนดเงินเข้าฝากประจำต่อเดือน</div>`;
+        sum.innerHTML=h;phases.innerHTML='';return;
+      }
       h+=`<div class="warn-box">\u26A0\uFE0F \u0E14\u0E49\u0E27\u0E22\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)} \u0E08\u0E30\u0E02\u0E32\u0E14\u0E2D\u0E22\u0E39\u0E48 <strong>\u0E3F${fmt(-gap)}</strong> \u0E13 \u0E27\u0E31\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35<br>
         \u0E17\u0E32\u0E07\u0E41\u0E01\u0E49: \u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 <strong>\u0E3F${fmt(need)}</strong>
         ${rr!==null?`\u0E2B\u0E23\u0E37\u0E2D\u0E2B\u0E32\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E19\u0E49\u0E2D\u0E22 <strong>${rr.toFixed(2)}% \u0E15\u0E48\u0E2D\u0E1B\u0E35</strong>`:'(\u0E25\u0E33\u0E1E\u0E31\u0E07\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E14\u0E35\u0E22\u0E27\u0E44\u0E21\u0E48\u0E1E\u0E2D \u0E15\u0E49\u0E2D\u0E07\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E07\u0E34\u0E19\u0E15\u0E49\u0E19)'}
@@ -2392,15 +2523,17 @@ function renderFundTab(){
     if(a.sum>0&&Math.abs(a.sum-100)>0.01){
       h+=`<div class="warn-box">⚠️ สัดส่วนพอร์ตเฟส ${n} รวมกันได้ ${a.sum.toFixed(0)}% ไม่ใช่ 100% — ระบบปรับให้เป็นสัดส่วนโดยอัตโนมัติแล้ว (${esc(allocText(a))}) แต่ควรแก้ให้ครบ 100</div>`;
     } else if(a.sum<=0&&ph){
-      h+=`<div class="warn-box">⚠️ เฟส ${n} ยังไม่ได้ตั้งสัดส่วนกองทุนเลย — เงินของเฟสนี้จะถูกพักไว้ที่อัตราพักกอง ${planCfg.ratePark}%/ปี ไม่ได้ลงทุนจริง</div>`;
+      h+=`<div class="warn-box">⚠️ เฟส ${n} ${a.empty?'ยังไม่ได้เพิ่มกองทุนสักกอง':'ยังไม่ได้ตั้งสัดส่วนกองทุนเลย'} — เงินของเฟสนี้จะถูกพักไว้ที่อัตราพักกอง ${planCfg.ratePark}%/ปี ไม่ได้ลงทุนจริง</div>`;
     }
   });
-  if(A1.capped)
-    h+=`<div class="warn-box">⚠️ สัดส่วนเฟส 1 รวมกันได้ ${A1.sum.toFixed(0)}% เกิน 100% — ระบบย่อลงให้พอดี 100% แล้ว</div>`;
-  if(A1.invested>=0.9999&&fdPart<=0)
-    h+=`<div class="warn-box">🚫 เฟส 1 ถูกจัดสรรเข้ากองทุนเต็ม 100% และไม่มีเงินเข้าฝากประจำ จึงไม่มีเงินสะสมในกองปิดรถเลย ไม่ว่าจะเก็บเดือนละเท่าไร — ลดสัดส่วนเฟส 1 ลง หรือกำหนดเงินเข้าฝากประจำ</div>`;
+  if(A1.sum>0&&Math.abs(A1.sum-100)>0.01)
+    h+=`<div class="warn-box">⚠️ สัดส่วนกองทุนเฟส 1 รวมกันได้ ${A1.sum.toFixed(0)}% ไม่ใช่ 100% — ระบบปรับให้เป็นสัดส่วนโดยอัตโนมัติแล้ว (${esc(allocText(A1))}) แต่ควรแก้ให้ครบ 100</div>`;
+  if(fundPct1()>0&&A1.empty)
+    h+=`<div class="warn-box">⚠️ ตั้งให้เฟส 1 เข้ากองทุนรวม ${fundPct1()}% แต่ยังไม่ได้เพิ่มกองทุนสักกอง — เงินทั้งหมดจึงยังอยู่ในฝากประจำและกองตลาดเงินตามเดิม</div>`;
+  else if(p1Squeezed)
+    h+=`<div class="warn-box">⚠️ ฝากประจำ ฿${fmt(fdPart)} + กองทุนรวม ${fundPct1()}% รวมแล้วเกินเงินเก็บเดือนละ ฿${fmt(monthly)} — ระบบลดเงินเข้ากองทุนลงเหลือ ฿${fmt(p1ToFunds)} เพื่อไม่ให้เบียดฝากประจำ</div>`;
   else if(A1.invested>0)
-    h+=`<div class="info-box">ℹ️ เฟส 1 แบ่งเงินเข้ากองทุน ${(A1.invested*100).toFixed(0)}% ของเงินที่เหลือหลังหักฝากประจำ — เงินส่วนนี้<strong>ไม่นับเป็นกองปิดรถ</strong> ระบบจึงคำนวณเงินเก็บต่อเดือนให้สูงขึ้นเพื่อให้กองปิดรถยังถึงเป้า</div>`;
+    h+=`<div class="info-box">ℹ️ เฟส 1 แบ่งเงินเข้ากองทุนรวม ${fundPct1()}% ของเงินเก็บต่อเดือน (฿${fmt(p1ToFunds)}) — เงินส่วนนี้<strong>ไม่นับเป็นกองปิดรถ</strong> ระบบจึงคำนวณเงินเก็บต่อเดือนให้สูงขึ้นเพื่อให้กองปิดรถยังถึงเป้า</div>`;
 
   sum.innerHTML=h;
 
@@ -2410,10 +2543,10 @@ function renderFundTab(){
       <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 1 \u00B7 \u0E2A\u0E30\u0E2A\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16</div>
       <div class="ec-tier-range">${rng(ph1)}</div>
       <div class="ec-tier-desc">\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)}${A1.invested>0
-          ?`<br>\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 \u0E3F${fmt(fdPart)} \u00B7 \u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19 \u0E3F${fmt(p1ToFunds)} \u00B7 \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(p1ToMM)}<br>\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 = \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 + \u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19`
+          ?`<br>\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 \u0E3F${fmt(fdPart)} \u00B7 \u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21 \u0E3F${fmt(p1ToFunds)} \u00B7 \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(p1ToMM)}<br>\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 = \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 + \u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 = \u0E3F${fmt(fdPart+p1ToMM)}`
           :`\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 100%${fdPart>0?`<br>\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 \u0E3F${fmt(fdPart)} + \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(monthly-fdPart)}`:'<br>\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19'}`}
         <br><strong>\u0E25\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E3F${fmt(s.invest[0])}</strong></div>
-      ${A1.invested>0?`<span class="ec-tier-savings">${esc(allocText(A1))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A1.blended.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(1)}</span>`
+      ${A1.invested>0?`<span class="ec-tier-savings">${esc(allocText(A1))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A1.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(1)}</span>`
         :(fdEnd?`<span class="ec-tier-savings">\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 ${monthLabel(fdEnd)} \u2192 \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19</span>`:'')}
     </div>
     <div class="ec-tier-card t2">
@@ -2421,14 +2554,14 @@ function renderFundTab(){
       <div class="ec-tier-range">${rng(ph2)}</div>
       <div class="ec-tier-desc">${ph2?`\u0E2B\u0E22\u0E38\u0E14\u0E40\u0E15\u0E34\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 \u0E1B\u0E25\u0E48\u0E2D\u0E22\u0E1E\u0E31\u0E01\u0E44\u0E27\u0E49\u0E40\u0E09\u0E22 \u0E46 \u0E43\u0E2B\u0E49\u0E14\u0E2D\u0E01\u0E40\u0E1A\u0E35\u0E49\u0E22\u0E40\u0E14\u0E34\u0E19\u0E15\u0E48\u0E2D<br>\u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)} \u0E44\u0E1B\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15\u0E41\u0E17\u0E19
         <br><strong>\u0E25\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E3F${fmt(s.invest[1])}</strong>`:'\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E16\u0E39\u0E01\u0E43\u0E0A\u0E49\u0E44\u0E1B\u0E01\u0E31\u0E1A\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E19\u0E16\u0E36\u0E07\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35'}</div>
-      ${ph2?`<span class="ec-tier-savings">${esc(allocText(A2))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A2.blended.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(2)}</span>`:''}
+      ${ph2?`<span class="ec-tier-savings">${esc(allocText(A2))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A2.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(2)}</span>`:''}
     </div>
     <div class="ec-tier-card t3">
       <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 3 \u00B7 \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E47\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15</div>
       <div class="ec-tier-range">${rng(ph3)}</div>
       <div class="ec-tier-desc">\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E41\u0E23\u0E01\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E41\u0E25\u0E49\u0E27 \u0E42\u0E2D\u0E19\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E14\u0E34\u0E21 \u0E3F${fmt(redirectAmt)} \u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E17\u0E38\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19<br>\u0E23\u0E27\u0E21\u0E01\u0E31\u0E1A\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E34\u0E21\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly+redirectAmt)}
         <br><strong>\u0E25\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E3F${fmt(s.invest[2]+s.redirectTotal)}</strong> (\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A \u0E3F${fmt(s.invest[2])} + \u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E42\u0E2D\u0E19 \u0E3F${fmt(s.redirectTotal)})</div>
-      <span class="ec-tier-savings">${esc(allocText(A3))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A3.blended.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(3)} \u00B7 \u0E08\u0E1A\u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E40\u0E14\u0E34\u0E21\u0E04\u0E27\u0E23\u0E08\u0E30\u0E08\u0E1A\u0E1E\u0E2D\u0E14\u0E35</span>
+      <span class="ec-tier-savings">${esc(allocText(A3))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A3.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(3)} \u00B7 \u0E08\u0E1A\u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E40\u0E14\u0E34\u0E21\u0E04\u0E27\u0E23\u0E08\u0E30\u0E08\u0E1A\u0E1E\u0E2D\u0E14\u0E35</span>
     </div>`;
 }
 
@@ -2436,7 +2569,13 @@ function renderFundTab(){
 let fundChartInst=null;
 // 4 กองเดิมคงสีเดิมไว้ให้กราฟหน้าตาคุ้น ที่เหลือไล่ด้วยมุมทอง 137.5° จึงรองรับกี่กองก็ได้โดยสีไม่ซ้ำกัน
 const LEGACY_FUND_COLOR={eq:'#7c3aed',esg:'#16a34a',au:'#f59e0b',gm:'#0ea5e9'};
-function fundColor(f,i){return LEGACY_FUND_COLOR[f.id]||`hsl(${Math.round((i*137.508+18)%360)} 62% 45%)`;}
+// สีผูกกับ id ไม่ใช่ลำดับ — เพิ่มหรือลบกองหนึ่งกองแล้วสีของกองอื่นจะได้ไม่เปลี่ยนตามไปทั้งกราฟ
+function fundColor(f){
+  if(LEGACY_FUND_COLOR[f.id])return LEGACY_FUND_COLOR[f.id];
+  let h=0;
+  for(let i=0;i<f.id.length;i++)h=(h*31+f.id.charCodeAt(i))>>>0;
+  return `hsl(${h%360} 62% 45%)`;
+}
 function buildFundChart(){
   const cv=document.getElementById('fundChart');
   const sec=document.getElementById('fundChartSection');
@@ -2486,10 +2625,10 @@ function buildFundChart(){
       {label:'รวมทั้งพอร์ต',data:s.rows.map(r=>Math.round(r.safe+r.grow)),borderColor:'#1e3a8a',borderWidth:2.5,pointRadius:0,fill:false,tension:.15},
       {label:'ยอดปิดบัญชี',data:s.rows.map(()=>Math.round(p.closureAmt)),borderColor:'#ea580c',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false},
       // เส้นรายกอง ซ่อนไว้ก่อนเสมอ — มีได้ถึง 12 กอง ถ้าโชว์หมดกราฟจะอ่านไม่ออก กดที่ legend เพื่อเปิดทีละกอง
-      ...s.funds.map((f,i)=>({
-        label:'— '+fundName(f,i),
+      ...s.cols.map(f=>({
+        label:`— ฟ${f.phase} ${f.name}`,
         data:s.rows.map(r=>Math.round((r.f&&r.f[f.id])||0)),
-        borderColor:fundColor(f,i),borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false,tension:.15,hidden:true
+        borderColor:fundColor(f),borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false,tension:.15,hidden:true
       })),
       ...(s.rows.some(r=>r.cash>1)?[{label:'— เงินพักรอจัดสรร',
         data:s.rows.map(r=>Math.round(r.cash||0)),borderColor:'#94a3b8',borderWidth:1.5,
@@ -2555,7 +2694,7 @@ function renderFundHead(){
   sub.innerHTML=`<th>\u0E40\u0E14\u0E37\u0E2D\u0E19</th><th>\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48</th><th>\u0E40\u0E1F\u0E2A</th>
     <th style="background:#15803d">\u0E40\u0E1B\u0E49\u0E32\u0E23\u0E27\u0E21\u0E17\u0E31\u0E49\u0E07\u0E1E\u0E2D\u0E23\u0E4C\u0E15</th>
     <th style="background:#6d28d9">\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33</th><th style="background:#6d28d9">\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19</th><th style="background:#4c1d95">\u0E23\u0E27\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16</th>
-    ${fundCols.map((f,i)=>`<th style="background:#6d28d9" title="${esc(fundName(f,i))} \u00B7 ${f.ret}%/\u0E1B\u0E35">${esc(fundName(f,i))}</th>`).join('')}
+    ${fundCols.map(f=>`<th style="background:#6d28d9" title="${esc(f.name)} \u00B7 \u0E40\u0E1F\u0E2A ${f.phase} \u00B7 ${f.ret}%/\u0E1B\u0E35"><span class="th-ph">\u0E1F${f.phase}</span> ${esc(f.name)}</th>`).join('')}
     <th style="background:#4c1d95">\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15</th>
     <th style="background:#b45309">\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07</th>`;
 }
@@ -2563,7 +2702,9 @@ function renderFundHead(){
 function renderFundTable(){
   const tb=document.getElementById('fundTbody');
   if(!tb)return;
-  fundCols=fundList().filter(f=>f&&f.id).slice();
+  // spread ไม่ใช่ assign — ถ้าแปะ .phase ลงบน object ที่เก็บอยู่จริง มันจะถูก savePlan เขียนขึ้น Firestore
+  // แล้ว sanitizeAllFunds ก็ตัดทิ้งตอนโหลด พฤติกรรมก่อนกับหลัง reload จะไม่เหมือนกัน
+  fundCols=allFundCols();
   renderFundHead();
   const NCOL=9+fundCols.length;   // 3 เดือน + 1 เป้า + 2 ฝาก/ตลาด + 1 รวมกอง + N + 1 รวมโต + 1 ส่วนต่าง
   const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
@@ -2584,14 +2725,17 @@ function renderFundTable(){
     const canFD=fdOn&&r.phase===1&&r.t<fdMonths;
     const canMM=r.phase<=2&&r.t<=s.plan.k;
     const colOn={fd:canFD,mm:canMM};
-    // กองหนึ่ง ๆ มีอยู่จริงในเฟส 1 ก็ต่อเมื่อถูกตั้งสัดส่วนเฟส 1 ไว้ ไม่งั้นยอดจะเป็น 0 ตลอด
-    fundCols.forEach(f=>{colOn[f.id]=(r.phase>=2)||(r.phase===1&&(+f.a1||0)>0);});
+    // กองเปิดให้กรอกตั้งแต่เฟสของตัวเองเป็นต้นไป "ไม่ใช่เฉพาะเฟสของตัวเอง"
+    // เพราะซื้อแล้วยอดยังโตต่อในเฟสถัดไป ถ้าปิดคอลัมน์ทิ้ง fundGroupTotal จะไม่นับกองนั้น
+    // ขณะที่ row.grow ยังนับอยู่ ทุกแถวของเฟสหลังจะโชว์ส่วนต่างติดลบมหาศาลทั้งที่กรอกครบ
+    const p1on=fundPct1()>0&&!s.alloc[1].empty&&s.alloc[1].invested>0;
+    fundCols.forEach(f=>{colOn[f.id]=(r.phase>=f.phase)&&(f.phase!==1||p1on);});
     fundActive[r.m]=colOn;
     const why={
       fd:!fdOn?'\u0E41\u0E1C\u0E19\u0E19\u0E35\u0E49\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E43\u0E0A\u0E49\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33':'\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27 \u0E22\u0E2D\u0E14\u0E16\u0E39\u0E01\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19',
       mm:'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E23\u0E16\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E1A\u0E20\u0E32\u0E23\u0E01\u0E34\u0E08',
       grow:'\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E40\u0E1F\u0E2A\u0E17\u0E35\u0E48\u0E40\u0E23\u0E34\u0E48\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15',
-      p1:'\u0E01\u0E2D\u0E07\u0E19\u0E35\u0E49\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E23\u0E31\u0E1A\u0E40\u0E07\u0E34\u0E19\u0E43\u0E19\u0E40\u0E1F\u0E2A 1 (\u0E2A\u0E31\u0E14\u0E2A\u0E48\u0E27\u0E19\u0E40\u0E1F\u0E2A 1 = 0%)'
+      p1:'\u0E40\u0E1F\u0E2A 1 \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E43\u0E2B\u0E49\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21'
     };
     const cell=(f,on,tip,label)=>{
       const v=fundRec[r.m]&&fundRec[r.m][f]!==undefined?fundRec[r.m][f]:'';
@@ -2614,7 +2758,7 @@ function renderFundTable(){
       <td class="col-plan tdr">${fmt(tgt)}</td>
       ${cell('fd',canFD,why.fd,'\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33')}${cell('mm',canMM,why.mm,'\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19')}
       <td class="tdr" id="fs_${r.m}"><strong>${aSafe===null?'\u2014':fmt(aSafe)}</strong></td>
-      ${fundCols.map((f,i)=>cell(f.id,colOn[f.id],r.phase===1?why.p1:why.grow,fundName(f,i))).join('')}
+      ${fundCols.map(f=>cell(f.id,colOn[f.id],f.phase===1?why.p1:why.grow,'\u0E1F'+f.phase+' '+f.name)).join('')}
       <td class="tdr" id="fgt_${r.m}"><strong>${aGrow===null?'\u2014':fmt(aGrow)}</strong></td>
       <td class="${dCls} tdr diff-cell" id="fd_${r.m}" data-tgt="${tgt}">${has?fmtDiff(diff):'-'}</td>
     </tr>`;
@@ -2651,11 +2795,14 @@ function clearFundData(){
 }
 
 function exportFundCSV(){
+  // fundCols/fundActive ถูกเซ็ตใน renderFundTable เท่านั้น ถ้ายังไม่เคยเปิดแท็บติดตาม
+  // ค่าจะเป็นของเก่า/ว่าง แล้วไฟล์ที่ได้จะไม่ตรงกับตารางบนจอ
+  renderFundTable();
   const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
   if(!s)return alert('\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E41\u0E1C\u0E19 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19');
   // ชื่อกองเป็นข้อความอิสระ อาจมี , หรือ " จึงต้อง quote หัวตารางด้วย ไม่ใช่แค่ข้อมูล
   const hdr=['\u0E40\u0E14\u0E37\u0E2D\u0E19','\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48','\u0E40\u0E1F\u0E2A','\u0E40\u0E1B\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16','\u0E40\u0E1B\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33','\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19','\u0E23\u0E27\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16',
-    ...fundCols.map((f,i)=>fundName(f,i)),'\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07'].map(csvq);
+    ...fundCols.map(f=>'\u0E1F'+f.phase+' '+f.name),'\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07'].map(csvq);
   const rows=s.rows.map(r=>{
     // ข้ามช่องที่กองนั้นปิดไปแล้วในเดือนนั้น ให้ตรงกับที่ตารางแสดง
     const act=fundActive[r.m];
