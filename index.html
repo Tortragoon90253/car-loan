@@ -271,6 +271,12 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .fund-row.fund-foot{font-size:.73rem;font-weight:700;color:var(--grayl);border-top:1px dashed var(--border);
   padding-top:8px;margin-top:2px;font-variant-numeric:tabular-nums}
 .fund-row.fund-foot .bad{color:var(--red)}
+.fv-block{margin-top:8px;padding-top:7px;border-top:1px dashed rgba(0,0,0,.12);
+  font-size:.68rem;line-height:1.55;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.fv-head{font-weight:800;margin-bottom:4px;opacity:.85}
+.fv-row{margin-bottom:5px}
+.fv-row .fv-nm{font-weight:700}
+.fv-row i{opacity:.75;font-style:normal}
 .sg-1 .fund-blk-head{color:#1d4ed8}
 .sg-2 .fund-blk-head{color:#15803d}
 .sg-3 .fund-blk-head{color:#7c3aed}
@@ -734,7 +740,11 @@ td:nth-child(2){text-align:left;color:#4b5563}
           </div>
         </div>
 
-        <div class="note" style="margin-top:8px">ผลตอบแทนคิดแบบทบต้นรายเดือนจากอัตราต่อปีหารสิบสอง (เท่ากับวิธีที่ตารางผ่อนใช้) และถือว่าฝากเงินต้นเดือนแล้วโตปลายเดือน</div>
+        <div class="note" style="margin-top:8px">📐 <strong>วิธีคิดผลตอบแทน</strong> — ใช้สูตร <strong>Future Value of an Ordinary Annuity</strong>
+          <code>FV = PMT × [((1+i)ⁿ − 1) ÷ i]</code> โดยถือว่าเงินงวดเข้า<strong>ตอนสิ้นเดือน</strong> เงินงวดนั้นจึงยังไม่ได้ดอกเบี้ยของเดือนที่ฝาก<br>
+          อัตรารายเดือนแปลงแบบ <strong>effective</strong> <code>i = (1+r)^(1/12) − 1</code> กรอก 8%/ปี แล้วทบต้นครบปีจะได้ 8.00% พอดี
+          (ไม่ใช่ 8.30% แบบที่หารสิบสองตรง ๆ) · เงินตั้งต้นที่มีอยู่แล้วได้ดอกตั้งแต่เดือนแรก เพราะถืออยู่ตั้งแต่ต้นเดือน<br>
+          <span style="color:var(--grayl)">หมายเหตุ: ตารางผ่อนรถหน้า 1 ยังคิดดอกเบี้ยแบบ nominal (อัตราต่อปี ÷ 12) ตามธรรมเนียมสินเชื่อรถ ไม่ได้เปลี่ยนตาม</span></div>
       </div>
       <div class="ec-tier-grid" id="fundPhases"></div>
       <div class="pp-chart-card" id="fundChartSection">
@@ -2039,8 +2049,20 @@ function onCheckChange(k){
 }
 
 // ========== FUND ENGINE (\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16) ==========
-// \u0E2D\u0E31\u0E15\u0E23\u0E32\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19 = \u0E2D\u0E31\u0E15\u0E23\u0E32\u0E15\u0E48\u0E2D\u0E1B\u0E35 / 12 (nominal \u0E17\u0E1A\u0E15\u0E49\u0E19\u0E23\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19) \u2014 \u0E27\u0E34\u0E18\u0E35\u0E40\u0E14\u0E35\u0E22\u0E27\u0E01\u0E31\u0E1A\u0E17\u0E35\u0E48\u0E15\u0E32\u0E23\u0E32\u0E07\u0E1C\u0E48\u0E2D\u0E19\u0E43\u0E0A\u0E49
-function mRate(annualPct){return (annualPct||0)/100/12;}
+// กติกาการคิดผลตอบแทนทั้งไฟล์นี้:
+//   1. อัตรารายเดือนแบบ effective  i = (1+r)^(1/12) - 1   (กรอก 8%/ปี แล้วได้ 8.00%/ปี จริง)
+//   2. ordinary annuity — เงินงวดเข้าสิ้นเดือน จึงยังไม่ได้ดอกของเดือนที่ฝาก
+//      ผลลัพธ์จึงเท่ากับ FV = PMT x [((1+i)^n - 1) / i] เป๊ะ ๆ (มีชุดทดสอบยืนยัน)
+//   ตารางผ่อนรถไม่เกี่ยวกับสองข้อนี้ — คิด rate/100/12 ของตัวเองแยกตามธรรมเนียมสินเชื่อ
+// อัตราต่อเดือนแบบ effective — กรอก 8%/ปี แล้วทบต้นครบ 12 เดือนได้ 8.00%/ปี พอดี
+// (เดิมใช้ r/12 แบบ nominal ซึ่งทบแล้วได้ 8.30%/ปี สูงกว่าที่กรอก)
+// ใช้เฉพาะฝั่งการลงทุนเท่านั้น — ตารางผ่อนรถคำนวณ rate/100/12 ของตัวเองแยกต่างหาก
+// ซึ่งถูกต้องแล้วเพราะสินเชื่อรถอ้างอัตราแบบ nominal ตามธรรมเนียม
+function mRate(annualPct){
+  const r=(annualPct||0)/100;
+  if(r<=-1)return -1;   // ขาดทุนเต็มจำนวน — กัน Math.pow ฐานติดลบที่คืน NaN
+  return Math.pow(1+r,1/12)-1;
+}
 function fundsOf(phase){const a=planCfg['funds'+phase];return Array.isArray(a)?a:[];}
 function fundPct1(){return Math.max(0,Math.min(100,+planCfg.fundPct1||0));}
 // รายการกองของทุกเฟสเรียงต่อกัน = คอลัมน์ของตารางติดตาม/กราฟ/CSV
@@ -2065,7 +2087,7 @@ function phaseAlloc(phase){
     raw.forEach(x=>{
       if(x.pct<=0)return;
       const f=toFunds*x.pct/sum;
-      w[x.id]=f;invested+=f;parts.push({name:x.name,pct:x.pct/sum*100});
+      w[x.id]=f;invested+=f;parts.push({id:x.id,name:x.name,ret:x.ret,pct:x.pct/sum*100});
     });
   }
   const resid=Math.max(0,1-invested);
@@ -2087,17 +2109,16 @@ function allocText(a){
   return parts.join(' · ')||'ยังไม่ได้ตั้งสัดส่วน';
 }
 
-// \u0E40\u0E07\u0E34\u0E19\u0E1D\u0E32\u0E01\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E43\u0E0A\u0E49 (annuity-DUE: \u0E1D\u0E32\u0E01\u0E15\u0E49\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E41\u0E25\u0E49\u0E27\u0E42\u0E15\u0E1B\u0E25\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19)
-//   FV = seed(1+i)^k + D(1+i)((1+i)^k - 1)/i
-// \u0E43\u0E0A\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E01\u0E23\u0E2D\u0E1A\u0E15\u0E31\u0E49\u0E07\u0E15\u0E49\u0E19\u0E43\u0E2B\u0E49\u0E15\u0E31\u0E27\u0E41\u0E01\u0E49\u0E2A\u0E21\u0E01\u0E32\u0E23 \u0E2A\u0E48\u0E27\u0E19\u0E15\u0E31\u0E27\u0E40\u0E25\u0E02\u0E17\u0E35\u0E48\u0E41\u0E2A\u0E14\u0E07\u0E08\u0E23\u0E34\u0E07\u0E21\u0E32\u0E08\u0E32\u0E01 buildFundSchedule \u0E40\u0E2A\u0E21\u0E2D
-function calcRequiredDeposit(target,seed,i,k){
-  if(k<=0)return Math.max(0,target-seed);
-  if(Math.abs(i)<1e-12)return Math.max(0,(target-seed)/k);
-  const g=Math.pow(1+i,k);
-  const need=target-seed*g;
-  if(need<=0)return 0;
-  return need/((1+i)*(g-1)/i);
+// ---- สูตรปิดที่ใช้แสดงบนการ์ดเฟส (เครื่องคำนวณหลักยังเป็นการจำลองรายเดือน) ----
+// FV ของเงินงวดเท่ากันทุกเดือน แบบ ordinary annuity (งวดเข้าตอนสิ้นเดือน)
+//   FV = PMT x [ ((1+i)^n - 1) / i ]
+// ต้องให้ผลตรงกับ buildFundSchedule เป๊ะ ๆ เมื่อกองนั้นรับเงินคงที่ตลอด n เดือนโดยไม่มีก้อนพิเศษ
+function fvOrdinary(pmt,i,n){
+  if(n<=0)return 0;
+  return Math.abs(i)<1e-12?pmt*n:pmt*((Math.pow(1+i,n)-1)/i);
 }
+// FV ของเงินก้อนเดียว — ใช้กับโหมด "ก้อนเดียวตอนเริ่มเฟส" และการโตต่อหลังหยุดเติมเงิน
+function fvLump(pv,i,n){return n<=0?pv:pv*Math.pow(1+i,n);}
 
 // \u0E08\u0E33\u0E25\u0E2D\u0E07\u0E01\u0E2D\u0E07\u0E40\u0E07\u0E34\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E15\u0E48\u0E2D\u0E40\u0E14\u0E37\u0E2D\u0E19 \u2014 \u0E41\u0E2B\u0E25\u0E48\u0E07\u0E04\u0E27\u0E32\u0E21\u0E08\u0E23\u0E34\u0E07\u0E40\u0E14\u0E35\u0E22\u0E27\u0E02\u0E2D\u0E07\u0E17\u0E31\u0E49\u0E07\u0E01\u0E23\u0E32\u0E1F \u0E2A\u0E23\u0E38\u0E1B \u0E41\u0E25\u0E30\u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21
 // \u0E25\u0E33\u0E14\u0E31\u0E1A\u0E43\u0E19\u0E41\u0E15\u0E48\u0E25\u0E30\u0E40\u0E14\u0E37\u0E2D\u0E19: \u0E1D\u0E32\u0E01\u0E40\u0E07\u0E34\u0E19\u0E15\u0E49\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19 -> \u0E42\u0E15\u0E1B\u0E25\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19 -> (\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35) \u0E2B\u0E31\u0E01\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14
@@ -2143,6 +2164,15 @@ function buildFundSchedule(monthly){
   for(let t=0;t<=total;t++){
     const m=monthAdd(p.saveStart,t);
     let phase;
+    // ---- ordinary annuity: ทบต้นยอดที่ถืออยู่ก่อน แล้วเงินงวดของเดือนนี้ค่อยเข้าตอนสิ้นเดือน ----
+    // เงินงวดจึงยังไม่ได้ดอกเบี้ยของเดือนที่ฝาก (เดิมได้ = annuity due)
+    // เงินตั้งต้น (seed) อยู่ใน mm ตั้งแต่ก่อนเข้าลูป จึงได้ดอกของเดือน 0 ด้วย ซึ่งถูกต้อง
+    // เพราะเป็นเงินที่มีอยู่จริงตั้งแต่ต้นเดือน ต่างจากเงินงวดที่เพิ่งเข้าตอนสิ้นเดือน
+    // กองตลาดเงินใช้อัตราพักกองหลังจบเฟส 1 · แต่ละกองทุนโตด้วยอัตราของตัวเอง
+    fd*=(1+iFD);mm*=(1+(t<accM?iMM:iPark));
+    for(let j=0;j<ids.length;j++){const id=ids[j];bal[id]*=(1+(iF[id]||0));}
+    cashRes*=(1+iPark);
+
     if(t<accM){
       // \u0E40\u0E1F\u0E2A 1 \u2014 \u0E40\u0E15\u0E34\u0E21\u0E40\u0E07\u0E34\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E41\u0E1A\u0E48\u0E07\u0E40\u0E02\u0E49\u0E32\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E01\u0E48\u0E2D\u0E19 \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19
       phase=1;
@@ -2175,11 +2205,6 @@ function buildFundSchedule(monthly){
       if(a.resid>0)cashRes+=add*a.resid;
       invest[2]+=cash;redirectTotal+=redirect*p.freedPay;
     }
-    // \u0E42\u0E15\u0E1B\u0E25\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19 \u2014 \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E43\u0E0A\u0E49\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E1E\u0E31\u0E01\u0E01\u0E2D\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E08\u0E1A\u0E40\u0E1F\u0E2A 1
-    // \u0E2A\u0E48\u0E27\u0E19\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E35\u0E48\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15 (gm) \u0E42\u0E15\u0E14\u0E49\u0E27\u0E22\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E40\u0E2A\u0E21\u0E2D \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E2D\u0E31\u0E15\u0E23\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15
-    fd*=(1+iFD);mm*=(1+(t<accM?iMM:iPark));
-    for(let j=0;j<ids.length;j++){const id=ids[j];bal[id]*=(1+(iF[id]||0));}
-    cashRes*=(1+iPark);
     // \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 -> \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E31\u0E49\u0E07\u0E01\u0E49\u0E2D\u0E19
     if(fdOpen&&t===fdMonths-1){mm+=fd;fd=0;fdOpen=false;}
 
@@ -2247,9 +2272,9 @@ function solveMonthlyDeposit(){
 function calcRequiredRate(target,seed,pmt,k){
   if(k<=0)return 0;
   const fv=(annual)=>{
-    const i=annual/100/12;
+    const i=mRate(annual);                       // effective เหมือนเครื่องคำนวณหลัก
     let b=seed;
-    for(let t=0;t<k;t++){b=(b+pmt)*(1+i);}
+    for(let t=0;t<k;t++){b=b*(1+i)+pmt;}         // ordinary: ทบต้นก่อน แล้วเงินงวดเข้าสิ้นเดือน
     return b;
   };
   if(fv(100)<target)return null;   // \u0E15\u0E48\u0E2D\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49 100%/\u0E1B\u0E35 \u0E01\u0E47\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07
@@ -2450,6 +2475,38 @@ function resetFunds(phase){
   renderFundTab();renderFundTable();buildFundChart();
 }
 
+// สร้างบล็อกสูตร FV รายกองของเฟสหนึ่ง ๆ ให้ตรงกับที่ buildFundSchedule ทำจริง
+//   dca  : เงินงวดเท่ากันทุกเดือนเข้าสิ้นเดือน -> FV = PMT x [((1+i)^n - 1) / i]
+//   lump : ก้อนเดียวเข้าสิ้นเดือนแรกของเฟส แล้วโตต่ออีก n-1 เดือน -> FV = P x (1+i)^(n-1)
+// ตัวเลขที่โชว์คือยอด "ณ สิ้นเฟส" ถ้ากองยังโตต่อหลังจบเฟส หรือมีเงินก้อนพิเศษเข้ามา
+// จะมีบรรทัดกำกับต่อท้าย เพื่อไม่ให้เข้าใจผิดว่าเท่ากับยอดสุดท้ายในกราฟ
+function fvBlock(s,phase,alloc,cashPerMonth,span){
+  if(!span||!span.months||!alloc.ids.length)return '';
+  const n=span.months, lump=phaseMode(phase)==='lump';
+  const endIdx=s.rows.findIndex(r=>r.m===span.to);
+  const carry=endIdx<0?0:(s.rows.length-1-endIdx);        // เดือนที่กองยังโตต่อหลังจบเฟส
+  // เงินเหลือจากปิดบัญชีถูกโยกเข้ากองของเฟส 3 ตอนสิ้นเดือนปิด แล้วโตตลอดเฟส 3
+  const payRow=s.rows.find(r=>r.paidOff);
+  const surplus=(phase===3&&payRow)?Math.max(0,payRow.safeBefore-s.target):0;
+  const rows=alloc.ids.map(id=>{
+    const f=alloc.parts.find(x=>x.id===id)||{};
+    const i=mRate(f.ret||0);
+    const pmt=cashPerMonth*alloc.w[id];
+    if(pmt<=0.005&&!surplus)return '';
+    const fv=lump?fvLump(pmt*n,i,n-1):fvOrdinary(pmt,i,n);
+    const sur=surplus*alloc.w[id]/(alloc.invested||1);
+    const parts=[`<span class="fv-nm">${esc(f.name||id)}</span>`,
+      `PMT ฿${fmt(pmt)} · i ${(i*100).toFixed(4)}%/ด. · n ${n} ด. → <b>฿${fmt(fv)}</b>`];
+    const extra=[];
+    if(sur>0.005)extra.push(`+ เงินเหลือจากปิดบัญชี ฿${fmt(sur)} → ฿${fmt(fvLump(sur,i,n))}`);
+    if(carry>0)extra.push(`→ ณ สิ้นสัญญา ฿${fmt(fvLump(fv+fvLump(sur,i,n),i,carry))} (โตต่ออีก ${carry} ด.)`);
+    return `<div class="fv-row">${parts.join('<br>')}${extra.map(x=>`<br><i>${x}</i>`).join('')}</div>`;
+  }).filter(Boolean).join('');
+  if(!rows)return '';
+  const head=lump?'FV = P × (1+i)ⁿ⁻¹':'FV = PMT × [((1+i)ⁿ − 1) ÷ i]';
+  return `<div class="fv-block"><div class="fv-head">📐 ${head}</div>${rows}</div>`;
+}
+
 function renderFundTab(){
   const sum=document.getElementById('fundSummary');
   const phases=document.getElementById('fundPhases');
@@ -2546,7 +2603,7 @@ function renderFundTab(){
           ?`<br>\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 \u0E3F${fmt(fdPart)} \u00B7 \u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21 \u0E3F${fmt(p1ToFunds)} \u00B7 \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(p1ToMM)}<br>\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 = \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 + \u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 = \u0E3F${fmt(fdPart+p1ToMM)}`
           :`\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 100%${fdPart>0?`<br>\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33 \u0E3F${fmt(fdPart)} + \u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19 \u0E3F${fmt(monthly-fdPart)}`:'<br>\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19'}`}
         <br><strong>\u0E25\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E3F${fmt(s.invest[0])}</strong></div>
-      ${A1.invested>0?`<span class="ec-tier-savings">${esc(allocText(A1))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A1.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(1)}</span>`
+      ${A1.invested>0?`<span class="ec-tier-savings">${esc(allocText(A1))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A1.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(1)}</span>${fvBlock(s,1,A1,p1ToFunds/(A1.invested||1),ph1)}`
         :(fdEnd?`<span class="ec-tier-savings">\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 ${monthLabel(fdEnd)} \u2192 \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19</span>`:'')}
     </div>
     <div class="ec-tier-card t2">
@@ -2554,7 +2611,7 @@ function renderFundTab(){
       <div class="ec-tier-range">${rng(ph2)}</div>
       <div class="ec-tier-desc">${ph2?`\u0E2B\u0E22\u0E38\u0E14\u0E40\u0E15\u0E34\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 \u0E1B\u0E25\u0E48\u0E2D\u0E22\u0E1E\u0E31\u0E01\u0E44\u0E27\u0E49\u0E40\u0E09\u0E22 \u0E46 \u0E43\u0E2B\u0E49\u0E14\u0E2D\u0E01\u0E40\u0E1A\u0E35\u0E49\u0E22\u0E40\u0E14\u0E34\u0E19\u0E15\u0E48\u0E2D<br>\u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly)} \u0E44\u0E1B\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15\u0E41\u0E17\u0E19
         <br><strong>\u0E25\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E3F${fmt(s.invest[1])}</strong>`:'\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E16\u0E39\u0E01\u0E43\u0E0A\u0E49\u0E44\u0E1B\u0E01\u0E31\u0E1A\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E19\u0E16\u0E36\u0E07\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35'}</div>
-      ${ph2?`<span class="ec-tier-savings">${esc(allocText(A2))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A2.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(2)}</span>`:''}
+      ${ph2?`<span class="ec-tier-savings">${esc(allocText(A2))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A2.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(2)}</span>${fvBlock(s,2,A2,monthly,ph2)}`:''}
     </div>
     <div class="ec-tier-card t3">
       <div class="ec-tier-label">\u0E40\u0E1F\u0E2A 3 \u00B7 \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E47\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15</div>
@@ -2562,6 +2619,7 @@ function renderFundTab(){
       <div class="ec-tier-desc">\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E41\u0E23\u0E01\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E41\u0E25\u0E49\u0E27 \u0E42\u0E2D\u0E19\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E14\u0E34\u0E21 \u0E3F${fmt(redirectAmt)} \u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E17\u0E38\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19<br>\u0E23\u0E27\u0E21\u0E01\u0E31\u0E1A\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E34\u0E21\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(monthly+redirectAmt)}
         <br><strong>\u0E25\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E3F${fmt(s.invest[2]+s.redirectTotal)}</strong> (\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A \u0E3F${fmt(s.invest[2])} + \u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E42\u0E2D\u0E19 \u0E3F${fmt(s.redirectTotal)})</div>
       <span class="ec-tier-savings">${esc(allocText(A3))}<br>\u0E1C\u0E25\u0E15\u0E2D\u0E1A\u0E41\u0E17\u0E19\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E40\u0E09\u0E25\u0E35\u0E48\u0E22 ${A3.fundBlend.toFixed(2)}%/\u0E1B\u0E35 \u00B7 ${modeText(3)} \u00B7 \u0E08\u0E1A\u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E27\u0E31\u0E19\u0E17\u0E35\u0E48\u0E2A\u0E31\u0E0D\u0E0D\u0E32\u0E40\u0E14\u0E34\u0E21\u0E04\u0E27\u0E23\u0E08\u0E30\u0E08\u0E1A\u0E1E\u0E2D\u0E14\u0E35</span>
+      ${fvBlock(s,3,A3,monthly+redirectAmt,ph3)}
     </div>`;
 }
 
