@@ -176,7 +176,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
   .fund-row{min-width:0;grid-template-columns:minmax(90px,2fr) 1fr 1fr 1fr 1fr 0}
   .set-group{break-inside:avoid;page-break-inside:avoid}
   .odo-strip{page-break-inside:avoid}
-  #p2tPlan,#p2tFund,#p2tTrack{page-break-before:always}
+  #p2tPlan,#p2tFund{page-break-before:always}
   .warn-box,.info-box,.odo-tick{print-color-adjust:exact;-webkit-print-color-adjust:exact}
   .page{display:none!important}
   body.print-p1 #page1{display:block!important}
@@ -241,7 +241,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .pt input.fund-in{padding:5px 8px;font-size:.77rem;border-radius:6px;border:1.5px solid #a78bfa;width:96px;
   text-align:right;background:#f5f3ff;color:#4c1d95;font-weight:600}
 .pt input.fund-in:focus{outline:none;border-color:var(--pur);background:#ede9fe}
-.pt input.fund-in:disabled{border-color:var(--border);background:#f9fafb;color:var(--grayl)}
+.pt input.fund-in:disabled{border:1.5px dashed #d1d5db;background:#f3f4f6;color:var(--grayl);cursor:not-allowed}
 /* ---- กลุ่มตั้งค่าแยกตามเฟส (สีตรงกับ .ec-tier-card ของการ์ดเฟส) ---- */
 .set-group{border:1.5px solid var(--border);border-left-width:4px;border-radius:10px;padding:12px 14px;margin-bottom:10px}
 .set-group.sg-base{border-left-color:var(--grayl);background:#f9fafb}
@@ -300,6 +300,55 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .ph-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700;white-space:nowrap}
 .ph-1{background:#dbeafe;color:#1d4ed8}.ph-2{background:#dcfce7;color:#15803d}
 .ph-3{background:#ede9fe;color:#7c3aed}.ph-x{background:#fef3c7;color:#92400e}
+/* ---- ตารางรวม: บันทึกการจ่าย + ติดตามพอร์ต ---- */
+.pt thead tr.hdr-top th.th-loan{background:#1d4ed8;color:#fff}
+.pt tbody tr.lg-payoff td{background:#fef3c7}
+.pt tbody tr.lg-now td:first-child{box-shadow:inset 4px 0 0 var(--pur)}
+.pt tbody tr.lg-focus td{background:#f5f3ff}
+.pt tbody tr.lg-total td{font-weight:700;background:#ede9fe!important;filter:none}
+.lg-now-tag{display:inline-block;font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:20px;
+  background:var(--pur);color:#fff;vertical-align:middle}
+.st-skip{background:#f3f4f6;color:var(--grayl)}
+/* แถบสลับมุมมองตาราง — ตารางรวมกว้างมาก ต้องเลือกดูเฉพาะฝั่งที่กำลังทำได้ */
+.seg-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.seg{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;
+  font-size:.76rem;font-weight:700;color:var(--grayl);cursor:pointer;white-space:nowrap}
+.seg:hover{border-color:#c4b5fd;color:var(--pur)}
+.seg.on{background:var(--pur);border-color:var(--pur);color:#fff}
+.seg-hint{font-size:.74rem;color:var(--grayl);font-weight:600}
+/* ---- การ์ดกรอกเร็วประจำเดือน ---- */
+.qe-card{border-left:5px solid var(--pur)}
+.qe-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.qe-title{font-size:.9rem;font-weight:800;color:var(--pur)}
+.qe-head select{padding:6px 10px;font-size:.8rem;font-weight:700;border:1.5px solid #c4b5fd;
+  border-radius:8px;background:#f5f3ff;color:#4c1d95;max-width:220px}
+.qe-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:780px){.qe-grid{grid-template-columns:1fr}}
+.qe-sec{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;background:#fcfcfd}
+.qe-sec.qe-loan{border-left:4px solid #3b82f6}
+.qe-sec.qe-port{border-left:4px solid var(--pur)}
+.qe-sec h4{font-size:.8rem;font-weight:800;margin-bottom:9px;color:var(--gray)}
+.qe-line{display:flex;justify-content:space-between;gap:10px;font-size:.77rem;padding:3px 0;
+  color:#374151;font-variant-numeric:tabular-nums}
+.qe-field{display:grid;grid-template-columns:1fr minmax(118px,150px);gap:8px;align-items:center;margin-top:7px}
+.qe-field label{font-size:.76rem;font-weight:600;color:#374151;overflow-wrap:anywhere}
+.qe-field input{padding:6px 9px;font-size:.79rem;border:1.5px solid var(--border);border-radius:7px;
+  background:#fff;width:100%;text-align:right;font-variant-numeric:tabular-nums}
+.qe-field input[type=date],.qe-field input[type=text]{text-align:left}
+.qe-field input[type=date].filled{border-color:#22c55e;background:#f0fdf4}
+.qe-field input.fund-in{border-color:#a78bfa;background:#f5f3ff;color:#4c1d95;font-weight:600}
+.qe-field input.fund-in:focus{outline:none;border-color:var(--pur);background:#ede9fe}
+.qe-field input:disabled{background:#f3f4f6;color:var(--grayl);border:1.5px dashed #d1d5db;cursor:not-allowed}
+.qe-ph{display:inline-block;font-size:.62rem;font-weight:800;padding:0 4px;border-radius:4px;
+  background:#ede9fe;color:#6d28d9;margin-right:3px}
+.qe-sum{display:flex;justify-content:space-between;gap:10px;margin-top:9px;padding-top:8px;
+  border-top:1px dashed var(--border);font-size:.79rem;font-weight:700;font-variant-numeric:tabular-nums}
+.qe-ok{color:#15803d}.qe-bad{color:#b91c1c}
+.qe-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.qe-empty{font-size:.77rem;color:var(--grayl);line-height:1.6}
+.stat-sub{font-size:.66rem;font-weight:600;margin-top:2px}
+.lg-warn{font-size:.77rem;line-height:1.6;background:#fffbeb;border:1px solid #fde68a;color:#92400e;
+  border-radius:10px;padding:9px 13px;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -527,6 +576,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
       <div class="stat r"><div class="stat-lbl">เกินกำหนด (ยังไม่จ่าย)</div><div class="stat-val" id="p2Over">-</div></div>
       <div class="stat"><div class="stat-lbl">รอชำระ</div><div class="stat-val" id="p2Pend">-</div></div>
       <div class="stat pur"><div class="stat-lbl">งวดถัดไป</div><div class="stat-val" id="p2Next">-</div></div>
+      <div class="stat"><div class="stat-lbl">พอร์ตล่าสุด (จริง)</div><div class="stat-val" id="p2Port">-</div></div>
     </div>
 
     <!-- Odometer: หนึ่งขีดต่อหนึ่งงวดตามสัญญา (schedBase) -->
@@ -547,10 +597,9 @@ td:nth-child(2){text-align:left;color:#4b5563}
 
     <div data-tabs="p2">
     <div class="tabs">
-      <div class="tab on" onclick="showTab('p2tPay',this)">📅 บันทึกการจ่าย</div>
+      <div class="tab on" onclick="showTab('p2tPay',this)">📅 บันทึกการจ่าย + พอร์ต</div>
       <div class="tab" onclick="showTab('p2tPlan',this)">🎯 แผนปิดรถ</div>
       <div class="tab" onclick="showTab('p2tFund',this)">💰 กองปิดรถ</div>
-      <div class="tab" onclick="showTab('p2tTrack',this)">📊 ติดตามพอร์ต</div>
     </div>
 
     <div id="p2tPay" class="tab-content on">
@@ -573,35 +622,61 @@ td:nth-child(2){text-align:left;color:#4b5563}
       </div>
     </div>
 
+    <!-- การ์ดกรอกเร็ว: งานประจำเดือนทั้งหมดอยู่ในที่เดียว ไม่ต้องเลื่อนหาแถวในตาราง -->
+    <div class="card qe-card">
+      <div class="qe-head">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="qe-title">📌 บันทึกประจำเดือน</span>
+          <select id="qeMonthSel" onchange="onQEMonth()" aria-label="เลือกเดือนที่จะบันทึก"></select>
+        </div>
+        <span id="qeBadges"></span>
+      </div>
+      <div id="qeBody"></div>
+    </div>
+
     <!-- Actions -->
     <div class="act-row">
       <button class="btn-purple" onclick="markAllPaidToday()">✅ บันทึกทุกงวด "จ่ายวันนี้"</button>
       <button class="btn-import" onclick="importPayCSV()">⬆ Import CSV</button>
       <button class="btn-pdf" onclick="exportPDF(2)">📄 Export PDF</button>
-      <button class="btn-exp" onclick="exportPayCSV()">⬇ Export CSV</button>
-      <button class="btn-danger" onclick="clearAllPayments()">🗑 ล้างข้อมูลการจ่าย</button>
+      <button class="btn-exp" onclick="exportPayCSV()">⬇ CSV การผ่อน</button>
+      <button class="btn-exp" onclick="exportFundCSV()">⬇ CSV พอร์ต</button>
+      <button class="btn-danger" onclick="clearAllPayments()">🗑 ล้างการจ่าย</button>
+      <button class="btn-danger" onclick="clearFundData()">🗑 ล้างยอดพอร์ต</button>
       <span style="font-size:.75rem;color:var(--grayl);margin-left:auto" id="saveStatus">💾 บันทึกอัตโนมัติ</span>
     </div>
 
-    <div id="ppLegend" class="pp-legend hidden">
-      <div class="pp-leg-item pl-plan">🟢 โปะแผน = ยอดโปะตามแผนที่ตั้งไว้หน้า 1</div>
+    <div class="lg-warn hidden" id="ledgerWarn"></div>
+
+    <div class="seg-row" id="ledgerViews">
+      <span class="seg-hint">มุมมองตาราง:</span>
+      <button type="button" class="seg on" onclick="setLedgerView('all',this)">📋 ทั้งหมด</button>
+      <button type="button" class="seg" onclick="setLedgerView('loan',this)">💳 เฉพาะการผ่อน</button>
+      <button type="button" class="seg" onclick="setLedgerView('port',this)">💰 เฉพาะพอร์ต</button>
     </div>
 
-    <!-- Payment table -->
+    <div class="pp-legend">
+      <div class="pp-leg-item pl-plan hidden" id="ppLegend">🟢 โปะแผน = ยอดโปะตามแผนที่ตั้งไว้หน้า 1</div>
+      <div class="pp-leg-item pl-plan">🟢 เป้าหมาย = ยอดพอร์ตที่ควรมีตามแผน</div>
+      <div class="pp-leg-item pl-actual">🟣 ยอดจริง = กรอกเอง ณ สิ้นเดือน</div>
+      <div class="pp-leg-item pl-diff">🟡 ส่วนต่าง = จริง − เป้า</div>
+      <div class="pp-leg-item pl-skip">⬜ ช่องเทา = เดือนนั้นยังไม่มีบัญชีนี้ หรือปิดไปแล้ว</div>
+    </div>
+
+    <div class="note" style="margin:0 0 10px">📌 <strong>ฝากประจำกรอกได้เฉพาะเฟส 1</strong> เพราะพอครบกำหนดยอดจะถูกโอนเข้ากองตลาดเงินทั้งก้อน เข้าเฟส 2 จึงไม่มีบัญชีนี้แล้ว · เฟส 2 ไม่มีเงินใหม่เข้ากองปิดรถ แต่ยังต้องบันทึกยอดกองตลาดเงินที่พักไว้ทุกสิ้นเดือน<br>
+      📌 <strong>คอลัมน์กองทุนมาจากรายการกองทุนในแท็บ 💰 กองปิดรถ</strong> · กองที่ตั้งสัดส่วนเฟส 1 ไว้เท่านั้นที่กรอกได้ตั้งแต่เฟส 1 · เงินที่เข้ากองทุนในเฟส 1 อยู่ในกลุ่ม "พอร์ตเติบโต" ไม่ใช่ "รวมกองปิดรถ" · เงินเฟส 2/3 ที่ยังไม่ได้จัดสรรเข้ากองไหนจะถูกนับรวมในเป้าหมายแต่ไม่มีคอลัมน์ให้กรอก</div>
+
+    <!-- ตารางรวม: หนึ่งแถวคือหนึ่งเดือน — ซ้ายเป็นค่างวด ขวาเป็นยอดพอร์ต -->
     <div class="ptw">
       <table class="pt" id="p2table">
         <thead>
-          <tr class="hdr-top" id="p2hdrTop">
-            <!-- rendered by JS -->
-          </tr>
-          <tr class="hdr-sub" id="p2hdrSub">
-            <!-- rendered by JS -->
-          </tr>
+          <tr class="hdr-top" id="p2hdrTop"><!-- rendered by JS --></tr>
+          <tr class="hdr-sub" id="p2hdrSub"><!-- rendered by JS --></tr>
         </thead>
         <tbody id="p2tbody"></tbody>
       </table>
     </div>
-    <p class="note" style="margin-top:8px">💾 ข้อมูลบันทึกอัตโนมัติ · 🟢 จ่ายแล้ว · ⚠️ จ่ายช้า · 🔵 รอชำระ · 🔴 เกินกำหนด</p>
+    <p class="note" style="margin-top:8px">💾 ข้อมูลบันทึกอัตโนมัติ · 🟢 จ่ายแล้ว · ⚠️ จ่ายช้า · 🔵 รอชำระ · 🔴 เกินกำหนด · เป้าหมายพอร์ตคำนวณจากสมมติฐานผลตอบแทนในแท็บ 💰 กองปิดรถ ของจริงจะแกว่งกว่านี้</p>
     </div><!-- /p2tPay -->
 
     <!-- ========== แท็บ: แผนปิดรถ ========== -->
@@ -761,7 +836,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
           กองที่เป็น <strong>feeder fund</strong> (ไปซื้อ ETF ต่างประเทศอีกที) เสียค่าธรรมเนียมสองชั้น จึงแยกช่อง "กองไทย" กับ "กองแม่" ไว้ให้ ·
           ระวังนับซ้ำ: fact sheet บางกองรายงานค่าธรรมเนียมรวมของกองแม่มาแล้ว ถ้าเป็นแบบนั้นให้ช่อง "กองแม่" เป็น 0 · ดูตัวเลขจริงได้ใน Fund Fact Sheet<br>
           📌 <strong>ค่าธรรมเนียมจะไม่ทำให้ "เก็บเดือนละ" เปลี่ยน</strong> เพราะกองปิดรถเป็นฝากประจำ + กองตลาดเงินเท่านั้น เงินกองทุนไม่ได้ไหลกลับเข้ามา ·
-          สิ่งที่ขยับคือ <strong>พอร์ตรวม ณ สิ้นสัญญา</strong> เส้น "พอร์ตเติบโต" ในกราฟ และเป้าหมายในตารางติดตาม</div>
+          สิ่งที่ขยับคือ <strong>พอร์ตรวม ณ สิ้นสัญญา</strong> เส้น "พอร์ตเติบโต" ในกราฟ และเป้าหมายในตารางแท็บ 📅 บันทึกการจ่าย + พอร์ต</div>
       </div>
       <div class="ec-tier-grid" id="fundPhases"></div>
       <div class="pp-chart-card" id="fundChartSection">
@@ -771,36 +846,6 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <div class="chart-wrap"><canvas id="fundChart"></canvas></div>
       </div>
     </div><!-- /p2tFund -->
-
-    <!-- ========== แท็บ: ติดตามพอร์ต ========== -->
-    <div id="p2tTrack" class="tab-content">
-      <div class="ec-info">
-        <strong>📊 บันทึกยอดจริงทุกสิ้นเดือน</strong> — กรอกยอดคงเหลือจริงของแต่ละกอง
-        ระบบจะเทียบกับเป้าหมายให้ ช่องที่ยังไม่ถึงเฟสของมันจะถูกปิดไว้
-      </div>
-      <div class="pp-legend">
-        <div class="pp-leg-item pl-plan">🟢 เป้าหมาย = ยอดที่ควรมีตามแผน</div>
-        <div class="pp-leg-item pl-actual">🟣 ยอดจริง = กรอกเอง</div>
-        <div class="pp-leg-item pl-diff">🟡 ส่วนต่าง = จริง − เป้า</div>
-        <div class="pp-leg-item pl-skip">⬜ ช่องเทา = กองนั้นยังไม่เริ่มหรือปิดไปแล้ว</div>
-      </div>
-      <div class="note" style="margin:0 0 10px">📌 <strong>ฝากประจำกรอกได้เฉพาะเฟส 1</strong> เพราะพอครบกำหนดยอดจะถูกโอนเข้ากองตลาดเงินทั้งก้อน เข้าเฟส 2 จึงไม่มีบัญชีนี้แล้ว · เฟส 2 ไม่มีเงินใหม่เข้ากองปิดรถ แต่ยังต้องบันทึกยอดกองตลาดเงินที่พักไว้ทุกสิ้นเดือน<br>
-        📌 <strong>คอลัมน์กองทุนมาจากรายการกองทุนในแท็บ 💰 กองปิดรถ</strong> · กองที่ตั้งสัดส่วนเฟส 1 ไว้เท่านั้นที่กรอกได้ตั้งแต่เฟส 1 · เงินที่เข้ากองทุนในเฟส 1 อยู่ในกลุ่ม "พอร์ตเติบโต" ไม่ใช่ "รวมกองปิดรถ" · เงินเฟส 2/3 ที่ยังไม่ได้จัดสรรเข้ากองไหนจะถูกนับรวมในเป้าหมายแต่ไม่มีคอลัมน์ให้กรอก</div>
-      <div class="act-row">
-        <button class="btn-exp" onclick="exportFundCSV()">⬇ Export CSV</button>
-        <button class="btn-danger" onclick="clearFundData()">🗑 ล้างยอดที่กรอก</button>
-      </div>
-      <div class="ptw">
-        <table class="pt" id="fundTable">
-          <thead>
-            <tr class="hdr-top" id="fundHdrTop"></tr>
-            <tr class="hdr-sub" id="fundHdrSub"></tr>
-          </thead>
-          <tbody id="fundTbody"></tbody>
-        </table>
-      </div>
-      <p class="note" style="margin-top:8px">💾 บันทึกอัตโนมัติ · เป้าหมายคำนวณจากสมมติฐานผลตอบแทนในแท็บ 💰 กองปิดรถ ของจริงจะแกว่งกว่านี้</p>
-    </div><!-- /p2tTrack -->
 
     </div><!-- /data-tabs=p2 -->
   </div>
@@ -1708,40 +1753,13 @@ function renderPage2(){
   document.getElementById('p2Empty').classList.add('hidden');
   document.getElementById('p2Content').classList.remove('hidden');
 
-  const hasPP=sched.some(r=>r.pp>0);
-  document.getElementById('ppLegend').classList.toggle('hidden',!hasPP);
-
-  // ---- Build header ----
-  const topRow=document.getElementById('p2hdrTop');
-  const subRow=document.getElementById('p2hdrSub');
-
-  // ข้อมูลงวด: งวดที่ | วันครบ | ค่างวด | [โปะแผน if hasPP] | ยอดปลายงวด
-  const baseCols=hasPP?5:4; // +1 for โปะแผน when hasPP
-  topRow.innerHTML=`
-    <th class="th-base" colspan="${baseCols}">📋 ข้อมูลงวด</th>
-    <th class="th-actual" colspan="4">📅 บันทึกการจ่าย</th>
-  `;
-  subRow.innerHTML=`
-    <th>งวดที่</th>
-    <th>วันครบกำหนด</th>
-    <th>ค่างวด</th>
-    ${hasPP?`<th style="background:#15803d">โปะแผน (บาท)</th>`:''}
-    <th>ยอดปลายงวด</th>
-    <th style="background:#4c1d95">วันที่จ่ายจริง</th>
-    <th style="background:#4c1d95">สถานะ</th>
-    <th style="background:#4c1d95">หมายเหตุ</th>
-    <th style="background:#4c1d95">Action</th>
-  `;
-
   // ---- Summary counts ----
   let paidCnt=0,overCnt=0,pendCnt=0,paidAmt=0,remAmt=0,nextRow=null;
-  let totPlanPP=0;
 
   sched.forEach(r=>{
     const st=getStatus(r);
     if(st.cls==='st-paid'||st.cls==='st-late'){paidCnt++;paidAmt+=r.pay;}
     else{if(st.cls==='st-overdue')overCnt++;else{pendCnt++;if(!nextRow)nextRow=r;}remAmt+=r.pay+r.pp;}
-    totPlanPP+=r.pp;
   });
 
   document.getElementById('p2Paid').textContent=`${paidCnt} งวด / ฿${fmt(paidAmt)}`;
@@ -1763,53 +1781,13 @@ function renderPage2(){
   document.getElementById('p2PaidAmt').textContent=`ยอดจ่ายจริง: ฿${fmt(paidAmt)}`;
   document.getElementById('p2ActualRem').textContent=`ยอดหนี้คงเหลือจริง: ฿${fmt(actualRemainingBal)}`;
 
-  // ---- Rows ----
-  const tb=document.getElementById('p2tbody');tb.innerHTML='';
-  sched.forEach(r=>{
-    const rec=payRec[r.i]||{paidDate:'',note:''};
-    const st=getStatus(r);
-    const planPP=r.pp;
-    const planCell=hasPP?`<td class="col-plan tdr">${planPP>0?fmt(planPP):'-'}</td>`:'';
+  // ตารางรวมค่างวด+พอร์ต (หัวตาราง/แถว/แถวรวม) อยู่ที่เดียวใน renderLedger
+  renderLedger();
 
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td><strong>${r.i}</strong></td>
-      <td class="tdl" style="white-space:nowrap">${r.date}</td>
-      <td class="tdr">${fmt(r.pay)}</td>
-      ${planCell}
-      <td class="tdr">${fmt(r.bal)}</td>
-      <td>
-        <input type="date" id="pd_${r.i}" value="${rec.paidDate||''}"
-          class="${rec.paidDate?'filled':''}"
-          onchange="onPDChange(${r.i})">
-      </td>
-      <td><span class="st ${st.cls}">${st.label}</span></td>
-      <td>
-        <input type="text" class="pt-note" id="pn_${r.i}"
-          value="${rec.note||''}" placeholder="หมายเหตุ..."
-          onchange="onNoteChange(${r.i})">
-      </td>
-      <td>
-        ${!rec.paidDate
-          ?`<button class="btn-paid" onclick="markPaid(${r.i})">✓ วันนี้</button>`
-          :`<button class="btn-unpaid" onclick="unmarkPaid(${r.i})">✕ ยกเลิก</button>`
-        }
-      </td>`;
-    tb.appendChild(tr);
-  });
-
-  // Total row — ตรงกับคอลัมน์: งวดที่+วันครบ | ค่างวด | [โปะแผน] | ยอดปลายงวด | colspan4
-  const totPay=sched.reduce((a,r)=>a+r.pay,0);
-  const tf=document.createElement('tr');
-  const planTotCell=hasPP?`<td class="col-plan tdr"><strong>${fmt(totPlanPP)}</strong></td>`:'';
-  tf.style.fontWeight='700';tf.style.background='#ede9fe';
-  tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td class="tdr">${fmt(totPay)}</td>${planTotCell}<td>-</td><td colspan="4">-</td>`;
-  tb.appendChild(tf);
   // แท็บใหม่ของหน้า 2 — แต่ละตัว self-guard เองเมื่อยังไม่มีตารางที่ใช้ได้
   renderOdometer();
   renderPayoffTab();
   renderFundTab();
-  renderFundTable();
   // กราฟกองเงินสร้างเฉพาะตอนแท็บเปิดอยู่จริง ไม่งั้น canvas จะได้ความสูง 0
   if(document.getElementById('p2tFund').classList.contains('on'))buildFundChart();
 }
@@ -1826,6 +1804,9 @@ function onNoteChange(i){
   const val=document.getElementById('pn_'+i).value;
   if(!payRec[i])payRec[i]={paidDate:'',note:''};
   payRec[i].note=val;savePayments();
+  // การ์ดกรอกเร็วอาจกำลังเปิดงวดเดียวกันอยู่ ให้เห็นค่าตรงกันทันทีโดยไม่ต้องวาดใหม่
+  const e=ledgerData.byM[qeMonth];
+  if(e&&e.pay&&e.pay.i===i){const q=document.getElementById('qe_note');if(q)q.value=val;}
 }
 function markPaid(i){
   const iso=new Date().toISOString().split('T')[0];
@@ -2382,7 +2363,7 @@ function onPlanInputChange(){
   planCfg.redirectPct=Math.max(0,Math.min(100,num('fRedirect',100)));
   savePlan();
   updateFundSums();   // ผลตอบแทนถัวเฉลี่ยมีขาของเงินพัก จึงขึ้นกับ rateMM/ratePark ที่แก้ในนี้ด้วย
-  renderFundTab();renderFundTable();buildFundChart();
+  renderFundTab();renderLedger();buildFundChart();
 }
 
 // ---- \u0E41\u0E17\u0E47\u0E1A \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 ----
@@ -2496,7 +2477,7 @@ function onFundDefChange(phase,id,key){
   }
   savePlan();
   updateFundSums();
-  renderFundTab();renderFundTable();buildFundChart();   // container อื่นทั้งหมด ไม่แตะ #fundRows{N}
+  renderFundTab();renderLedger();buildFundChart();   // container อื่นทั้งหมด ไม่แตะ #fundRows{N}
 }
 
 function addFund(phase){
@@ -2507,7 +2488,7 @@ function addFund(phase){
   // กองแรกของเฟสให้ 100% ไปเลย จะได้ใช้งานได้ทันทีโดยไม่ต้องมานั่งไล่ปรับ
   list.push({id,name:'',ret:5,ter:0,terM:0,pct:list.length?0:100});
   savePlan();renderFundList(phase);updateFundSums();
-  renderFundTab();renderFundTable();buildFundChart();
+  renderFundTab();renderLedger();buildFundChart();
   const el=document.getElementById('fn_'+id);
   if(el){el.focus();el.select();}
 }
@@ -2530,14 +2511,14 @@ function removeFund(phase,id){
     saveFund(true);
   }
   savePlan();renderFundList(phase);updateFundSums();
-  renderFundTab();renderFundTable();buildFundChart();
+  renderFundTab();renderLedger();buildFundChart();
 }
 
 function resetFunds(phase){
   if(!confirm(`กลับไปใช้รายการกองทุนชุดเริ่มต้นของเฟส ${phase}?`))return;
   planCfg['funds'+phase]=defaultFunds(phase);
   savePlan();renderFundList(phase);updateFundSums();
-  renderFundTab();renderFundTable();buildFundChart();
+  renderFundTab();renderLedger();buildFundChart();
 }
 
 // สร้างบล็อกสูตร FV รายกองของเฟสหนึ่ง ๆ ให้ตรงกับที่ buildFundSchedule ทำจริง
@@ -2783,13 +2764,20 @@ function buildFundChart(){
   });
 }
 
-// ---- \u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15 ----
-// สแนปช็อตรายการกองตอน render — renderFundTable/exportFundCSV/onFundChange ใช้ชุดเดียวกันเสมอ
+// ================= ตารางรวม: บันทึกการจ่าย + ติดตามพอร์ต =================
+// เดิมแยกเป็นสองแท็บ (บันทึกการจ่าย = รายงวด, ติดตามพอร์ต = รายเดือน) ทั้งที่เป็นงานเดียวกัน
+// ของทุกสิ้นเดือน จึงรวมเป็นตารางเดียวที่ผูกกันด้วย "เดือน" แล้วให้เลือกดูเฉพาะฝั่งที่สนใจได้
+// สแนปช็อตรายการกองตอน render — renderLedger/exportFundCSV/onFundChange ใช้ชุดเดียวกันเสมอ
 let fundCols=[];
 function growIds(){return fundCols.map(f=>f.id);}
-// ช่องไหนของเดือนไหน "มีอยู่จริง" ตามแผน — สร้างตอน renderFundTable แล้วใช้ร่วมกับ
+// ช่องไหนของเดือนไหน "มีอยู่จริง" ตามแผน — สร้างตอน renderLedger แล้วใช้ร่วมกับ
 // onFundChange และ exportFundCSV เพื่อไม่ให้นับยอดของกองที่ปิดไปแล้ว
 let fundActive={};
+// ข้อมูลของตารางรวมรอบล่าสุด — การ์ดกรอกเร็วและสถิติหัวหน้าอ่านจากตัวนี้ ไม่คำนวณซ้ำ
+let ledgerData={rows:[],byM:{},hasFund:false};
+let ledgerView='all';     // all | loan | port
+let qeMonth=null;         // เดือนที่การ์ดกรอกเร็วกำลังเปิดอยู่
+
 function fundVal(m,f){
   const r=fundRec[m];
   if(!r)return null;
@@ -2808,128 +2796,398 @@ function fundGroupTotal(m,group){
   });
   return any?t:null;
 }
-
-// หัวตารางเป็นของที่สร้างขึ้น เพราะจำนวนคอลัมน์ขึ้นกับจำนวนกองที่ผู้ใช้ตั้งไว้
-function renderFundHead(){
-  const top=document.getElementById('fundHdrTop'), sub=document.getElementById('fundHdrSub');
-  if(!top||!sub)return;
-  top.innerHTML=`<th class="th-base" colspan="3">\uD83D\uDCCB \u0E40\u0E14\u0E37\u0E2D\u0E19</th>
-    <th class="th-plan" colspan="1">\uD83D\uDFE2 \u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22</th>
-    <th class="th-actual" colspan="3">\uD83D\uDFE3 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 (\u0E08\u0E23\u0E34\u0E07)</th>
-    <th class="th-actual" colspan="${fundCols.length+1}">\uD83D\uDFE3 \u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15 (\u0E08\u0E23\u0E34\u0E07)</th>
-    <th class="th-diff" colspan="1">\uD83D\uDFE1 \u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07</th>`;
-  sub.innerHTML=`<th>\u0E40\u0E14\u0E37\u0E2D\u0E19</th><th>\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48</th><th>\u0E40\u0E1F\u0E2A</th>
-    <th style="background:#15803d">\u0E40\u0E1B\u0E49\u0E32\u0E23\u0E27\u0E21\u0E17\u0E31\u0E49\u0E07\u0E1E\u0E2D\u0E23\u0E4C\u0E15</th>
-    <th style="background:#6d28d9">\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33</th><th style="background:#6d28d9">\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19</th><th style="background:#4c1d95">\u0E23\u0E27\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16</th>
-    ${fundCols.map(f=>`<th style="background:#6d28d9" title="${esc(f.name)} \u00B7 \u0E40\u0E1F\u0E2A ${f.phase} \u00B7 \u0E01\u0E48\u0E2D\u0E19\u0E2B\u0E31\u0E01\u0E04\u0E48\u0E32\u0E18\u0E23\u0E23\u0E21\u0E40\u0E19\u0E35\u0E22\u0E21 ${f.ret}% \u00B7 \u0E2A\u0E38\u0E17\u0E18\u0E34 ${f.net.toFixed(2)}%/\u0E1B\u0E35"><span class="th-ph">\u0E1F${f.phase}</span> ${esc(f.name)}</th>`).join('')}
-    <th style="background:#4c1d95">\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15</th>
-    <th style="background:#b45309">\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07</th>`;
-}
-
-function renderFundTable(){
-  const tb=document.getElementById('fundTbody');
-  if(!tb)return;
-  // spread ไม่ใช่ assign — ถ้าแปะ .phase ลงบน object ที่เก็บอยู่จริง มันจะถูก savePlan เขียนขึ้น Firestore
-  // แล้ว sanitizeAllFunds ก็ตัดทิ้งตอนโหลด พฤติกรรมก่อนกับหลัง reload จะไม่เหมือนกัน
-  fundCols=allFundCols();
-  renderFundHead();
-  const NCOL=9+fundCols.length;   // 3 เดือน + 1 เป้า + 2 ฝาก/ตลาด + 1 รวมกอง + N + 1 รวมโต + 1 ส่วนต่าง
-  const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
-  if(!s){tb.innerHTML=`<tr><td colspan="${NCOL}" style="padding:18px;color:var(--grayl)">\u0E22\u0E31\u0E07\u0E04\u0E33\u0E19\u0E27\u0E13\u0E41\u0E1C\u0E19\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19</td></tr>`;return;}
-  if(s.plan.k<=0){
-    tb.innerHTML=`<tr><td colspan="${NCOL}" style="padding:18px;color:var(--grayl)">\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E1C\u0E48\u0E32\u0E19\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 \u0E08\u0E36\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E0A\u0E48\u0E27\u0E07\u0E40\u0E27\u0E25\u0E32\u0E43\u0E2B\u0E49\u0E17\u0E22\u0E2D\u0E22\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E07\u0E34\u0E19 \u2014 \u0E1B\u0E23\u0E31\u0E1A "\u0E40\u0E23\u0E34\u0E48\u0E21\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19" \u0E2B\u0E23\u0E37\u0E2D\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E21\u0E32\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E43\u0E19\u0E41\u0E17\u0E47\u0E1A \uD83C\uDFAF \u0E41\u0E1C\u0E19\u0E1B\u0E34\u0E14\u0E23\u0E16</td></tr>`;
-    return;
-  }
-  const phName={1:'\u0E40\u0E1F\u0E2A 1',2:'\u0E40\u0E1F\u0E2A 2',3:'\u0E40\u0E1F\u0E2A 3'};
-  const fdMonths=Math.max(0,+planCfg.fdMonths||0);
-  const fdOn=(+planCfg.fdMonthly||0)>0&&fdMonths>0;
-  fundActive={};
-  tb.innerHTML=s.rows.map(r=>{
-    // \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33: \u0E21\u0E35\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E0A\u0E48\u0E27\u0E07\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E1D\u0E32\u0E01\u0E2D\u0E22\u0E39\u0E48 \u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27\u0E22\u0E2D\u0E14\u0E16\u0E39\u0E01\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E31\u0E49\u0E07\u0E01\u0E49\u0E2D\u0E19
-    //            \u0E40\u0E02\u0E49\u0E32\u0E40\u0E1F\u0E2A 2 \u0E08\u0E36\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E19\u0E35\u0E49\u0E43\u0E2B\u0E49\u0E01\u0E23\u0E2D\u0E01\u0E2D\u0E35\u0E01
-    // \u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19: \u0E40\u0E1F\u0E2A 2 \u0E44\u0E21\u0E48\u0E40\u0E15\u0E34\u0E21\u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48 \u0E41\u0E15\u0E48\u0E22\u0E2D\u0E14\u0E22\u0E31\u0E07\u0E1E\u0E31\u0E01\u0E2D\u0E22\u0E39\u0E48\u0E41\u0E25\u0E30\u0E40\u0E14\u0E34\u0E19\u0E14\u0E2D\u0E01\u0E15\u0E48\u0E2D \u0E08\u0E36\u0E07\u0E22\u0E31\u0E07\u0E15\u0E49\u0E2D\u0E07\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E22\u0E2D\u0E14\u0E2A\u0E34\u0E49\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19
-    // \u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15: \u0E40\u0E23\u0E34\u0E48\u0E21\u0E40\u0E1F\u0E2A 2 \u0E40\u0E1B\u0E47\u0E19\u0E15\u0E49\u0E19\u0E44\u0E1B
-    const canFD=fdOn&&r.phase===1&&r.t<fdMonths;
-    const canMM=r.phase<=2&&r.t<=s.plan.k;
-    const colOn={fd:canFD,mm:canMM};
-    // กองเปิดให้กรอกตั้งแต่เฟสของตัวเองเป็นต้นไป "ไม่ใช่เฉพาะเฟสของตัวเอง"
-    // เพราะซื้อแล้วยอดยังโตต่อในเฟสถัดไป ถ้าปิดคอลัมน์ทิ้ง fundGroupTotal จะไม่นับกองนั้น
-    // ขณะที่ row.grow ยังนับอยู่ ทุกแถวของเฟสหลังจะโชว์ส่วนต่างติดลบมหาศาลทั้งที่กรอกครบ
-    const p1on=fundPct1()>0&&!s.alloc[1].empty&&s.alloc[1].invested>0;
-    fundCols.forEach(f=>{colOn[f.id]=(r.phase>=f.phase)&&(f.phase!==1||p1on);});
-    fundActive[r.m]=colOn;
-    const why={
-      fd:!fdOn?'\u0E41\u0E1C\u0E19\u0E19\u0E35\u0E49\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E43\u0E0A\u0E49\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33':'\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14\u0E41\u0E25\u0E49\u0E27 \u0E22\u0E2D\u0E14\u0E16\u0E39\u0E01\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19',
-      mm:'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E23\u0E16\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16\u0E08\u0E1A\u0E20\u0E32\u0E23\u0E01\u0E34\u0E08',
-      grow:'\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E16\u0E36\u0E07\u0E40\u0E1F\u0E2A\u0E17\u0E35\u0E48\u0E40\u0E23\u0E34\u0E48\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15',
-      p1:'\u0E40\u0E1F\u0E2A 1 \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E15\u0E31\u0E49\u0E07\u0E43\u0E2B\u0E49\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E17\u0E38\u0E19\u0E23\u0E27\u0E21'
-    };
-    const cell=(f,on,tip,label)=>{
-      const v=fundRec[r.m]&&fundRec[r.m][f]!==undefined?fundRec[r.m][f]:'';
-      return `<td class="col-actual-input"><input type="number" class="fund-in" id="fu_${r.m}_${f}"
-        value="${esc(v)}" ${on?'':'disabled'} min="0" step="1000"${on?'':` title="${esc(tip)}"`}
-        onchange="onFundChange('${r.m}','${f}')" aria-label="${esc(label||f)} ${monthLabel(r.m)}"></td>`;
-    };
-    const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
-    // เป้า = ยอดที่ควรมี "ณ สิ้นเดือน" จึงต้องใช้ safe (หลังจ่ายปิดบัญชีแล้ว) ไม่ใช่ safeBefore
-    // เดือนปิดบัญชี safe เป็น 0 เพราะเงินถูกจ่ายออกไป ส่วนเกินถูกโยกเข้าพอร์ตแล้ว
-    const tgt=r.safe+r.grow;
-    const act=(aSafe||0)+(aGrow||0);
-    const has=aSafe!==null||aGrow!==null;
-    const diff=act-tgt;
-    const dCls=!has?'col-diff-zero':(diff>=-tgt*0.03?'col-diff-pos':'col-diff-neg');
-    return `<tr${r.paidOff?' class="rowmark" style="background:#fef3c7"':''}>
-      <td class="tdl" style="white-space:nowrap">${monthLabel(r.m)}${r.paidOff?' \uD83D\uDCA5':''}</td>
-      <td>${r.inst>=1&&r.inst<=s.plan.T?r.inst:'-'}</td>
-      <td><span class="ph-pill ${r.paidOff?'ph-x':'ph-'+r.phase}">${r.paidOff?'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':phName[r.phase]}</span></td>
-      <td class="col-plan tdr">${fmt(tgt)}</td>
-      ${cell('fd',canFD,why.fd,'\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33')}${cell('mm',canMM,why.mm,'\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19')}
-      <td class="tdr" id="fs_${r.m}"><strong>${aSafe===null?'\u2014':fmt(aSafe)}</strong></td>
-      ${fundCols.map(f=>cell(f.id,colOn[f.id],f.phase===1?why.p1:why.grow,'\u0E1F'+f.phase+' '+f.name)).join('')}
-      <td class="tdr" id="fgt_${r.m}"><strong>${aGrow===null?'\u2014':fmt(aGrow)}</strong></td>
-      <td class="${dCls} tdr diff-cell" id="fd_${r.m}" data-tgt="${tgt}">${has?fmtDiff(diff):'-'}</td>
-    </tr>`;
-  }).join('');
-}
-
-// \u0E2D\u0E31\u0E1B\u0E40\u0E14\u0E15\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E0A\u0E48\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E40\u0E01\u0E35\u0E48\u0E22\u0E27\u0E02\u0E49\u0E2D\u0E07 \u0E44\u0E21\u0E48\u0E2A\u0E23\u0E49\u0E32\u0E07 innerHTML \u0E43\u0E2B\u0E21\u0E48 \u0E44\u0E21\u0E48\u0E07\u0E31\u0E49\u0E19 focus \u0E08\u0E30\u0E2B\u0E25\u0E38\u0E14\u0E15\u0E2D\u0E19\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E02\u0E49\u0E32\u0E21\u0E0A\u0E48\u0E2D\u0E07
-function onFundChange(m,f){
-  const el=document.getElementById(`fu_${m}_${f}`);
-  if(!el)return;
+function setFundVal(m,f,val){
   if(!fundRec[m])fundRec[m]={};
-  fundRec[m][f]=el.value;
+  fundRec[m][f]=val;
   // ไล่จากคีย์ที่มีอยู่จริง ไม่ใช่จากรายชื่อกองปัจจุบัน — กันคีย์กำพร้าของกองที่ถูกลบไปแล้วค้างเดือนนั้นไว้
   if(Object.keys(fundRec[m]).every(x=>fundRec[m][x]===undefined||fundRec[m][x]===''))delete fundRec[m];
   saveFund(true);
-  const aSafe=fundGroupTotal(m,'safe'), aGrow=fundGroupTotal(m,'grow');
-  const sc=document.getElementById('fs_'+m), gc=document.getElementById('fgt_'+m), dc=document.getElementById('fd_'+m);
-  if(sc)sc.innerHTML='<strong>'+(aSafe===null?'\u2014':fmt(aSafe))+'</strong>';
-  if(gc)gc.innerHTML='<strong>'+(aGrow===null?'\u2014':fmt(aGrow))+'</strong>';
+}
+
+// ---- รวมสองตารางเข้าด้วยกันด้วยคีย์เดือน ----
+// เดือนที่มีแต่ค่างวด (ก่อนเริ่มเก็บเงิน) หรือมีแต่ยอดพอร์ต (หลังปิดบัญชี) ก็ยังได้แถวของตัวเอง
+function buildLedger(){
+  const hasDates=!!(sched.length&&sched[0].dateISO);
+  const s=(hasDates&&planReady())?buildFundSchedule(effectiveMonthly()):null;
+  const out=[];
+  if(!s){
+    sched.forEach(r=>out.push({m:hasDates?monthKey(r.dateISO):'',pay:r,f:null}));
+    return{rows:out,s:null,hasFund:false};
+  }
+  const payByM={};sched.forEach(r=>{payByM[monthKey(r.dateISO)]=r;});
+  const fByM={};s.rows.forEach(r=>{fByM[r.m]=r;});
+  const keys=Object.keys(payByM).concat(s.rows.map(r=>r.m));
+  let min=keys[0],max=keys[0];
+  keys.forEach(m=>{if(m<min)min=m;if(m>max)max=m;});
+  let m=min;
+  for(let guard=0;guard<1200;guard++){
+    out.push({m,pay:payByM[m]||null,f:fByM[m]||null});
+    if(m===max)break;
+    m=monthAdd(m,1);
+  }
+  return{rows:out,s,hasFund:true};
+}
+
+function setLedgerView(v,el){
+  ledgerView=v;
+  const host=document.getElementById('ledgerViews');
+  if(host)host.querySelectorAll('.seg').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+  renderLedger();
+}
+
+const PH_NAME={1:'เฟส 1',2:'เฟส 2',3:'เฟส 3'};
+const G_CLS={base:'th-base',loan:'th-loan',pay:'th-actual',tgt:'th-plan',safe:'th-actual',grow:'th-actual',diff:'th-diff'};
+
+// ตัดสินว่าเดือนไหนกรอกช่องไหนได้ — ตรรกะเดิมของตารางติดตาม ย้ายมาทั้งดุ้น
+function monthColOn(s,r){
+  const fdMonths=Math.max(0,+planCfg.fdMonths||0);
+  const fdOn=(+planCfg.fdMonthly||0)>0&&fdMonths>0;
+  const on={fd:false,mm:false};
+  fundCols.forEach(f=>{on[f.id]=false;});
+  if(!r)return on;
+  // ฝากประจำ: มีเฉพาะช่วงที่ยังฝากอยู่ ครบกำหนดแล้วยอดถูกโอนเข้ากองตลาดเงินทั้งก้อน
+  // ตลาดเงิน: เฟส 2 ไม่เติมเงินใหม่ แต่ยอดยังพักอยู่และเดินดอกต่อ จึงยังต้องบันทึกยอดสิ้นเดือน
+  on.fd=fdOn&&r.phase===1&&r.t<fdMonths;
+  on.mm=r.phase<=2&&r.t<=s.plan.k;
+  // กองเปิดให้กรอกตั้งแต่เฟสของตัวเองเป็นต้นไป "ไม่ใช่เฉพาะเฟสของตัวเอง"
+  // เพราะซื้อแล้วยอดยังโตต่อในเฟสถัดไป ถ้าปิดคอลัมน์ทิ้ง fundGroupTotal จะไม่นับกองนั้น
+  // ขณะที่ row.grow ยังนับอยู่ ทุกแถวของเฟสหลังจะโชว์ส่วนต่างติดลบมหาศาลทั้งที่กรอกครบ
+  const p1on=fundPct1()>0&&!s.alloc[1].empty&&s.alloc[1].invested>0;
+  fundCols.forEach(f=>{on[f.id]=(r.phase>=f.phase)&&(f.phase!==1||p1on);});
+  return on;
+}
+const WHY={
+  fd:'ฝากประจำครบกำหนดแล้ว (หรือแผนนี้ไม่ได้ใช้ฝากประจำ) ยอดถูกโอนเข้ากองตลาดเงิน',
+  mm:'ปิดบัญชีรถไปแล้ว กองปิดรถจบภารกิจ',
+  grow:'ยังไม่ถึงเฟสที่เริ่มพอร์ตเติบโต',
+  p1:'เฟส 1 ยังไม่ได้ตั้งให้เข้ากองทุนรวม',
+  none:'เดือนนี้อยู่นอกช่วงแผนเก็บเงิน'
+};
+
+function renderLedger(){
+  const top=document.getElementById('p2hdrTop'),sub=document.getElementById('p2hdrSub'),tb=document.getElementById('p2tbody');
+  if(!top||!sub||!tb)return;
+  if(!sched.length){top.innerHTML='';sub.innerHTML='';tb.innerHTML='';return;}
+
+  fundCols=allFundCols();
+  const L=buildLedger(),s=L.s,hasFund=L.hasFund;
+  if(!hasFund&&ledgerView==='port')ledgerView='all';
+
+  // ---- แถบสลับมุมมอง / คำเตือน ----
+  const vh=document.getElementById('ledgerViews');
+  if(vh)vh.classList.toggle('hidden',!hasFund);
+  const warn=document.getElementById('ledgerWarn');
+  if(warn){
+    let msg='';
+    if(!hasFund)msg='ℹ️ ยังไม่มีแผนกองปิดรถ — ไปตั้งค่าที่แท็บ <strong>💰 กองปิดรถ</strong> แล้วคอลัมน์พอร์ตจะขึ้นมาให้กรอกในตารางนี้';
+    else if(s.plan.k<=0)msg='⚠️ เดือนปิดบัญชีผ่านไปแล้ว จึงไม่มีช่วงเวลาให้ทยอยเก็บเงิน — ปรับ "เริ่มเก็บเดือน" หรือเลือกงวดเป้าหมายที่ยังมาไม่ถึงในแท็บ 🎯 แผนปิดรถ';
+    warn.innerHTML=msg;warn.classList.toggle('hidden',!msg);
+  }
+
+  const hasPP=sched.some(r=>r.pp>0);
+  const ppl=document.getElementById('ppLegend');
+  if(ppl)ppl.classList.toggle('hidden',!hasPP);
+  const showLoan=ledgerView!=='port', showPort=hasFund&&ledgerView!=='loan';
+
+  // ---- เตรียมข้อมูลของแต่ละแถวไว้ก่อน แล้วค่อยวาด (การ์ดกรอกเร็วใช้ชุดเดียวกัน) ----
+  fundActive={};
+  ledgerData={rows:[],byM:{},hasFund};
+  L.rows.forEach(r=>{
+    const on=hasFund?monthColOn(s,r.f):{};
+    fundActive[r.m]=on;
+    // เป้า = ยอดที่ควรมี "ณ สิ้นเดือน" จึงต้องใช้ safe (หลังจ่ายปิดบัญชีแล้ว) ไม่ใช่ safeBefore
+    // เดือนปิดบัญชี safe เป็น 0 เพราะเงินถูกจ่ายออกไป ส่วนเกินถูกโยกเข้าพอร์ตแล้ว
+    const tgt=r.f?r.f.safe+r.f.grow:null;
+    // ตารางที่ import มาโดยไม่มีวันครบกำหนดจะได้ m ว่างทุกแถว จึงต้องมีคีย์สำรองเป็นเลขงวด
+    const e={m:r.m,key:r.m||('#'+(r.pay?r.pay.i:ledgerData.rows.length)),pay:r.pay,f:r.f,on,tgt,
+      phase:r.f?(r.f.paidOff?'x':r.f.phase):null,
+      phaseText:r.f?(r.f.paidOff?'ปิดบัญชี':PH_NAME[r.f.phase]):'-'};
+    ledgerData.rows.push(e);ledgerData.byM[e.key]=e;
+  });
+
+  // ---- นิยามคอลัมน์ทีละช่อง หัวตารางกับตัวตารางจึงไม่มีทางหลุดจากกัน ----
+  const C=[];
+  const add=(g,label,sub,o)=>C.push(Object.assign({g,label,sub,tot:()=>'<td>-</td>'},o));
+  const nowM=thisMonth();
+
+  add('base','📋 เดือน','เดือน',{
+    td:e=>`<td class="tdl" style="white-space:nowrap">${e.m?monthLabel(e.m):'-'}${e.f&&e.f.paidOff?' 💥':''}${e.m===nowM?' <span class="lg-now-tag">เดือนนี้</span>':''}</td>`,
+    tot:()=>'<td class="tdl"><strong>รวมทั้งหมด</strong></td>'});
+  add('base','📋 เดือน','งวดที่',{td:e=>`<td>${e.pay?'<strong>'+e.pay.i+'</strong>':'-'}</td>`});
+  if(hasFund)add('base','📋 เดือน','เฟส',{
+    td:e=>`<td>${e.phase?`<span class="ph-pill ph-${e.phase}">${e.phaseText}</span>`:'-'}</td>`});
+
+  if(showLoan){
+    add('loan','💳 ค่างวดตามแผน','ค่างวด',{sbg:'#1e40af',
+      td:e=>`<td class="tdr">${e.pay?fmt(e.pay.pay):'-'}</td>`,
+      tot:()=>`<td class="tdr"><strong>${fmt(sched.reduce((a,r)=>a+r.pay,0))}</strong></td>`});
+    if(hasPP)add('loan','💳 ค่างวดตามแผน','โปะแผน',{sbg:'#15803d',
+      td:e=>`<td class="col-plan tdr">${e.pay&&e.pay.pp>0?fmt(e.pay.pp):'-'}</td>`,
+      tot:()=>`<td class="col-plan tdr"><strong>${fmt(sched.reduce((a,r)=>a+r.pp,0))}</strong></td>`});
+    add('loan','💳 ค่างวดตามแผน','ยอดปลายงวด',{sbg:'#1e40af',
+      td:e=>`<td class="tdr">${e.pay?fmt(e.pay.bal):'-'}</td>`});
+    add('loan','💳 ค่างวดตามแผน','วันครบกำหนด',{sbg:'#1e40af',
+      td:e=>`<td class="tdl" style="white-space:nowrap">${e.pay?esc(e.pay.date):'-'}</td>`});
+
+    add('pay','✅ บันทึกการจ่าย','วันที่จ่ายจริง',{sbg:'#4c1d95',td:e=>{
+      if(!e.pay)return '<td class="col-actual-input">-</td>';
+      const rec=payRec[e.pay.i]||{};
+      return `<td class="col-actual-input"><input type="date" id="pd_${e.pay.i}" value="${esc(rec.paidDate||'')}"
+        class="${rec.paidDate?'filled':''}" onchange="onPDChange(${e.pay.i})"
+        aria-label="วันที่จ่ายจริงงวด ${e.pay.i}"></td>`;}});
+    add('pay','✅ บันทึกการจ่าย','สถานะ',{sbg:'#4c1d95',td:e=>{
+      if(!e.pay)return '<td class="col-actual-input"><span class="st st-skip">— ไม่มีงวด</span></td>';
+      const st=getStatus(e.pay);
+      return `<td class="col-actual-input"><span class="st ${st.cls}">${st.label}</span></td>`;}});
+    add('pay','✅ บันทึกการจ่าย','บันทึก',{sbg:'#4c1d95',td:e=>{
+      if(!e.pay)return '<td class="col-actual-input">-</td>';
+      const rec=payRec[e.pay.i]||{};
+      return `<td class="col-actual-input">${rec.paidDate
+        ?`<button class="btn-unpaid" onclick="unmarkPaid(${e.pay.i})">✕ ยกเลิก</button>`
+        :`<button class="btn-paid" onclick="markPaid(${e.pay.i})">✓ วันนี้</button>`}</td>`;}});
+    add('pay','✅ บันทึกการจ่าย','หมายเหตุ',{sbg:'#4c1d95',td:e=>{
+      if(!e.pay)return '<td class="col-actual-input">-</td>';
+      const rec=payRec[e.pay.i]||{};
+      return `<td class="col-actual-input"><input type="text" class="pt-note" id="pn_${e.pay.i}"
+        value="${esc(rec.note||'')}" placeholder="หมายเหตุ..." onchange="onNoteChange(${e.pay.i})"
+        aria-label="หมายเหตุงวด ${e.pay.i}"></td>`;}});
+  }
+
+  if(showPort){
+    add('tgt','🟢 เป้าหมายพอร์ต','เป้ารวมทั้งพอร์ต',{sbg:'#15803d',
+      td:e=>`<td class="col-plan tdr">${e.tgt===null?'-':fmt(e.tgt)}</td>`});
+
+    const cell=(e,f,label)=>{
+      if(!e.f)return `<td class="col-actual-input"><input type="number" class="fund-in" disabled title="${esc(WHY.none)}" aria-label="${esc(label)} ${e.m}"></td>`;
+      const on=!!e.on[f];
+      const v=fundRec[e.m]&&fundRec[e.m][f]!==undefined?fundRec[e.m][f]:'';
+      const tip=f==='fd'?WHY.fd:(f==='mm'?WHY.mm:(label.indexOf('ฟ1')===0?WHY.p1:WHY.grow));
+      return `<td class="col-actual-input"><input type="number" class="fund-in" id="fu_${e.m}_${f}"
+        value="${esc(v)}" ${on?'':'disabled'} min="0" step="1000"${on?'':` title="${esc(tip)}"`}
+        onchange="onFundChange('${e.m}','${f}')" aria-label="${esc(label)} ${monthLabel(e.m)}"></td>`;
+    };
+    add('safe','🟣 กองปิดรถ (จริง)','ฝากประจำ',{sbg:'#6d28d9',td:e=>cell(e,'fd','ฝากประจำ')});
+    add('safe','🟣 กองปิดรถ (จริง)','ตลาดเงิน',{sbg:'#6d28d9',td:e=>cell(e,'mm','กองตลาดเงิน')});
+    add('safe','🟣 กองปิดรถ (จริง)','รวมกองปิดรถ',{sbg:'#4c1d95',td:e=>{
+      const a=fundGroupTotal(e.m,'safe');
+      return `<td class="tdr" id="fs_${e.m}"><strong>${a===null?'—':fmt(a)}</strong></td>`;}});
+
+    fundCols.forEach(f=>{
+      add('grow','🟣 พอร์ตเติบโต (จริง)',`<span class="th-ph">ฟ${f.phase}</span> ${esc(f.name)}`,{sbg:'#6d28d9',
+        title:`${f.name} · เฟส ${f.phase} · ก่อนหักค่าธรรมเนียม ${f.ret}% · สุทธิ ${f.net.toFixed(2)}%/ปี`,
+        td:e=>cell(e,f.id,'ฟ'+f.phase+' '+f.name)});
+    });
+    add('grow','🟣 พอร์ตเติบโต (จริง)','รวมพอร์ตโต',{sbg:'#4c1d95',td:e=>{
+      const a=fundGroupTotal(e.m,'grow');
+      return `<td class="tdr" id="fgt_${e.m}"><strong>${a===null?'—':fmt(a)}</strong></td>`;}});
+
+    add('diff','🟡 ส่วนต่าง','จริง − เป้า',{sbg:'#b45309',td:e=>{
+      const aSafe=fundGroupTotal(e.m,'safe'),aGrow=fundGroupTotal(e.m,'grow');
+      const has=aSafe!==null||aGrow!==null,tgt=e.tgt||0;
+      const diff=(aSafe||0)+(aGrow||0)-tgt;
+      const cls=!has?'col-diff-zero':(diff>=-tgt*0.03?'col-diff-pos':'col-diff-neg');
+      return `<td class="${cls} tdr diff-cell" id="fd_${e.m}" data-tgt="${tgt}">${has?fmtDiff(diff):'-'}</td>`;}});
+  }
+
+  // ---- หัวตาราง: รวมช่องที่อยู่กลุ่มเดียวกันติดกันเป็นหัวใหญ่อันเดียว ----
+  let ht='',i=0;
+  while(i<C.length){
+    let j=i;while(j<C.length&&C[j].label===C[i].label)j++;
+    ht+=`<th class="${G_CLS[C[i].g]}" colspan="${j-i}">${C[i].label}</th>`;
+    i=j;
+  }
+  top.innerHTML=ht;
+  sub.innerHTML=C.map(c=>`<th${c.sbg?` style="background:${c.sbg}"`:''}${c.title?` title="${esc(c.title)}"`:''}>${c.sub}</th>`).join('');
+
+  // ---- ตัวตาราง ----
+  tb.innerHTML=ledgerData.rows.map(e=>{
+    const cls=[];
+    if(e.f&&e.f.paidOff)cls.push('lg-payoff');
+    if(e.m===nowM)cls.push('lg-now');
+    if(e.key===qeMonth)cls.push('lg-focus');
+    return `<tr${cls.length?` class="${cls.join(' ')}"`:''}>${C.map(c=>c.td(e)).join('')}</tr>`;
+  }).join('')+`<tr class="lg-total">${C.map(c=>c.tot()).join('')}</tr>`;
+
+  renderQuickEntry();
+  updatePortStat();
+}
+
+// ---- การ์ดกรอกเร็วประจำเดือน ----
+// ตารางรวมกว้างเกินกว่าจะกรอกบนมือถือได้สบาย งานจริงของทุกสิ้นเดือนคือ "เดือนเดียว" เท่านั้น
+// การ์ดนี้จึงยกเดือนนั้นออกมาเป็นฟอร์มแนวตั้ง กรอกครบทั้งค่างวดและยอดพอร์ตโดยไม่ต้องเลื่อนจอ
+function defaultQEMonth(){
+  const rows=ledgerData.rows;
+  if(!rows.length)return null;
+  const tm=thisMonth();
+  if(ledgerData.byM[tm])return tm;
+  // ไม่มีเดือนปัจจุบันในแผน — เอาเดือนของงวดแรกที่ยังไม่ได้บันทึกว่าจ่าย
+  for(let i=0;i<rows.length;i++){
+    const e=rows[i];
+    if(e.pay&&!(payRec[e.pay.i]&&payRec[e.pay.i].paidDate))return e.key;
+  }
+  return rows[rows.length-1].key;
+}
+function onQEMonth(){
+  const sel=document.getElementById('qeMonthSel');
+  if(sel)qeMonth=sel.value;
+  renderLedger();
+  const row=document.querySelector('#p2tbody tr.lg-focus');
+  if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+}
+function renderQuickEntry(){
+  const body=document.getElementById('qeBody'),sel=document.getElementById('qeMonthSel'),badges=document.getElementById('qeBadges');
+  if(!body||!sel)return;
+  const rows=ledgerData.rows;
+  if(!rows.length){body.innerHTML='<div class="qe-empty">ยังไม่มีตาราง</div>';sel.innerHTML='';return;}
+  if(!qeMonth||!ledgerData.byM[qeMonth])qeMonth=defaultQEMonth();
+  const e=ledgerData.byM[qeMonth];
+
+  sel.innerHTML=rows.map(r=>{
+    const paid=r.pay&&payRec[r.pay.i]&&payRec[r.pay.i].paidDate;
+    const tag=(r.pay?' · งวด '+r.pay.i:'')+(paid?' ✓':'');
+    return `<option value="${esc(r.key)}"${r.key===qeMonth?' selected':''}>${r.m?monthLabel(r.m):'งวดที่ '+(r.pay?r.pay.i:'-')}${tag}</option>`;
+  }).join('');
+
+  const st=e.pay?getStatus(e.pay):null;
+  if(badges)badges.innerHTML=(e.phase?`<span class="ph-pill ph-${e.phase}">${e.phaseText}</span> `:'')
+    +(st?`<span class="st ${st.cls}">${st.label}</span>`:'<span class="st st-skip">— ไม่มีงวดต้องจ่าย</span>');
+
+  // ---- ฝั่งซ้าย: ค่างวด ----
+  let loan='';
+  if(e.pay){
+    const rec=payRec[e.pay.i]||{};
+    loan=`<div class="qe-line"><span>งวดที่</span><b>${e.pay.i}</b></div>
+      <div class="qe-line"><span>วันครบกำหนด</span><b>${esc(e.pay.date)}</b></div>
+      <div class="qe-line"><span>ค่างวด</span><b>฿${fmt(e.pay.pay)}</b></div>
+      ${e.pay.pp>0?`<div class="qe-line"><span>โปะเพิ่มตามแผน</span><b style="color:#15803d">฿${fmt(e.pay.pp)}</b></div>`:''}
+      <div class="qe-line"><span>ยอดหนี้ปลายงวด</span><b>฿${fmt(e.pay.bal)}</b></div>
+      <div class="qe-field"><label for="qe_pd">วันที่จ่ายจริง</label>
+        <input type="date" id="qe_pd" value="${esc(rec.paidDate||'')}" class="${rec.paidDate?'filled':''}" onchange="onQEPd()"></div>
+      <div class="qe-field"><label for="qe_note">หมายเหตุ</label>
+        <input type="text" id="qe_note" value="${esc(rec.note||'')}" placeholder="เช่น จ่ายผ่านแอป" onchange="onQENote()"></div>
+      <div class="qe-btns">${rec.paidDate
+        ?`<button class="btn-unpaid" onclick="unmarkPaid(${e.pay.i})">✕ ยกเลิกการจ่าย</button>`
+        :`<button class="btn-paid" onclick="markPaid(${e.pay.i})">✓ บันทึกว่าจ่ายวันนี้</button>`}</div>`;
+  } else {
+    loan=`<div class="qe-empty">เดือนนี้ไม่มีงวดต้องจ่าย${e.f&&e.f.phase===3?' — ปิดบัญชีรถไปแล้ว 🎉':''}</div>`;
+  }
+
+  // ---- ฝั่งขวา: ยอดพอร์ตสิ้นเดือน ----
+  let port='';
+  if(!ledgerData.hasFund){
+    port='<div class="qe-empty">ยังไม่มีแผนกองปิดรถ — ตั้งค่าที่แท็บ 💰 กองปิดรถ ก่อน</div>';
+  } else if(!e.f){
+    port='<div class="qe-empty">เดือนนี้อยู่นอกช่วงแผนเก็บเงิน จึงไม่มีอะไรให้บันทึก</div>';
+  } else {
+    const fld=(f,label,tip)=>{
+      const on=!!e.on[f];
+      const v=fundRec[e.m]&&fundRec[e.m][f]!==undefined?fundRec[e.m][f]:'';
+      return `<div class="qe-field"><label for="qe_f_${f}">${label}</label>
+        <input type="number" class="fund-in" id="qe_f_${f}" value="${esc(v)}" min="0" step="1000"
+          ${on?'':'disabled'}${on?'':` title="${esc(tip)}"`} onchange="onQEFund('${f}')"></div>`;
+    };
+    port=fld('fd','🏦 ฝากประจำ',WHY.fd)+fld('mm','💵 กองตลาดเงิน',WHY.mm)
+      +fundCols.map(f=>fld(f.id,`<span class="qe-ph">ฟ${f.phase}</span> ${esc(f.name)}`,f.phase===1?WHY.p1:WHY.grow)).join('');
+    const aSafe=fundGroupTotal(e.m,'safe'),aGrow=fundGroupTotal(e.m,'grow');
+    const has=aSafe!==null||aGrow!==null,tgt=e.tgt||0,diff=(aSafe||0)+(aGrow||0)-tgt;
+    port+=`<div class="qe-sum" id="qeSum" data-tgt="${tgt}">
+      <span>เป้าหมายสิ้นเดือน</span><b>฿${fmt(tgt)}</b></div>
+      <div class="qe-sum" style="border:0;padding-top:0;margin-top:2px">
+        <span>รวมที่กรอก</span><b id="qeActual">${has?'฿'+fmt((aSafe||0)+(aGrow||0)):'—'}</b></div>
+      <div class="qe-sum" style="border:0;padding-top:0;margin-top:2px">
+        <span>ส่วนต่าง</span><b id="qeDiff" class="${!has?'':(diff>=-tgt*0.03?'qe-ok':'qe-bad')}">${has?fmtDiff(diff):'—'}</b></div>`;
+  }
+
+  body.innerHTML=`<div class="qe-grid">
+    <div class="qe-sec qe-loan"><h4>💳 ค่างวดรถ</h4>${loan}</div>
+    <div class="qe-sec qe-port"><h4>💰 ยอดพอร์ต ณ สิ้นเดือน</h4>${port}</div>
+  </div>`;
+}
+
+// ---- ตัวจัดการเหตุการณ์ของการ์ดกรอกเร็ว ----
+function onQEPd(){
+  const e=ledgerData.byM[qeMonth];if(!e||!e.pay)return;
+  const i=e.pay.i,val=document.getElementById('qe_pd').value;
+  if(!payRec[i])payRec[i]={paidDate:'',note:''};
+  payRec[i].paidDate=val;
+  savePayments();renderPage2();
+}
+function onQENote(){
+  const e=ledgerData.byM[qeMonth];if(!e||!e.pay)return;
+  const i=e.pay.i;
+  if(!payRec[i])payRec[i]={paidDate:'',note:''};
+  payRec[i].note=document.getElementById('qe_note').value;
+  const t=document.getElementById('pn_'+i);if(t)t.value=payRec[i].note;
+  savePayments();
+}
+// อัปเดตเฉพาะช่องที่เกี่ยวข้อง ไม่สร้าง innerHTML ใหม่ ไม่งั้น focus จะหลุดตอนพิมพ์ข้ามช่อง
+function onQEFund(f){
+  const el=document.getElementById('qe_f_'+f);
+  if(!el||!qeMonth)return;
+  setFundVal(qeMonth,f,el.value);
+  const t=document.getElementById(`fu_${qeMonth}_${f}`);
+  if(t)t.value=el.value;
+  refreshMonthTotals(qeMonth);
+  renderFundTab();
+}
+function onFundChange(m,f){
+  const el=document.getElementById(`fu_${m}_${f}`);
+  if(!el)return;
+  setFundVal(m,f,el.value);
+  if(m===qeMonth){const q=document.getElementById('qe_f_'+f);if(q)q.value=el.value;}
+  refreshMonthTotals(m);
+  renderFundTab();
+}
+function refreshMonthTotals(m){
+  const aSafe=fundGroupTotal(m,'safe'),aGrow=fundGroupTotal(m,'grow');
+  const has=aSafe!==null||aGrow!==null,act=(aSafe||0)+(aGrow||0);
+  const sc=document.getElementById('fs_'+m),gc=document.getElementById('fgt_'+m),dc=document.getElementById('fd_'+m);
+  if(sc)sc.innerHTML='<strong>'+(aSafe===null?'—':fmt(aSafe))+'</strong>';
+  if(gc)gc.innerHTML='<strong>'+(aGrow===null?'—':fmt(aGrow))+'</strong>';
   if(dc){
-    const tgt=+dc.dataset.tgt||0;
-    const has=aSafe!==null||aGrow!==null;
-    const diff=(aSafe||0)+(aGrow||0)-tgt;
+    const tgt=+dc.dataset.tgt||0,diff=act-tgt;
     dc.textContent=has?fmtDiff(diff):'-';
     dc.className='tdr diff-cell '+(!has?'col-diff-zero':(diff>=-tgt*0.03?'col-diff-pos':'col-diff-neg'));
   }
-  renderFundTab();
+  if(m===qeMonth){
+    const sum=document.getElementById('qeSum'),ae=document.getElementById('qeActual'),de=document.getElementById('qeDiff');
+    const tgt=sum?(+sum.dataset.tgt||0):0,diff=act-tgt;
+    if(ae)ae.textContent=has?'฿'+fmt(act):'—';
+    if(de){de.textContent=has?fmtDiff(diff):'—';de.className=!has?'':(diff>=-tgt*0.03?'qe-ok':'qe-bad');}
+  }
+  updatePortStat();
+}
+// สถิติหัวหน้า: ยอดพอร์ตของเดือนล่าสุดที่กรอกไว้ เทียบกับเป้าของเดือนนั้น
+function updatePortStat(){
+  const el=document.getElementById('p2Port');
+  if(!el)return;
+  let last=null;
+  ledgerData.rows.forEach(e=>{
+    if(!e.f)return;
+    const a=fundGroupTotal(e.m,'safe'),b=fundGroupTotal(e.m,'grow');
+    if(a!==null||b!==null)last={m:e.m,v:(a||0)+(b||0),tgt:e.tgt||0};
+  });
+  if(!last){el.innerHTML=ledgerData.hasFund?'<span style="font-size:.8rem;color:var(--grayl)">ยังไม่ได้กรอก</span>':'-';return;}
+  const d=last.v-last.tgt;
+  el.innerHTML=`฿${fmt(last.v)}<div class="stat-sub" style="color:${d>=0?'#15803d':'#b91c1c'}">${monthLabel(last.m)} · ${d>=0?'+':''}${fmt(d)} จากเป้า</div>`;
 }
 
 function clearFundData(){
-  if(!confirm('\u0E25\u0E49\u0E32\u0E07\u0E22\u0E2D\u0E14\u0E08\u0E23\u0E34\u0E07\u0E17\u0E35\u0E48\u0E01\u0E23\u0E2D\u0E01\u0E44\u0E27\u0E49\u0E43\u0E19\u0E15\u0E32\u0E23\u0E32\u0E07\u0E15\u0E34\u0E14\u0E15\u0E32\u0E21\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14?'))return;
+  if(!confirm('ล้างยอดจริงที่กรอกไว้ในคอลัมน์พอร์ตทั้งหมด?'))return;
   fundRec={};saveFund();
-  renderFundTable();renderFundTab();buildFundChart();
+  renderLedger();renderFundTab();buildFundChart();
 }
 
 function exportFundCSV(){
-  // fundCols/fundActive ถูกเซ็ตใน renderFundTable เท่านั้น ถ้ายังไม่เคยเปิดแท็บติดตาม
+  // fundCols/fundActive ถูกเซ็ตใน renderLedger เท่านั้น ถ้าตารางยังไม่เคยถูกวาด
   // ค่าจะเป็นของเก่า/ว่าง แล้วไฟล์ที่ได้จะไม่ตรงกับตารางบนจอ
-  renderFundTable();
+  renderLedger();
   const s=planReady()?buildFundSchedule(effectiveMonthly()):null;
-  if(!s)return alert('\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E41\u0E1C\u0E19 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19');
+  if(!s)return alert('ยังไม่มีแผน — กรุณากดคำนวณที่หน้า 1 ก่อน');
   // ชื่อกองเป็นข้อความอิสระ อาจมี , หรือ " จึงต้อง quote หัวตารางด้วย ไม่ใช่แค่ข้อมูล
-  const hdr=['\u0E40\u0E14\u0E37\u0E2D\u0E19','\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48','\u0E40\u0E1F\u0E2A','\u0E40\u0E1B\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16','\u0E40\u0E1B\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33','\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19','\u0E23\u0E27\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16',
-    ...fundCols.map(f=>'\u0E1F'+f.phase+' '+f.name),'\u0E23\u0E27\u0E21\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15','\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07'].map(csvq);
+  const hdr=['เดือน','งวดที่','เฟส','เป้ากองปิดรถ','เป้าพอร์ตโต','ฝากประจำ','ตลาดเงิน','รวมกองปิดรถ',
+    ...fundCols.map(f=>'ฟ'+f.phase+' '+f.name),'รวมพอร์ตโต','ส่วนต่าง'].map(csvq);
   const rows=s.rows.map(r=>{
     // ข้ามช่องที่กองนั้นปิดไปแล้วในเดือนนั้น ให้ตรงกับที่ตารางแสดง
     const act=fundActive[r.m];
@@ -2937,15 +3195,13 @@ function exportFundCSV(){
     const aSafe=fundGroupTotal(r.m,'safe'), aGrow=fundGroupTotal(r.m,'grow');
     const has=aSafe!==null||aGrow!==null;
     // เป้า = ยอดที่ควรมี "ณ สิ้นเดือน" จึงต้องใช้ safe (หลังจ่ายปิดบัญชีแล้ว) ไม่ใช่ safeBefore
-    // เดือนปิดบัญชี safe เป็น 0 เพราะเงินถูกจ่ายออกไป ส่วนเกินถูกโยกเข้าพอร์ตแล้ว
     const tgt=r.safe+r.grow;
     const diff=(aSafe||0)+(aGrow||0)-tgt;
     const fcells=fundCols.map(f=>g(f.id)).join(',');
-    return `${csvq(r.m)},${r.inst>=1&&r.inst<=s.plan.T?r.inst:''},${r.paidOff?'\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35':r.phase},${r.safeBefore.toFixed(2)},${r.grow.toFixed(2)},${g('fd')},${g('mm')},${aSafe===null?'':aSafe.toFixed(2)},${fcells},${aGrow===null?'':aGrow.toFixed(2)},${has?diff.toFixed(2):''}`;
+    return `${csvq(r.m)},${r.inst>=1&&r.inst<=s.plan.T?r.inst:''},${r.paidOff?'ปิดบัญชี':r.phase},${r.safeBefore.toFixed(2)},${r.grow.toFixed(2)},${g('fd')},${g('mm')},${aSafe===null?'':aSafe.toFixed(2)},${fcells},${aGrow===null?'':aGrow.toFixed(2)},${has?diff.toFixed(2):''}`;
   });
   dl('\uFEFF'+[hdr.join(','),...rows].join('\n'),'car_loan_fund.csv');
 }
-
 syncPlanInputs();
 </script>
 </body>
