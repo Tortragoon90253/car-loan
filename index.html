@@ -306,6 +306,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .pt tbody tr.lg-now td:first-child{box-shadow:inset 4px 0 0 var(--pur)}
 .pt tbody tr.lg-focus td{background:#f5f3ff}
 .pt tbody tr.lg-total td{font-weight:700;background:#ede9fe!important;filter:none}
+.pt td.lg-dup{color:var(--grayl);background:#fafafa}
 .lg-now-tag{display:inline-block;font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:20px;
   background:var(--pur);color:#fff;vertical-align:middle}
 .st-skip{background:#f3f4f6;color:var(--grayl)}
@@ -1165,9 +1166,20 @@ function fmtDiff(n){
 }
 // ใช้ปฏิทินเกรกอเรียน (ค.ศ.) ทั้งแอป — ชื่อเดือนยังเป็นไทย แต่ปีเป็น ค.ศ. เพื่อให้เทียบกับแผนได้ง่าย
 const TH_CAL='th-TH-u-ca-gregory';
+// บวกเดือนแบบตรึงวันที่ ถ้าเดือนปลายทางไม่มีวันนั้นให้ร่นมาเป็นวันสุดท้ายของเดือน
+// ห้ามใช้ Date.setMonth() ตรง ๆ เพราะมันล้นเดือน: 31 ม.ค. +1 เดือน ได้ 3 มี.ค. ไม่ใช่ 28 ก.พ.
+// ผลคือ ก.พ. ไม่มีงวดเลยและ มี.ค. มีสองงวด ซึ่งพังทั้งวันครบกำหนดหน้า 1 และการจับคู่รายเดือนหน้า 2
+// สร้างวันจาก y/m/d เอง ไม่ผ่าน new Date('YYYY-MM-DD') ที่ parse เป็น UTC แล้วถูกอ่านกลับแบบ local
+// (โซนเวลาที่ช้ากว่า UTC จะได้วันก่อนหน้าหนึ่งวัน) และไม่ผ่าน toISOString() ที่แปลงกลับเป็น UTC อีกที
 function addMonths(ds,n){
-  const d=new Date(ds);d.setMonth(d.getMonth()+n);
-  return{display:d.toLocaleDateString(TH_CAL,{year:'numeric',month:'short',day:'numeric'}),iso:d.toISOString().split('T')[0]};
+  const [y,mo,dd]=String(ds).split('-').map(Number);
+  if(!y||!mo||!dd)return{display:'',iso:''};
+  const t=(y*12+(mo-1))+n, ny=Math.floor(t/12), nm=((t%12)+12)%12;
+  const last=new Date(ny,nm+1,0).getDate();     // วันที่ 0 ของเดือนถัดไป = วันสุดท้ายของเดือนปลายทาง
+  const day=Math.min(dd,last);
+  const d=new Date(ny,nm,day);
+  return{display:d.toLocaleDateString(TH_CAL,{year:'numeric',month:'short',day:'numeric'}),
+    iso:ny+'-'+String(nm+1).padStart(2,'0')+'-'+String(day).padStart(2,'0')};
 }
 function getPP(){
   if(!document.getElementById('enablePP').checked)return null;
@@ -2776,6 +2788,7 @@ let fundActive={};
 // ข้อมูลของตารางรวมรอบล่าสุด — การ์ดกรอกเร็วและสถิติหัวหน้าอ่านจากตัวนี้ ไม่คำนวณซ้ำ
 let ledgerData={rows:[],byM:{},hasFund:false};
 let ledgerView='all';     // all | loan | port
+let payRange={first:'',last:''};   // ช่วงเดือนที่มีค่างวดจริง ใช้บอกสาเหตุของแถวที่ไม่มีงวด
 let qeMonth=null;         // เดือนที่การ์ดกรอกเร็วกำลังเปิดอยู่
 
 function fundVal(m,f){
@@ -2814,14 +2827,18 @@ function buildLedger(){
     sched.forEach(r=>out.push({m:hasDates?monthKey(r.dateISO):'',pay:r,f:null}));
     return{rows:out,s:null,hasFund:false};
   }
-  const payByM={};sched.forEach(r=>{payByM[monthKey(r.dateISO)]=r;});
+  // เก็บเป็น "รายการงวดต่อเดือน" ไม่ใช่งวดเดียวต่อเดือน — ตารางที่ import มาจากไฟล์ที่ export
+  // ก่อนแก้บั๊ก addMonths อาจมีสองงวดตกในเดือนเดียวกัน ถ้าเขียนทับกันจะมีงวดหายไปจากตารางเงียบ ๆ
+  const payByM={};sched.forEach(r=>{const k=monthKey(r.dateISO);(payByM[k]=payByM[k]||[]).push(r);});
   const fByM={};s.rows.forEach(r=>{fByM[r.m]=r;});
   const keys=Object.keys(payByM).concat(s.rows.map(r=>r.m));
   let min=keys[0],max=keys[0];
   keys.forEach(m=>{if(m<min)min=m;if(m>max)max=m;});
   let m=min;
   for(let guard=0;guard<1200;guard++){
-    out.push({m,pay:payByM[m]||null,f:fByM[m]||null});
+    // ยอดพอร์ตเป็นของ "เดือน" ไม่ใช่ของ "งวด" งวดที่สองของเดือนเดียวกันจึงได้แถวของตัวเอง
+    // แต่ช่องพอร์ตถูกยกไปไว้ที่งวดแรกของเดือนเท่านั้น ไม่งั้น id ของ input จะซ้ำกัน
+    (payByM[m]||[null]).forEach((pr,idx)=>out.push({m,pay:pr,f:idx?null:(fByM[m]||null),dup:idx>0}));
     if(m===max)break;
     m=monthAdd(m,1);
   }
@@ -2837,6 +2854,21 @@ function setLedgerView(v,el){
 }
 
 const PH_NAME={1:'เฟส 1',2:'เฟส 2',3:'เฟส 3'};
+// แถวที่ไม่มีค่างวดเกิดได้สองแบบ: ผ่อนหมดก่อนสิ้นสัญญาเพราะโปะ กับเดือนนอกช่วงผ่อน
+// แยกคำให้ชัด ไม่งั้นอ่านแล้วเหมือนข้อมูลหาย ทั้งที่เดือนนั้นแค่ไม่มีค่างวดแต่ยังต้องบันทึกพอร์ต
+function noPayLabel(e){
+  if(!payRange.last)return '— ไม่มีงวด';
+  if(e.m&&e.m>payRange.last)return '🎉 ผ่อนหมดแล้ว';
+  if(e.m&&e.m<payRange.first)return '— ยังไม่เริ่มผ่อน';
+  return '— ไม่มีค่างวด';
+}
+function noPayReason(e){
+  if(e.m&&payRange.last&&e.m>payRange.last)
+    return 'ผ่อนหมดแล้ว 🎉 เดือนนี้ไม่มีค่างวดต้องจ่าย แต่ยังบันทึกยอดพอร์ตได้ตามปกติ';
+  if(e.m&&payRange.first&&e.m<payRange.first)
+    return 'ยังไม่ถึงงวดแรกของสัญญา เดือนนี้จึงยังไม่มีค่างวด';
+  return 'เดือนนี้ไม่มีค่างวดต้องจ่าย แต่ยังบันทึกยอดพอร์ตได้ตามปกติ';
+}
 const G_CLS={base:'th-base',loan:'th-loan',pay:'th-actual',tgt:'th-plan',safe:'th-actual',grow:'th-actual',diff:'th-diff'};
 
 // ตัดสินว่าเดือนไหนกรอกช่องไหนได้ — ตรรกะเดิมของตารางติดตาม ย้ายมาทั้งดุ้น
@@ -2872,6 +2904,8 @@ function renderLedger(){
 
   fundCols=allFundCols();
   const L=buildLedger(),s=L.s,hasFund=L.hasFund;
+  const pm=sched.map(r=>monthKey(r.dateISO)).filter(Boolean);
+  payRange={first:pm.length?pm[0]:'',last:pm.length?pm[pm.length-1]:''};
   if(!hasFund&&ledgerView==='port')ledgerView='all';
 
   // ---- แถบสลับมุมมอง / คำเตือน ----
@@ -2894,13 +2928,14 @@ function renderLedger(){
   fundActive={};
   ledgerData={rows:[],byM:{},hasFund};
   L.rows.forEach(r=>{
-    const on=hasFund?monthColOn(s,r.f):{};
-    fundActive[r.m]=on;
+    const on=(hasFund&&!r.dup)?monthColOn(s,r.f):{};
+    if(!r.dup)fundActive[r.m]=on;
     // เป้า = ยอดที่ควรมี "ณ สิ้นเดือน" จึงต้องใช้ safe (หลังจ่ายปิดบัญชีแล้ว) ไม่ใช่ safeBefore
     // เดือนปิดบัญชี safe เป็น 0 เพราะเงินถูกจ่ายออกไป ส่วนเกินถูกโยกเข้าพอร์ตแล้ว
     const tgt=r.f?r.f.safe+r.f.grow:null;
     // ตารางที่ import มาโดยไม่มีวันครบกำหนดจะได้ m ว่างทุกแถว จึงต้องมีคีย์สำรองเป็นเลขงวด
-    const e={m:r.m,key:r.m||('#'+(r.pay?r.pay.i:ledgerData.rows.length)),pay:r.pay,f:r.f,on,tgt,
+    const e={m:r.m,key:r.m?(r.dup?r.m+'#'+r.pay.i:r.m):('#'+(r.pay?r.pay.i:ledgerData.rows.length)),
+      pay:r.pay,f:r.f,on,tgt,dup:!!r.dup,
       phase:r.f?(r.f.paidOff?'x':r.f.phase):null,
       phaseText:r.f?(r.f.paidOff?'ปิดบัญชี':PH_NAME[r.f.phase]):'-'};
     ledgerData.rows.push(e);ledgerData.byM[e.key]=e;
@@ -2937,7 +2972,7 @@ function renderLedger(){
         class="${rec.paidDate?'filled':''}" onchange="onPDChange(${e.pay.i})"
         aria-label="วันที่จ่ายจริงงวด ${e.pay.i}"></td>`;}});
     add('pay','✅ บันทึกการจ่าย','สถานะ',{sbg:'#4c1d95',td:e=>{
-      if(!e.pay)return '<td class="col-actual-input"><span class="st st-skip">— ไม่มีงวด</span></td>';
+      if(!e.pay)return `<td class="col-actual-input"><span class="st st-skip" title="เดือนนี้ไม่มีค่างวดต้องจ่าย แต่ยังบันทึกยอดพอร์ตได้">${noPayLabel(e)}</span></td>`;
       const st=getStatus(e.pay);
       return `<td class="col-actual-input"><span class="st ${st.cls}">${st.label}</span></td>`;}});
     add('pay','✅ บันทึกการจ่าย','บันทึก',{sbg:'#4c1d95',td:e=>{
@@ -2955,10 +2990,13 @@ function renderLedger(){
   }
 
   if(showPort){
+    // งวดที่สองของเดือนเดียวกันชี้ขึ้นไปที่แถวแรก ยอดพอร์ตของเดือนนั้นบันทึกที่แถวเดียว
+    const dupTd=()=>'<td class="lg-dup" title="ยอดพอร์ตของเดือนนี้บันทึกที่งวดแรกของเดือน">↑</td>';
     add('tgt','🟢 เป้าหมายพอร์ต','เป้ารวมทั้งพอร์ต',{sbg:'#15803d',
-      td:e=>`<td class="col-plan tdr">${e.tgt===null?'-':fmt(e.tgt)}</td>`});
+      td:e=>e.dup?dupTd():`<td class="col-plan tdr">${e.tgt===null?'-':fmt(e.tgt)}</td>`});
 
     const cell=(e,f,label)=>{
+      if(e.dup)return dupTd();
       if(!e.f)return `<td class="col-actual-input"><input type="number" class="fund-in" disabled title="${esc(WHY.none)}" aria-label="${esc(label)} ${e.m}"></td>`;
       const on=!!e.on[f];
       const v=fundRec[e.m]&&fundRec[e.m][f]!==undefined?fundRec[e.m][f]:'';
@@ -2970,6 +3008,7 @@ function renderLedger(){
     add('safe','🟣 กองปิดรถ (จริง)','ฝากประจำ',{sbg:'#6d28d9',td:e=>cell(e,'fd','ฝากประจำ')});
     add('safe','🟣 กองปิดรถ (จริง)','ตลาดเงิน',{sbg:'#6d28d9',td:e=>cell(e,'mm','กองตลาดเงิน')});
     add('safe','🟣 กองปิดรถ (จริง)','รวมกองปิดรถ',{sbg:'#4c1d95',td:e=>{
+      if(e.dup)return dupTd();
       const a=fundGroupTotal(e.m,'safe');
       return `<td class="tdr" id="fs_${e.m}"><strong>${a===null?'—':fmt(a)}</strong></td>`;}});
 
@@ -2979,10 +3018,12 @@ function renderLedger(){
         td:e=>cell(e,f.id,'ฟ'+f.phase+' '+f.name)});
     });
     add('grow','🟣 พอร์ตเติบโต (จริง)','รวมพอร์ตโต',{sbg:'#4c1d95',td:e=>{
+      if(e.dup)return dupTd();
       const a=fundGroupTotal(e.m,'grow');
       return `<td class="tdr" id="fgt_${e.m}"><strong>${a===null?'—':fmt(a)}</strong></td>`;}});
 
     add('diff','🟡 ส่วนต่าง','จริง − เป้า',{sbg:'#b45309',td:e=>{
+      if(e.dup)return dupTd();
       const aSafe=fundGroupTotal(e.m,'safe'),aGrow=fundGroupTotal(e.m,'grow');
       const has=aSafe!==null||aGrow!==null,tgt=e.tgt||0;
       const diff=(aSafe||0)+(aGrow||0)-tgt;
@@ -3051,7 +3092,7 @@ function renderQuickEntry(){
 
   const st=e.pay?getStatus(e.pay):null;
   if(badges)badges.innerHTML=(e.phase?`<span class="ph-pill ph-${e.phase}">${e.phaseText}</span> `:'')
-    +(st?`<span class="st ${st.cls}">${st.label}</span>`:'<span class="st st-skip">— ไม่มีงวดต้องจ่าย</span>');
+    +(st?`<span class="st ${st.cls}">${st.label}</span>`:`<span class="st st-skip">${noPayLabel(e)}</span>`);
 
   // ---- ฝั่งซ้าย: ค่างวด ----
   let loan='';
@@ -3070,13 +3111,15 @@ function renderQuickEntry(){
         ?`<button class="btn-unpaid" onclick="unmarkPaid(${e.pay.i})">✕ ยกเลิกการจ่าย</button>`
         :`<button class="btn-paid" onclick="markPaid(${e.pay.i})">✓ บันทึกว่าจ่ายวันนี้</button>`}</div>`;
   } else {
-    loan=`<div class="qe-empty">เดือนนี้ไม่มีงวดต้องจ่าย${e.f&&e.f.phase===3?' — ปิดบัญชีรถไปแล้ว 🎉':''}</div>`;
+    loan=`<div class="qe-empty">${noPayReason(e)}</div>`;
   }
 
   // ---- ฝั่งขวา: ยอดพอร์ตสิ้นเดือน ----
   let port='';
   if(!ledgerData.hasFund){
     port='<div class="qe-empty">ยังไม่มีแผนกองปิดรถ — ตั้งค่าที่แท็บ 💰 กองปิดรถ ก่อน</div>';
+  } else if(e.dup){
+    port='<div class="qe-empty">เดือนนี้มีสองงวด — ยอดพอร์ตเป็นยอดต่อเดือน จึงบันทึกที่งวดแรกของเดือนที่เดียว</div>';
   } else if(!e.f){
     port='<div class="qe-empty">เดือนนี้อยู่นอกช่วงแผนเก็บเงิน จึงไม่มีอะไรให้บันทึก</div>';
   } else {
