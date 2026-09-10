@@ -87,6 +87,10 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .win{color:#16a34a;font-weight:700}
 .verdict{margin-top:12px;padding:12px 16px;border-radius:10px;background:var(--greenp);border:1px solid #86efac;font-size:.85rem;color:var(--green);font-weight:600}
 .chart-wrap{position:relative;height:280px;margin-top:4px}
+/* กราฟกองเงินมีแถบสีเฟสกับป้ายกำกับอยู่ด้านบน ต้องสูงกว่ากราฟหน้า 1 ไม่งั้นป้ายทับเส้นข้อมูล */
+#fundChartSection .chart-wrap{height:330px}
+/* จอแคบ legend ขึ้นหลายบรรทัดจนบีบพื้นที่กราฟ จึงต้องเพิ่มความสูงชดเชย */
+@media(max-width:640px){#fundChartSection .chart-wrap{height:420px}}
 /* PAGE 2 */
 .prog-wrap{background:#e5e7eb;border-radius:20px;height:12px;overflow:hidden;margin:8px 0 4px}
 .prog-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .5s}
@@ -171,7 +175,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .btn-sm{padding:4px 10px;background:#f5f3ff;color:var(--pur);border:1.5px solid #c4b5fd;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer}
 /* ---- Print / PDF ---- */
 @media print{
-  .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto,.btn-sm,.fund-del{display:none!important}
+  .page-nav,.btn-calc,.btn-exp,.btn-pdf,.btn-import,.btn-sync,.btn-purple,.btn-danger,.gs-url-row,.tabs,.act-row,.pp-toggle,.btn-goto,.btn-sm,.fund-del,.seg-row{display:none!important}
   .fund-scroll{overflow:visible}
   .fund-row{min-width:0;grid-template-columns:minmax(90px,2fr) 1fr 1fr 1fr 1fr 0}
   .set-group{break-inside:avoid;page-break-inside:avoid}
@@ -844,7 +848,14 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <div class="pp-chart-header">
           <span class="pp-chart-title">📈 เส้นทางกองเงินถึงวันปิดบัญชีและหลังจากนั้น</span>
         </div>
+        <div class="seg-row" id="fundChartViews">
+          <span class="seg-hint">มุมมองกราฟ:</span>
+          <button type="button" class="seg on" onclick="setFundChartView('overview',this)">📊 ภาพรวม</button>
+          <button type="button" class="seg" onclick="setFundChartView('gain',this)">💹 เงินต้น vs ผลตอบแทน</button>
+          <button type="button" class="seg" id="fcvFunds" onclick="setFundChartView('funds',this)">🧩 รายกอง</button>
+        </div>
         <div class="chart-wrap"><canvas id="fundChart"></canvas></div>
+        <div class="note" id="fundChartHint" style="margin-top:10px"></div>
       </div>
     </div><!-- /p2tFund -->
 
@@ -1157,6 +1168,13 @@ function updatePPLabel(){
   document.getElementById('ppStartUnit').textContent=y?'(นับจากงวดแรก)':'งวด';
 }
 function fmt(n){return n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+// ป้ายแกนของกราฟ — เดิมเป็น "2500k" เปล่า ๆ อ่านแล้วต้องเดาเองว่าหน่วยอะไรและกี่ล้าน
+function axisMoney(v){
+  const a=Math.abs(v);
+  if(a>=1e6)return '฿'+(v/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'')+' ล้าน';
+  if(a>=1e4)return '฿'+Math.round(v/1e3)+'k';
+  return '฿'+Math.round(v).toLocaleString('th-TH');
+}
 // ชื่อกองทุนเป็นข้อความอิสระจากผู้ใช้ ต้อง escape ทุกครั้งที่ยัดเข้า HTML และใส่เครื่องหมายคำพูดใน CSV
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function csvq(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
@@ -2187,6 +2205,9 @@ function buildFundSchedule(monthly){
   let fundedMonth=null;
   const rows=[], invest=[0,0,0];
   let redirectTotal=0;
+  // เงินสดสุทธิที่ "เราใส่เข้าไปเอง" สะสมถึงเดือนนั้น — เงินตั้งต้น + ทุกงวดที่เข้าระบบ − เงินที่จ่ายปิดบัญชีออกไป
+  // ส่วนต่างระหว่างยอดพอร์ตจริงกับตัวนี้คือผลตอบแทนที่งอกมา จึงต้องตรงเป๊ะ: safe+grow = principal+gain
+  let principalCum=Math.max(0,+planCfg.seed||0);
   for(let t=0;t<=total;t++){
     const m=monthAdd(p.saveStart,t);
     let phase;
@@ -2212,7 +2233,7 @@ function buildFundSchedule(monthly){
       let toFunds=0;
       for(let j=0;j<a.ids.length;j++){const id=a.ids[j];const x=cash*a.w[id]*sc;bal[id]+=x;toFunds+=x;}
       fd+=toFD;mm+=cash-toFD-toFunds;
-      invest[0]+=cash;
+      invest[0]+=cash;principalCum+=cash;
     } else if(t<=p.k){
       // \u0E40\u0E1F\u0E2A 2 \u2014 \u0E2B\u0E22\u0E38\u0E14\u0E40\u0E15\u0E34\u0E21\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 \u0E1B\u0E25\u0E48\u0E2D\u0E22\u0E1E\u0E31\u0E01\u0E44\u0E27\u0E49 \u0E40\u0E07\u0E34\u0E19\u0E43\u0E2B\u0E21\u0E48\u0E44\u0E1B\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15
       // \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 (t===p.k) \u0E22\u0E31\u0E07\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E40\u0E1F\u0E2A\u0E19\u0E35\u0E49 \u0E40\u0E1E\u0E23\u0E32\u0E30\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E19\u0E31\u0E49\u0E19\u0E22\u0E31\u0E07\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22\u0E2D\u0E22\u0E39\u0E48
@@ -2220,7 +2241,7 @@ function buildFundSchedule(monthly){
       const a=AL[2], cash=put(2,t-accM);
       for(let j=0;j<a.ids.length;j++)bal[a.ids[j]]+=cash*a.w[a.ids[j]];
       if(a.resid>0)cashRes+=cash*a.resid;
-      invest[1]+=cash;
+      invest[1]+=cash;principalCum+=cash;
     } else {
       // \u0E40\u0E1F\u0E2A 3 \u2014 \u0E40\u0E23\u0E34\u0E48\u0E21\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E16\u0E31\u0E14\u0E08\u0E32\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 \u0E0B\u0E36\u0E48\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E41\u0E23\u0E01\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E41\u0E25\u0E49\u0E27
       // \u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E1B\u0E47\u0E19\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E40\u0E07\u0E34\u0E19\u0E23\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E08\u0E23\u0E34\u0E07 \u0E08\u0E36\u0E07\u0E17\u0E22\u0E2D\u0E22\u0E40\u0E02\u0E49\u0E32\u0E17\u0E38\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E40\u0E2A\u0E21\u0E2D
@@ -2229,14 +2250,14 @@ function buildFundSchedule(monthly){
       const a=AL[3], cash=put(3,t-p.k-1), add=cash+redirect*p.freedPay;
       for(let j=0;j<a.ids.length;j++)bal[a.ids[j]]+=add*a.w[a.ids[j]];
       if(a.resid>0)cashRes+=add*a.resid;
-      invest[2]+=cash;redirectTotal+=redirect*p.freedPay;
+      invest[2]+=cash;redirectTotal+=redirect*p.freedPay;principalCum+=add;
     }
     // \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 -> \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E31\u0E49\u0E07\u0E01\u0E49\u0E2D\u0E19
     if(fdOpen&&t===fdMonths-1){mm+=fd;fd=0;fdOpen=false;}
 
     // safeBefore = \u0E22\u0E2D\u0E14\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22\u0E01\u0E48\u0E2D\u0E19\u0E2B\u0E31\u0E01\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35 \u2014 \u0E15\u0E31\u0E27\u0E40\u0E25\u0E02\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49\u0E40\u0E17\u0E35\u0E22\u0E1A\u0E27\u0E48\u0E32\u0E40\u0E01\u0E47\u0E1A\u0E1E\u0E2D\u0E2B\u0E23\u0E37\u0E2D\u0E02\u0E32\u0E14
     const safeBefore=fd+mm;
-    let safe=safeBefore, grow=growTotal(), paidOff=false;
+    let safe=safeBefore, grow=growTotal(), paidOff=false, paidOut=0;
     if(fundedMonth===null&&safe>=target-0.005)fundedMonth=m;
     if(t===p.k){
       // \u0E40\u0E14\u0E37\u0E2D\u0E19\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35: \u0E08\u0E48\u0E32\u0E22\u0E22\u0E2D\u0E14\u0E1B\u0E34\u0E14\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E01\u0E2D\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E25\u0E37\u0E2D\u0E42\u0E22\u0E01\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E42\u0E15
@@ -2253,10 +2274,15 @@ function buildFundSchedule(monthly){
           if(aRoll.resid>0)cashRes+=left*aRoll.resid;
         }
       }
+      // เงินที่ออกจากระบบจริง = กองปลอดภัยทั้งก้อนลบส่วนที่โยกกลับเข้าพอร์ต
+      // ใช้ตัวนี้ไม่ใช่ target ตรง ๆ เพราะถ้าเก็บไม่ถึงเป้า โค้ดก็ยังล้าง fd/mm คือจ่ายเท่าที่มี
+      paidOut=safeBefore-Math.max(0,left);
+      principalCum-=paidOut;
       fd=0;mm=0;safe=0;grow=growTotal();
     }
     // f ต้อง clone ทุกเดือน ไม่งั้นทุกแถวจะชี้ object เดียวกันแล้วกราฟ/ตารางจะเห็นแต่ยอดเดือนสุดท้าย
-    rows.push({m,t,phase,safe,safeBefore,grow,fd,mm,f:{...bal},cash:cashRes,paidOff,
+    rows.push({m,t,phase,safe,safeBefore,grow,fd,mm,f:{...bal},cash:cashRes,paidOff,paidOut,
+      principal:principalCum,gain:(safe+grow)-principalCum,
       inst:monthDiff(monthKey(schedBase[0].dateISO),m)+1});
   }
   const atRow=rows[p.k];
@@ -2696,6 +2722,25 @@ function fundColor(f){
   for(let i=0;i<f.id.length;i++)h=(h*31+f.id.charCodeAt(i))>>>0;
   return `hsl(${h%360} 62% 45%)`;
 }
+// มุมมองกราฟ: overview = ภาพรวมแบบแถบซ้อนชั้น, gain = แยกเงินต้นกับผลตอบแทน, funds = เส้นรายกอง
+let fundChartView='overview';
+function setFundChartView(v,el){
+  fundChartView=v;
+  const host=document.getElementById('fundChartViews');
+  if(host)host.querySelectorAll('.seg').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+  buildFundChart();
+}
+// คำอธิบายใต้กราฟเปลี่ยนตามมุมมอง — บอกตรง ๆ ว่าเส้นไหนหมายถึงอะไรและช่องว่างระหว่างเส้นคืออะไร
+const FCV_HINT={
+  overview:'🟢 <strong>เขียว = กองปิดรถ</strong> เงินที่กันไว้จ่ายปิดบัญชี — หายไปทั้งก้อนในเดือนปิดบัญชีเพราะจ่ายออกไปจริง ไม่ใช่ข้อมูลหาย<br>'+
+    '🟣 <strong>ม่วง = พอร์ตเติบโต ซ้อนอยู่บนเขียว</strong> ความหนาของแถบม่วงคือยอดพอร์ต ส่วน<strong>ขอบบนสุดคือยอดรวมทั้งพอร์ต</strong><br>'+
+    '⚫ <strong>เส้นประเทา = เงินต้นที่เราใส่ไปเอง</strong> ช่องว่างระหว่างเส้นประกับขอบบนสุดคือ<strong>ผลตอบแทนที่งอกมา</strong>',
+  gain:'⚫ <strong>เทา = เงินต้นที่เราใส่ไปเอง</strong> (เงินตั้งต้น + ทุกงวดที่เก็บ + ค่างวดที่โอนเข้าพอร์ต − เงินที่จ่ายปิดบัญชีออกไป)<br>'+
+    '🟡 <strong>เหลือง = ผลตอบแทนสะสม</strong> ซ้อนอยู่บนเทา ยิ่งเวลาผ่านไปแถบยิ่งหนาขึ้นเพราะทบต้น · สองแถบรวมกัน = ยอดรวมทั้งพอร์ต',
+  funds:'เส้นแต่ละสีคือยอดของกองทุนหนึ่งกอง ป้าย <strong>ฟ1/ฟ2/ฟ3</strong> บอกว่าเป็นกองที่ตั้งไว้ในเฟสไหน — '+
+    'กองที่ซื้อตั้งแต่เฟส 1 ยังโตต่อในเฟสหลังแม้ไม่มีเงินใหม่เข้า · กดที่ legend เพื่อซ่อน/แสดงทีละกอง'
+};
 function buildFundChart(){
   const cv=document.getElementById('fundChart');
   const sec=document.getElementById('fundChartSection');
@@ -2708,71 +2753,179 @@ function buildFundChart(){
   const p=s.plan;
   const labels=s.rows.map(r=>monthLabel(r.m));
   if(fundChartInst)fundChartInst.destroy();
-  // เส้นแบ่งเฟส + เดือนปิดบัญชี วาดเองด้วย plugin เล็ก ๆ (ไม่ต้องพึ่ง annotation plugin)
-  const marks=[];
-  s.phases.forEach((ph,i)=>{ if(ph&&i>0) marks.push({at:s.rows.findIndex(r=>r.m===ph.from), text:'เฟส '+(i+1), color:i===1?'#15803d':'#7c3aed'}); });
+  // ยังไม่มีกองทุนสักกอง มุมมองรายกองจะว่างเปล่า จึงปิดปุ่มไว้แล้วถอยไปภาพรวมให้
+  const fcv=document.getElementById('fcvFunds');
+  if(fcv)fcv.disabled=!s.cols.length;
+  if(fundChartView==='funds'&&!s.cols.length){
+    fundChartView='overview';
+    const host=document.getElementById('fundChartViews');
+    if(host){const bs=host.querySelectorAll('.seg');bs.forEach(b=>b.classList.remove('on'));if(bs[0])bs[0].classList.add('on');}
+  }
+  const hint=document.getElementById('fundChartHint');
+  if(hint){
+    const last=s.rows[s.rows.length-1], base=Math.max(0,last.principal);
+    const tot=last.safe+last.grow, g=tot-base;
+    hint.innerHTML=(FCV_HINT[fundChartView]||'')+
+      `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">📌 <strong>ณ ${monthLabel(last.m)}</strong> — `+
+      `เงินต้นที่ใส่ไปเอง ฿${fmt(base)} · ผลตอบแทนสะสม <strong>฿${fmt(g)}</strong>`+
+      (base>0?` (${g>=0?'+':''}${(g/base*100).toFixed(1)}%)`:'')+
+      ` · รวมทั้งพอร์ต <strong>฿${fmt(tot)}</strong></div>`;
+  }
+
+  const total=s.rows.map(r=>Math.round(r.safe+r.grow));
+  // เงินต้นติดลบได้ถ้าผลตอบแทนช่วยจ่ายปิดบัญชีไปมาก — แถบซ้อนติดลบจะอ่านไม่รู้เรื่อง จึงตัดที่ 0
+  // แล้วส่วนที่เกินไปโผล่เป็นความหนาของแถบผลตอบแทนแทน (ยอดรวมยังเท่าเดิม)
+  const principal=s.rows.map(r=>Math.round(Math.max(0,r.principal)));
+  const targetLine=s.rows.map(()=>Math.round(p.closureAmt));
+  const TGT={label:'🟠 ยอดปิดบัญชี (เป้า)',data:targetLine,borderColor:'#ea580c',borderWidth:1.5,
+    borderDash:[5,4],pointRadius:0,fill:false,tipKey:'target'};
+
+  let datasets;
+  if(fundChartView==='gain'){
+    datasets=[
+      {label:'⚫ เงินต้นที่ใส่ไปเอง',data:principal,borderColor:'#64748b',
+       backgroundColor:'rgba(148,163,184,.35)',borderWidth:2,pointRadius:0,fill:'origin',tension:.15,tipKey:'principal'},
+      // พล็อตเป็นยอดรวม แล้ว fill ลงมาหาเส้นก่อนหน้า — ความหนาของแถบจึงเท่ากับผลตอบแทนพอดี
+      {label:'🟡 ผลตอบแทนสะสม — เส้นบน = รวมทั้งพอร์ต',data:total,borderColor:'#d97706',
+       backgroundColor:'rgba(245,158,11,.3)',borderWidth:2.5,pointRadius:0,fill:'-1',tension:.15,tipKey:'gain'},
+      TGT
+    ];
+  } else if(fundChartView==='funds'){
+    datasets=[
+      {label:'รวมทั้งพอร์ต',data:total,borderColor:'#94a3b8',borderWidth:1.5,pointRadius:0,fill:false,tension:.15},
+      ...s.cols.map(f=>({
+        label:`ฟ${f.phase} ${f.name}`,
+        data:s.rows.map(r=>Math.round((r.f&&r.f[f.id])||0)),
+        borderColor:fundColor(f),borderWidth:2,pointRadius:0,fill:false,tension:.15
+      })),
+      ...(s.rows.some(r=>r.cash>1)?[{label:'เงินพักรอจัดสรร',
+        data:s.rows.map(r=>Math.round(r.cash||0)),borderColor:'#94a3b8',borderWidth:1.5,
+        borderDash:[2,3],pointRadius:0,fill:false,tension:.15}]:[]),
+      TGT
+    ];
+  } else {
+    datasets=[
+      {label:'🟢 กองปิดรถ (เงินไว้จ่ายปิด)',data:s.rows.map(r=>Math.round(r.safe)),borderColor:'#16a34a',
+       backgroundColor:'rgba(22,163,74,.22)',borderWidth:2,pointRadius:0,fill:'origin',tension:.15,tipKey:'safe'},
+      // เดิมเส้นนี้ fill ลงศูนย์เหมือนเส้นเขียว พื้นที่จึงทับกันแล้วต้องมีเส้น "รวมทั้งพอร์ต" อีกเส้น
+      // ตอนนี้ fill:'-1' ทำให้แถบม่วงต่อบนแถบเขียวจริง ๆ ขอบบนสุดจึงเป็นยอดรวมในตัวเอง ไม่ต้องมีเส้นซ้ำ
+      {label:'🟣 พอร์ตเติบโต — เส้นบน = รวมทั้งพอร์ต',data:total,borderColor:'#6d28d9',
+       backgroundColor:'rgba(124,58,237,.25)',borderWidth:2.5,pointRadius:0,fill:'-1',tension:.15,tipKey:'grow'},
+      {label:'⚫ เงินต้นที่ใส่ไปสะสม',data:principal,borderColor:'#475569',borderWidth:1.5,
+       borderDash:[6,4],pointRadius:0,fill:false,tension:.15,tipKey:'principal'},
+      TGT
+    ];
+  }
+
+  // แถบสีพื้นหลังแยกเฟส + เส้นเดือนปิดบัญชี วาดเองด้วย plugin เล็ก ๆ (ไม่ต้องพึ่ง annotation plugin)
+  // สีตรงกับการ์ดเฟสด้านบน (.ec-tier-card) กราฟกับการ์ดจึงพูดภาษาสีเดียวกัน
+  // เดิมใช้เส้นประสีเขียว/ม่วงซึ่งเป็นสีเดียวกับเส้นข้อมูล สีจึงสื่อสองความหมายพร้อมกัน
+  const BAND=[null,{bg:'rgba(219,234,254,.55)',fg:'#1d4ed8',t:'เฟส 1 · สะสมกองปิดรถ'},
+                   {bg:'rgba(220,252,231,.55)',fg:'#15803d',t:'เฟส 2 · พักกอง + เริ่มพอร์ตโต'},
+                   {bg:'rgba(237,233,254,.55)',fg:'#7c3aed',t:'เฟส 3 · หลังปิดบัญชี'}];
+  const idxOf=m=>s.rows.findIndex(r=>r.m===m);
+  const bands=[1,2,3].map(n=>{
+    const ph=s.phases[n-1];
+    if(!ph)return null;
+    return {a:idxOf(ph.from),b:idxOf(ph.to),...BAND[n]};
+  }).filter(b=>b&&b.a>=0&&b.b>=0);
   const payIdx=s.rows.findIndex(r=>r.paidOff);
-  if(payIdx>=0)marks.push({at:payIdx,text:'ปิดบัญชี',color:'#ea580c',bold:true});
-  const phaseLines={
-    id:'phaseLines',
-    afterDatasetsDraw(ch){
-      const {ctx,chartArea:{top,bottom},scales:{x}}=ch;
+  const phaseBands={
+    id:'phaseBands',
+    // วาดก่อนชุดข้อมูล แถบสีจึงอยู่ "ใต้" เส้น ไม่บังข้อมูล
+    beforeDatasetsDraw(ch){
+      const {ctx,chartArea:{top,bottom,left,right},scales:{x}}=ch;
       ctx.save();
-      ctx.font='600 10px sans-serif';
-      // จุดปิดบัญชีกับต้นเฟส 3 ห่างกันแค่เดือนเดียว ป้ายจะทับกัน
-      // จึงไล่วางทีละอัน ถ้าชนกับป้ายก่อนหน้าให้เลื่อนลงมาอีกบรรทัด
-      let lastRight=-1e9,linePos=0;
-      marks.filter(mk=>mk.at>=0).sort((a,b)=>a.at-b.at).forEach(mk=>{
-        const px=x.getPixelForValue(mk.at);
-        ctx.beginPath();ctx.setLineDash(mk.bold?[]:[4,4]);
-        ctx.lineWidth=mk.bold?1.5:1;ctx.strokeStyle=mk.color;
-        ctx.moveTo(px,top);ctx.lineTo(px,bottom);ctx.stroke();
-        ctx.setLineDash([]);
-        const w=ctx.measureText(mk.text).width;
-        linePos=px<lastRight?linePos+1:0;
-        lastRight=px+w+8;
-        ctx.fillStyle=mk.color;ctx.textAlign='left';
-        ctx.fillText(mk.text,px+3,top+10+linePos*12);
+      bands.forEach(bd=>{
+        // ขอบแถบวางกึ่งกลางระหว่างจุด เพื่อให้รอยต่อเฟสตรงกับเดือนที่เปลี่ยนเฟสจริง
+        const half=(x.getPixelForValue(1)-x.getPixelForValue(0))/2;
+        const x0=Math.max(left,x.getPixelForValue(bd.a)-half);
+        const x1=Math.min(right,x.getPixelForValue(bd.b)+half);
+        if(x1<=x0)return;
+        ctx.fillStyle=bd.bg;ctx.fillRect(x0,top,x1-x0,bottom-top);
+        ctx.strokeStyle='rgba(148,163,184,.5)';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(x0,top);ctx.lineTo(x0,bottom);ctx.stroke();
+        // ป้ายชื่อเฟสวางกลางแถบ ถ้าแถบแคบกว่าข้อความก็ไม่ต้องเขียน ไม่งั้นล้นไปทับเฟสข้าง ๆ
+        ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.fillStyle=bd.fg;
+        if(ctx.measureText(bd.t).width<x1-x0-6)ctx.fillText(bd.t,(x0+x1)/2,top+12);
       });
+      ctx.restore();
+    },
+    // เส้นเดือนปิดบัญชีต้องอยู่ "บน" เส้นข้อมูล เพราะเป็นจุดที่ต้องอธิบายหน้าผาของกราฟ
+    afterDatasetsDraw(ch){
+      if(payIdx<0)return;
+      const {ctx,chartArea:{top,bottom,right},scales:{x}}=ch;
+      const px=x.getPixelForValue(payIdx);
+      ctx.save();
+      ctx.beginPath();ctx.lineWidth=1.8;ctx.strokeStyle='#ea580c';
+      ctx.moveTo(px,top);ctx.lineTo(px,bottom);ctx.stroke();
+      const out=s.rows[payIdx].paidOut;
+      const l1='💥 ปิดบัญชี', l2='จ่ายออก −฿'+fmt(out);
+      ctx.font='700 10px sans-serif';
+      const w=Math.max(ctx.measureText(l1).width,ctx.measureText(l2).width);
+      // ป้ายชิดขวาจอจะโดนตัด จึงพลิกไปอยู่ซ้ายเส้นแทน
+      const flip=px+w+8>right;
+      ctx.textAlign=flip?'right':'left';
+      const tx=flip?px-4:px+4;
+      ctx.fillStyle='#ea580c';
+      // วางไว้แถวบน ใต้ป้ายชื่อเฟส — เดิมชิดขอบล่างแล้วไปทับป้ายแกน x ตอนจอเตี้ย
+      ctx.fillText(l1,tx,top+28);
+      ctx.font='600 10px sans-serif';
+      ctx.fillText(l2,tx,top+40);
       ctx.restore();
     }
   };
+
   fundChartInst=new Chart(cv,{
     type:'line',
-    data:{labels,datasets:[
-      {label:'กองปิดรถ',data:s.rows.map(r=>Math.round(r.safe)),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.08)',borderWidth:2,pointRadius:0,fill:true,tension:.15},
-      {label:'พอร์ตเติบโต',data:s.rows.map(r=>Math.round(r.grow)),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',borderWidth:2,pointRadius:0,fill:true,tension:.15},
-      {label:'รวมทั้งพอร์ต',data:s.rows.map(r=>Math.round(r.safe+r.grow)),borderColor:'#1e3a8a',borderWidth:2.5,pointRadius:0,fill:false,tension:.15},
-      {label:'ยอดปิดบัญชี',data:s.rows.map(()=>Math.round(p.closureAmt)),borderColor:'#ea580c',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false},
-      // เส้นรายกอง ซ่อนไว้ก่อนเสมอ — มีได้ถึง 12 กอง ถ้าโชว์หมดกราฟจะอ่านไม่ออก กดที่ legend เพื่อเปิดทีละกอง
-      ...s.cols.map(f=>({
-        label:`— ฟ${f.phase} ${f.name}`,
-        data:s.rows.map(r=>Math.round((r.f&&r.f[f.id])||0)),
-        borderColor:fundColor(f),borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false,tension:.15,hidden:true
-      })),
-      ...(s.rows.some(r=>r.cash>1)?[{label:'— เงินพักรอจัดสรร',
-        data:s.rows.map(r=>Math.round(r.cash||0)),borderColor:'#94a3b8',borderWidth:1.5,
-        borderDash:[2,3],pointRadius:0,fill:false,tension:.15,hidden:true}]:[])
-    ]},
+    data:{labels,datasets},
     options:{
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{labels:{boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{
-          title:(it)=>{
-            const r=s.rows[it[0].dataIndex];
-            return monthLabel(r.m)+(r.paidOff?' · 💥 เดือนปิดบัญชี':' · เฟส '+r.phase+' · '+modeText(r.phase));
-          },
-          label:(c)=>c.dataset.label+': ฿'+fmt(c.parsed.y)
-        }}
+        tooltip:{
+          callbacks:{
+            title:(it)=>{
+              const r=s.rows[it[0].dataIndex];
+              return monthLabel(r.m)+' · เดือนที่ '+(r.t+1)+(r.paidOff?' · 💥 เดือนปิดบัญชี':' · เฟส '+r.phase);
+            },
+            // เส้นที่ถูก fill ซ้อนชั้นพล็อตเป็น "ยอดสะสม" ไม่ใช่ยอดของตัวเอง
+            // tooltip จึงต้องอ่านค่าจริงจากแถวข้อมูลตาม tipKey ไม่งั้นจะอ่านได้ว่ากองนั้นมีมากกว่าความจริง
+            label:(c)=>{
+              const r=s.rows[c.dataIndex], k=c.dataset.tipKey;
+              const v=k==='grow'?r.grow
+                    :k==='safe'?r.safe
+                    :k==='principal'?Math.max(0,r.principal)
+                    :k==='gain'?(r.safe+r.grow)-Math.max(0,r.principal)
+                    :k==='target'?p.closureAmt
+                    :c.parsed.y;
+              return c.dataset.label+': ฿'+fmt(v);
+            },
+            afterBody:(it)=>{
+              const r=s.rows[it[0].dataIndex], out=['▬ รวมทั้งพอร์ต: ฿'+fmt(r.safe+r.grow)];
+              if(r.paidOff)out.push('💥 จ่ายปิดบัญชี −฿'+fmt(r.paidOut)+' · เหลือโยกเข้าพอร์ต ฿'+fmt(Math.max(0,r.safeBefore-r.paidOut)));
+              else if(r.t<p.k){
+                const d=r.safe-p.closureAmt;
+                out.push('เทียบเป้าปิดบัญชี: '+(d>=0?'เกินแล้ว ฿'+fmt(d):'ยังขาด ฿'+fmt(-d)));
+              }
+              return out;
+            },
+            footer:(it)=>{
+              const r=s.rows[it[0].dataIndex], base=Math.max(0,r.principal);
+              const g=(r.safe+r.grow)-base, pc=base>0?(g/base*100):0;
+              return ['เงินต้นที่ใส่ไป ฿'+fmt(base),
+                      'ผลตอบแทนสะสม ฿'+fmt(g)+(base>0?' ('+(g>=0?'+':'')+pc.toFixed(1)+'%)':'')];
+            }
+          }
+        }
       },
       scales:{
-        y:{ticks:{callback:v=>(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'#eef2f7'}},
+        y:{ticks:{callback:axisMoney,font:{size:10}},grid:{color:'#eef2f7'}},
         x:{ticks:{maxTicksLimit:14,font:{size:10}},grid:{display:false}}
       }
     },
-    plugins:[phaseLines]
+    plugins:[phaseBands]
   });
 }
 
