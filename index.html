@@ -120,6 +120,9 @@ td:nth-child(2){text-align:left;color:#4b5563}
 .pt input.pt-note{padding:5px 8px;font-size:.75rem;border-radius:6px;border:1.5px solid var(--border);width:120px;background:#fff}
 .btn-paid{padding:4px 10px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap}
 .btn-paid:hover{background:#16a34a}
+/* งวดหลังปิดบัญชี ยังกดบันทึกได้ถ้าสุดท้ายจ่ายจริง แต่ไม่ควรเด่นจนชวนกดตามแถวอื่น */
+.btn-paid.btn-skip{background:#f3f4f6;color:var(--grayl);border:1.5px solid var(--border)}
+.btn-paid.btn-skip:hover{background:#e5e7eb;color:#374151}
 .btn-unpaid{padding:4px 10px;background:#f3f4f6;color:#9ca3af;border:1.5px solid var(--border);border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer}
 .btn-unpaid:hover{background:#fee2e2;color:var(--red);border-color:var(--red)}
 .st{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.69rem;font-weight:700;white-space:nowrap}
@@ -307,6 +310,9 @@ td:nth-child(2){text-align:left;color:#4b5563}
 /* ---- ตารางรวม: บันทึกการจ่าย + ติดตามพอร์ต ---- */
 .pt thead tr.hdr-top th.th-loan{background:#1d4ed8;color:#fff}
 .pt tbody tr.lg-payoff td{background:#fef3c7}
+/* งวดหลังปิดบัญชี — ยังโชว์ไว้เป็นข้อมูลสัญญา แต่ขีดฆ่าให้เห็นว่าไม่ได้จ่ายตามแผนแล้ว */
+.pt tbody tr.lg-skiprow td{background:#fafafa}
+.pt td.lg-skip{color:var(--grayl);text-decoration:line-through;text-decoration-color:#cbd5e1}
 .pt tbody tr.lg-now td:first-child{box-shadow:inset 4px 0 0 var(--pur)}
 .pt tbody tr.lg-focus td{background:#f5f3ff}
 .pt tbody tr.lg-total td{font-weight:700;background:#ede9fe!important;filter:none}
@@ -666,6 +672,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
       <div class="pp-leg-item pl-actual">🟣 ยอดจริง = กรอกเอง ณ สิ้นเดือน</div>
       <div class="pp-leg-item pl-diff">🟡 ส่วนต่าง = จริง − เป้า</div>
       <div class="pp-leg-item pl-skip">⬜ ช่องเทา = เดือนนั้นยังไม่มีบัญชีนี้ หรือปิดไปแล้ว</div>
+      <div class="pp-leg-item pl-skip">⏭️ ไม่ต้องจ่าย = งวดหลังปิดบัญชี เดือนนั้นเหลือแค่บันทึกพอร์ตเติบโต</div>
     </div>
 
     <div class="note" style="margin:0 0 10px">📌 <strong>ฝากประจำกรอกได้เฉพาะเฟส 1</strong> เพราะพอครบกำหนดยอดจะถูกโอนเข้ากองตลาดเงินทั้งก้อน เข้าเฟส 2 จึงไม่มีบัญชีนี้แล้ว · เฟส 2 ไม่มีเงินใหม่เข้ากองปิดรถ แต่ยังต้องบันทึกยอดกองตลาดเงินที่พักไว้ทุกสิ้นเดือน<br>
@@ -1785,6 +1792,29 @@ function getStatus(r){
   return due>=todayD?{cls:'st-pending',label:'⏳ รอชำระ'}:{cls:'st-overdue',label:'🔴 เกินกำหนด'};
 }
 
+// ---- งวดที่ "ไม่ต้องจ่ายแล้ว" เพราะปิดบัญชีไปก่อนกำหนด ----
+// ปิดบัญชีที่งวดเป้าหมายแล้ว งวดถัด ๆ ไปจะไม่มีการจ่ายอีก เดือนพวกนั้นเหลือแค่บันทึกพอร์ตเติบโต
+// ถ้าผู้ใช้บันทึกว่าจ่ายจริงไปแล้ว ให้ยึดของจริงเสมอ — แผนเป็นแค่แผน เปลี่ยนทีหลังได้
+// calcPayoffPlan หนักเกินกว่าจะเรียกรายแถว จึงคิด cut ครั้งเดียวต่อการเรนเดอร์แล้วส่งต่อ
+function payoffCut(){
+  if(!planReady())return null;
+  const p=calcPayoffPlan();
+  if(!p||p.targetN>=p.T)return null;
+  const pct=Math.max(0,Math.min(100,+planCfg.redirectPct??100));
+  return{month:p.payoffMonth,targetN:p.targetN,redirect:p.freedPay*pct/100};
+}
+function isSkippedPay(r,cut){
+  if(!cut||!r||!r.dateISO)return false;
+  if(payRec[r.i]&&payRec[r.i].paidDate)return false;
+  const m=monthKey(r.dateISO);
+  // เดือนเดียวกับที่ปิดบัญชียังมีงวดเป้าหมายให้จ่ายอยู่ ต้องเทียบเลขงวดด้วย ไม่ใช่เทียบแต่เดือน
+  return m>cut.month||(m===cut.month&&r.i>cut.targetN);
+}
+function skipWhy(cut){
+  return `\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E17\u0E35\u0E48\u0E07\u0E27\u0E14 ${cut.targetN} (${monthLabel(cut.month)}) \u0E41\u0E25\u0E49\u0E27 \u0E07\u0E27\u0E14\u0E19\u0E35\u0E49\u0E08\u0E36\u0E07\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22`
+    +(cut.redirect>0?` \u2014 \u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E01\u0E49\u0E2D\u0E19\u0E19\u0E35\u0E49\u0E16\u0E39\u0E01\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E15\u0E34\u0E1A\u0E42\u0E15\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30 \u0E3F${fmt(cut.redirect)} \u0E41\u0E17\u0E19`:'');
+}
+
 function renderPage2(){
   if(!sched.length){
     document.getElementById('p2Empty').classList.remove('hidden');
@@ -1795,18 +1825,22 @@ function renderPage2(){
   document.getElementById('p2Content').classList.remove('hidden');
 
   // ---- Summary counts ----
-  let paidCnt=0,overCnt=0,pendCnt=0,paidAmt=0,remAmt=0,nextRow=null;
+  let paidCnt=0,overCnt=0,pendCnt=0,paidAmt=0,remAmt=0,nextRow=null,skipCnt=0,skipAmt=0;
+  const cut=payoffCut();
 
   sched.forEach(r=>{
     const st=getStatus(r);
     if(st.cls==='st-paid'||st.cls==='st-late'){paidCnt++;paidAmt+=r.pay;}
+    // งวดหลังปิดบัญชีไม่ใช่หนี้ค้าง จึงไม่นับรวมใน "เกินกำหนด/รอชำระ" และไม่เป็นงวดถัดไป
+    else if(isSkippedPay(r,cut)){skipCnt++;skipAmt+=r.pay+r.pp;}
     else{if(st.cls==='st-overdue')overCnt++;else{pendCnt++;if(!nextRow)nextRow=r;}remAmt+=r.pay+r.pp;}
   });
 
   document.getElementById('p2Paid').textContent=`${paidCnt} งวด / ฿${fmt(paidAmt)}`;
   document.getElementById('p2Over').textContent=`${overCnt} งวด`;
   document.getElementById('p2Pend').textContent=`${pendCnt} งวด`;
-  document.getElementById('p2Next').textContent=nextRow?`งวด ${nextRow.i} · ${nextRow.date}`:'ผ่อนหมดแล้ว 🎉';
+  document.getElementById('p2Next').textContent=nextRow?`งวด ${nextRow.i} · ${nextRow.date}`
+    :(skipCnt?`ปิดบัญชีที่งวด ${cut.targetN} 🎉`:'ผ่อนหมดแล้ว 🎉');
 
   // ยอดหนี้คงเหลือจริง = ยอดปลายงวดของงวดล่าสุดที่บันทึกว่าจ่ายแล้ว
   let actualRemainingBal=sched[0].op;
@@ -1814,12 +1848,16 @@ function renderPage2(){
   const loanAmt=sched[0].op;
   const debtPaidPct=loanAmt>0?Math.min(100,Math.round((1-actualRemainingBal/loanAmt)*100)):0;
 
-  const pct=sched.length?Math.round((paidCnt/sched.length)*100):0;
-  document.getElementById('progBar').style.width=pct+'%';
-  document.getElementById('progLabel').textContent=`${paidCnt} / ${sched.length} งวด (${pct}%)`;
+  // ความคืบหน้าเทียบกับ "งวดที่ต้องจ่ายจริงตามแผน" ไม่ใช่ทั้งสัญญา งวดที่ปิดบัญชีข้ามไปจึงไม่ถ่วงเปอร์เซ็นต์
+  const payN=Math.max(1,sched.length-skipCnt);
+  const pct=Math.round((paidCnt/payN)*100);
+  document.getElementById('progBar').style.width=Math.min(100,pct)+'%';
+  document.getElementById('progLabel').textContent=`${paidCnt} / ${payN} งวด (${pct}%)`
+    +(skipCnt?` · ข้าม ${skipCnt} งวดหลังปิดบัญชี`:'');
   document.getElementById('debtBar').style.width=debtPaidPct+'%';
   document.getElementById('debtLabel').textContent=debtPaidPct+'%';
-  document.getElementById('p2PaidAmt').textContent=`ยอดจ่ายจริง: ฿${fmt(paidAmt)}`;
+  document.getElementById('p2PaidAmt').textContent=`ยอดจ่ายจริง: ฿${fmt(paidAmt)}`
+    +(skipCnt?` · ไม่ต้องจ่ายอีก ${skipCnt} งวด (฿${fmt(skipAmt)})`:'');
   document.getElementById('p2ActualRem').textContent=`ยอดหนี้คงเหลือจริง: ฿${fmt(actualRemainingBal)}`;
 
   // ตารางรวมค่างวด+พอร์ต (หัวตาราง/แถว/แถวรวม) อยู่ที่เดียวใน renderLedger
@@ -1860,9 +1898,13 @@ function unmarkPaid(i){
   savePayments();renderPage2();
 }
 function markAllPaidToday(){
-  if(!confirm('บันทึกทุกงวดที่ยังไม่มีวันจ่ายเป็นวันนี้?'))return;
+  const cut=payoffCut();
+  const skip=sched.filter(r=>isSkippedPay(r,cut)).length;
+  if(!confirm('บันทึกทุกงวดที่ยังไม่มีวันจ่ายเป็นวันนี้?'
+    +(skip?`\n(ข้าม ${skip} งวดหลังปิดบัญชี เพราะตามแผนไม่ต้องจ่ายแล้ว)`:'')))return;
   const iso=new Date().toISOString().split('T')[0];
-  sched.forEach(r=>{if(!payRec[r.i]||!payRec[r.i].paidDate){if(!payRec[r.i])payRec[r.i]={paidDate:'',note:''};payRec[r.i].paidDate=iso;}});
+  sched.forEach(r=>{if(isSkippedPay(r,cut))return;
+    if(!payRec[r.i]||!payRec[r.i].paidDate){if(!payRec[r.i])payRec[r.i]={paidDate:'',note:''};payRec[r.i].paidDate=iso;}});
   savePayments();renderPage2();
 }
 function clearAllPayments(){
@@ -1875,9 +1917,10 @@ function exportPayCSV(){
   const hdr=['งวดที่','วันครบกำหนด','ค่างวด'];
   if(hasPP)hdr.push('โปะแผน');
   hdr.push('ยอดปลายงวด','วันที่จ่ายจริง','สถานะ','หมายเหตุ');
+  const cut=payoffCut();
   const rows=sched.map(r=>{
     const rec=payRec[r.i]||{};
-    const st=getStatus(r);
+    const st=isSkippedPay(r,cut)?{label:'\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22 (\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E41\u0E25\u0E49\u0E27)'}:getStatus(r);
     const planPart=hasPP?`,${r.pp.toFixed(2)}`:'';
     return `${r.i},"${r.date}",${r.pay.toFixed(2)}${planPart},${r.bal.toFixed(2)},"${rec.paidDate||''}","${st.label.replace(/[✅⏳🔴⚠️]/g,'').trim()}","${rec.note||''}"`;
   });
@@ -3153,7 +3196,8 @@ function renderLedger(){
 
   // ---- เตรียมข้อมูลของแต่ละแถวไว้ก่อน แล้วค่อยวาด (การ์ดกรอกเร็วใช้ชุดเดียวกัน) ----
   fundActive={};
-  ledgerData={rows:[],byM:{},hasFund};
+  const cut=payoffCut();
+  ledgerData={rows:[],byM:{},hasFund,cut};
   L.rows.forEach(r=>{
     const on=(hasFund&&!r.dup)?monthColOn(s,r.f):{};
     if(!r.dup)fundActive[r.m]=on;
@@ -3162,7 +3206,7 @@ function renderLedger(){
     const tgt=r.f?r.f.safe+r.f.grow:null;
     // ตารางที่ import มาโดยไม่มีวันครบกำหนดจะได้ m ว่างทุกแถว จึงต้องมีคีย์สำรองเป็นเลขงวด
     const e={m:r.m,key:r.m?(r.dup?r.m+'#'+r.pay.i:r.m):('#'+(r.pay?r.pay.i:ledgerData.rows.length)),
-      pay:r.pay,f:r.f,on,tgt,dup:!!r.dup,
+      pay:r.pay,f:r.f,on,tgt,dup:!!r.dup,skip:isSkippedPay(r.pay,cut),
       phase:r.f?(r.f.paidOff?'x':r.f.phase):null,
       phaseText:r.f?(r.f.paidOff?'ปิดบัญชี':PH_NAME[r.f.phase]):'-'};
     ledgerData.rows.push(e);ledgerData.byM[e.key]=e;
@@ -3181,16 +3225,19 @@ function renderLedger(){
     td:e=>`<td>${e.phase?`<span class="ph-pill ph-${e.phase}">${e.phaseText}</span>`:'-'}</td>`});
 
   if(showLoan){
+    // งวดหลังปิดบัญชียังแสดงตัวเลขของสัญญาไว้ แต่ทำให้เห็นชัดว่าไม่ได้จ่ายแล้ว และไม่เอาไปรวมในแถวรวม
+    const payable=f=>sched.reduce((a,r)=>a+(isSkippedPay(r,cut)?0:f(r)),0);
+    const skipTip=cut?` title="ไม่รวมงวดที่ไม่ต้องจ่ายหลังปิดบัญชีที่งวด ${cut.targetN}"`:'';
     add('loan','💳 ค่างวดตามแผน','ค่างวด',{sbg:'#1e40af',
-      td:e=>`<td class="tdr">${e.pay?fmt(e.pay.pay):'-'}</td>`,
-      tot:()=>`<td class="tdr"><strong>${fmt(sched.reduce((a,r)=>a+r.pay,0))}</strong></td>`});
+      td:e=>`<td class="tdr${e.skip?' lg-skip':''}"${e.skip?` title="${esc(skipWhy(cut))}"`:''}>${e.pay?fmt(e.pay.pay):'-'}</td>`,
+      tot:()=>`<td class="tdr"${skipTip}><strong>${fmt(payable(r=>r.pay))}</strong></td>`});
     if(hasPP)add('loan','💳 ค่างวดตามแผน','โปะแผน',{sbg:'#15803d',
-      td:e=>`<td class="col-plan tdr">${e.pay&&e.pay.pp>0?fmt(e.pay.pp):'-'}</td>`,
-      tot:()=>`<td class="col-plan tdr"><strong>${fmt(sched.reduce((a,r)=>a+r.pp,0))}</strong></td>`});
+      td:e=>`<td class="col-plan tdr${e.skip?' lg-skip':''}">${e.pay&&e.pay.pp>0?fmt(e.pay.pp):'-'}</td>`,
+      tot:()=>`<td class="col-plan tdr"${skipTip}><strong>${fmt(payable(r=>r.pp))}</strong></td>`});
     add('loan','💳 ค่างวดตามแผน','ยอดปลายงวด',{sbg:'#1e40af',
-      td:e=>`<td class="tdr">${e.pay?fmt(e.pay.bal):'-'}</td>`});
+      td:e=>`<td class="tdr${e.skip?' lg-skip':''}">${e.pay?fmt(e.pay.bal):'-'}</td>`});
     add('loan','💳 ค่างวดตามแผน','วันครบกำหนด',{sbg:'#1e40af',
-      td:e=>`<td class="tdl" style="white-space:nowrap">${e.pay?esc(e.pay.date):'-'}</td>`});
+      td:e=>`<td class="tdl${e.skip?' lg-skip':''}" style="white-space:nowrap">${e.pay?esc(e.pay.date):'-'}</td>`});
 
     add('pay','✅ บันทึกการจ่าย','วันที่จ่ายจริง',{sbg:'#4c1d95',td:e=>{
       if(!e.pay)return '<td class="col-actual-input">-</td>';
@@ -3200,14 +3247,16 @@ function renderLedger(){
         aria-label="วันที่จ่ายจริงงวด ${e.pay.i}"></td>`;}});
     add('pay','✅ บันทึกการจ่าย','สถานะ',{sbg:'#4c1d95',td:e=>{
       if(!e.pay)return `<td class="col-actual-input"><span class="st st-skip" title="เดือนนี้ไม่มีค่างวดต้องจ่าย แต่ยังบันทึกยอดพอร์ตได้">${noPayLabel(e)}</span></td>`;
+      if(e.skip)return `<td class="col-actual-input"><span class="st st-skip" title="${esc(skipWhy(cut))}">⏭️ ไม่ต้องจ่าย</span></td>`;
       const st=getStatus(e.pay);
       return `<td class="col-actual-input"><span class="st ${st.cls}">${st.label}</span></td>`;}});
     add('pay','✅ บันทึกการจ่าย','บันทึก',{sbg:'#4c1d95',td:e=>{
       if(!e.pay)return '<td class="col-actual-input">-</td>';
       const rec=payRec[e.pay.i]||{};
+      // งวดที่ข้ามยังกดบันทึกได้ เผื่อสุดท้ายเปลี่ยนใจจ่ายงวดนั้นจริง — แค่เปลี่ยนคำให้รู้ว่าเป็นข้อยกเว้น
       return `<td class="col-actual-input">${rec.paidDate
         ?`<button class="btn-unpaid" onclick="unmarkPaid(${e.pay.i})">✕ ยกเลิก</button>`
-        :`<button class="btn-paid" onclick="markPaid(${e.pay.i})">✓ วันนี้</button>`}</td>`;}});
+        :`<button class="btn-paid${e.skip?' btn-skip':''}" onclick="markPaid(${e.pay.i})">${e.skip?'✓ จ่ายจริง':'✓ วันนี้'}</button>`}</td>`;}});
     add('pay','✅ บันทึกการจ่าย','หมายเหตุ',{sbg:'#4c1d95',td:e=>{
       if(!e.pay)return '<td class="col-actual-input">-</td>';
       const rec=payRec[e.pay.i]||{};
@@ -3271,6 +3320,7 @@ function renderLedger(){
   // ---- ตัวตาราง ----
   tb.innerHTML=ledgerData.rows.map(e=>{
     const cls=[];
+    if(e.skip)cls.push('lg-skiprow');
     if(e.f&&e.f.paidOff)cls.push('lg-payoff');
     if(e.m===nowM)cls.push('lg-now');
     if(e.key===qeMonth)cls.push('lg-focus');
@@ -3317,7 +3367,7 @@ function renderQuickEntry(){
     return `<option value="${esc(r.key)}"${r.key===qeMonth?' selected':''}>${r.m?monthLabel(r.m):'งวดที่ '+(r.pay?r.pay.i:'-')}${tag}</option>`;
   }).join('');
 
-  const st=e.pay?getStatus(e.pay):null;
+  const st=e.pay?(e.skip?{cls:'st-skip',label:'⏭️ ไม่ต้องจ่าย'}:getStatus(e.pay)):null;
   if(badges)badges.innerHTML=(e.phase?`<span class="ph-pill ph-${e.phase}">${e.phaseText}</span> `:'')
     +(st?`<span class="st ${st.cls}">${st.label}</span>`:`<span class="st st-skip">${noPayLabel(e)}</span>`);
 
@@ -3325,7 +3375,8 @@ function renderQuickEntry(){
   let loan='';
   if(e.pay){
     const rec=payRec[e.pay.i]||{};
-    loan=`<div class="qe-line"><span>งวดที่</span><b>${e.pay.i}</b></div>
+    loan=(e.skip&&ledgerData.cut?`<div class="qe-empty" style="margin-bottom:8px">⏭️ ${esc(skipWhy(ledgerData.cut))} — เดือนนี้บันทึกแค่ยอดพอร์ตทางขวาพอ</div>`:'')
+      +`<div class="qe-line"><span>งวดที่</span><b>${e.pay.i}</b></div>
       <div class="qe-line"><span>วันครบกำหนด</span><b>${esc(e.pay.date)}</b></div>
       <div class="qe-line"><span>ค่างวด</span><b>฿${fmt(e.pay.pay)}</b></div>
       ${e.pay.pp>0?`<div class="qe-line"><span>โปะเพิ่มตามแผน</span><b style="color:#15803d">฿${fmt(e.pay.pp)}</b></div>`:''}
@@ -3336,7 +3387,7 @@ function renderQuickEntry(){
         <input type="text" id="qe_note" value="${esc(rec.note||'')}" placeholder="เช่น จ่ายผ่านแอป" onchange="onQENote()"></div>
       <div class="qe-btns">${rec.paidDate
         ?`<button class="btn-unpaid" onclick="unmarkPaid(${e.pay.i})">✕ ยกเลิกการจ่าย</button>`
-        :`<button class="btn-paid" onclick="markPaid(${e.pay.i})">✓ บันทึกว่าจ่ายวันนี้</button>`}</div>`;
+        :`<button class="btn-paid${e.skip?' btn-skip':''}" onclick="markPaid(${e.pay.i})">${e.skip?'✓ บันทึกว่าจ่ายจริงวันนี้':'✓ บันทึกว่าจ่ายวันนี้'}</button>`}</div>`;
   } else {
     loan=`<div class="qe-empty">${noPayReason(e)}</div>`;
   }
