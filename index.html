@@ -695,11 +695,20 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <div class="card-title">🔢 งวดเป้าหมายที่จะปิดบัญชี</div>
         <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
           <div>
+            <label>เลือกปีที่จะปิดบัญชี</label>
+            <select id="poTargetYear" style="max-width:120px" onchange="onTargetYearChange()"></select>
+          </div>
+          <div>
+            <label>เดือนที่จะปิดบัญชี</label>
+            <select id="poTargetMonth" style="max-width:220px" onchange="onTargetMonthChange()"></select>
+          </div>
+          <div>
             <label>ปิดบัญชีหลังจ่ายครบงวดที่</label>
             <div class="iw"><input type="number" id="poTargetN" min="1" style="max-width:110px" onchange="onTargetNChange()"><span>งวด</span></div>
           </div>
           <button class="btn-sm" style="padding:8px 14px" onclick="resetTargetN()">↺ ใช้งวดที่ได้ส่วนลด 100%</button>
         </div>
+        <div class="note" style="margin-top:8px">📅 สามช่องนี้ผูกกันเสมอ — เลือกปีแล้วระบบจะเลือกงวดในปีนั้นให้ (เปลี่ยนเดือนได้อีกที) หรือจะกรอกเลขงวดตรง ๆ ก็ได้ · เดือนที่ปิดบัญชีคือเดือนที่เฟส 3 เริ่ม</div>
         <div id="poWarn"></div>
       </div>
       <div class="sum-grid-p2" id="poHead" style="margin-top:12px"></div>
@@ -780,7 +789,8 @@ td:nth-child(2){text-align:left;color:#4b5563}
         <div class="set-group sg-2">
           <div class="sg-head"><span class="sg-title">🟢 เฟส 2 · เริ่มพอร์ตเติบโต</span><span class="sg-when" id="sgWhen2">—</span></div>
           <div class="sg-desc">พอหยุดเติมกองปิดรถแล้ว เงินใหม่ทุกเดือนจะเข้ากองทุนรวมของเฟสนี้ทั้งหมด · สัดส่วนด้านล่างคือ "เงินก้อนนั้นแบ่งเข้ากองไหนกี่ %" รวมกันควรได้ 100%</div>
-          <div class="g3">
+          <div class="g4">
+            <div><label>เริ่มเฟส 2 เดือน <span style="font-weight:400;color:var(--grayl)">(= เดือนที่จบเฟส 1)</span></label><input type="month" id="fPhase2Start" onchange="onPhase2StartChange()"></div>
             <div><label>รูปแบบการลงทุน</label>
               <select id="fMode2" onchange="onPlanInputChange()">
                 <option value="dca">DCA — ทยอยเท่ากันทุกเดือน</option>
@@ -816,7 +826,8 @@ td:nth-child(2){text-align:left;color:#4b5563}
             <div><label>ผลตอบแทนพอร์ต <span style="font-weight:400;color:var(--grayl)">(ถัวเฉลี่ยจากรายการกอง)</span></label><div class="iw"><input type="text" id="fRateGrow3Out" readonly tabindex="-1"><span>%/ปี</span></div></div>
             <div><label>สัดส่วนที่ตั้งไว้รวม</label><div class="iw"><input type="text" id="fAllocSum3Out" readonly tabindex="-1"><span>%</span></div></div>
           </div>
-          <div class="note" style="margin-top:8px">ค่างวดที่โอนเข้าพอร์ตเป็นเงินสดรายเดือนจริง จึงทยอยเข้าทุกเดือนเสมอ ไม่ว่าเงินเก็บส่วนของเราจะเลือกโหมดไหน · เงินที่เหลือจากการปิดบัญชีจะถูกโยกเข้ากองของเฟสนี้</div>
+          <div class="note" style="margin-top:8px">ค่างวดที่โอนเข้าพอร์ตเป็นเงินสดรายเดือนจริง จึงทยอยเข้าทุกเดือนเสมอ ไม่ว่าเงินเก็บส่วนของเราจะเลือกโหมดไหน · เงินที่เหลือจากการปิดบัญชีจะถูกโยกเข้ากองของเฟสนี้<br>
+            📅 เฟส 3 เริ่มเดือนที่ปิดบัญชี — เลือกปี/เดือนที่จะปิดได้ที่แท็บ 🎯 แผนปิดรถ</div>
           <div class="fund-block">
             <div class="fund-blk-head"><span>📈 กองทุนรวมในเฟส 3</span><span class="fund-blk-sum" id="sgFundsN3">—</span></div>
             <div class="fund-scroll">
@@ -1977,12 +1988,57 @@ function resetTargetN(){
   planCfg.targetN=null;savePlan();
   syncPlanInputs();renderPage2();
 }
-function onTargetNChange(){
+function setTargetN(v){
   const T=schedBase.length;
-  let v=parseInt(document.getElementById('poTargetN').value,10);
-  if(!v||isNaN(v))v=defaultTargetN();
   planCfg.targetN=Math.max(1,Math.min(Math.max(1,T-1),v));
   savePlan();syncPlanInputs();renderPage2();
+}
+function onTargetNChange(){
+  let v=parseInt(document.getElementById('poTargetN').value,10);
+  if(!v||isNaN(v))v=defaultTargetN();
+  setTargetN(v);
+}
+
+// ---- เลือกเดือน/ปีที่จะปิดบัญชีแทนการนับเลขงวดเอง ----
+// งวดที่ปิดก่อนกำหนดได้คือ 1..T-1 (งวดสุดท้ายคือจ่ายจนจบสัญญา ไม่ใช่การปิดก่อน)
+// หนึ่งเดือนมีได้มากกว่าหนึ่งงวด ป้ายจึงต้องมีเลขงวดกำกับเสมอ ไม่งั้นเลือกไม่ถูกตัว
+function payoffChoices(){
+  const T=schedBase.length, out=[];
+  for(let n=1;n<T;n++){
+    const iso=schedBase[n-1]&&schedBase[n-1].dateISO;
+    if(!iso)continue;
+    out.push({n,m:monthKey(iso),y:+String(iso).slice(0,4)});
+  }
+  return out;
+}
+// เขียนตัวเลือกใหม่จาก targetN ปัจจุบัน — ข้าม select ที่ผู้ใช้กำลังเลือกอยู่ เหมือนช่องเลขงวด
+function renderTargetPickers(targetN){
+  const ySel=document.getElementById('poTargetYear'), mSel=document.getElementById('poTargetMonth');
+  if(!ySel||!mSel)return;
+  const list=payoffChoices();
+  const cur=list.find(c=>c.n===targetN)||list[0];
+  if(!cur){ySel.innerHTML='';mSel.innerHTML='';return;}
+  if(document.activeElement!==ySel){
+    const years=[...new Set(list.map(c=>c.y))];
+    ySel.innerHTML=years.map(y=>`<option value="${y}"${y===cur.y?' selected':''}>${y}</option>`).join('');
+  }
+  if(document.activeElement!==mSel){
+    mSel.innerHTML=list.filter(c=>c.y===cur.y)
+      .map(c=>`<option value="${c.n}"${c.n===cur.n?' selected':''}>${monthLabel(c.m)} \u00B7 \u0E07\u0E27\u0E14 ${c.n}</option>`).join('');
+  }
+}
+function onTargetYearChange(){
+  const y=parseInt(document.getElementById('poTargetYear').value,10);
+  const list=payoffChoices(), inY=list.filter(c=>c.y===y);
+  if(!inY.length)return;
+  // ย้ายปีแล้วพยายามคงเดือนเดิมไว้ ถ้าปีใหม่ไม่มีเดือนนั้นก็ใช้งวดแรกของปี
+  const cur=list.find(c=>c.n===getTargetN());
+  const keep=cur?inY.find(c=>c.m.slice(5)===cur.m.slice(5)):null;
+  setTargetN((keep||inY[0]).n);
+}
+function onTargetMonthChange(){
+  const n=parseInt(document.getElementById('poTargetMonth').value,10);
+  if(n)setTargetN(n);
 }
 
 const PO_CHECKS=[
@@ -2015,6 +2071,7 @@ function renderPayoffTab(){
     tnEl.max=p.T-1;
     if(document.activeElement!==tnEl)tnEl.value=p.targetN;
   }
+  renderTargetPickers(p.targetN);
 
   head.innerHTML=`
     <div class="stat pur"><div class="stat-lbl">\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22</div><div class="stat-val">\u0E07\u0E27\u0E14 ${p.targetN}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">${ec.date}</div></div>
@@ -2354,6 +2411,8 @@ function syncPlanInputs(){
   set('poTargetN',planReady()?getTargetN():'');
   const tn=document.getElementById('poTargetN');
   if(tn&&schedBase.length)tn.max=schedBase.length-1;
+  if(planReady())renderTargetPickers(getTargetN());
+  else{['poTargetYear','poTargetMonth'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='';});}
   set('fSaveStart',planCfg.saveStart||(p?p.saveStart:thisMonth()));
   set('fSeed',planCfg.seed);
   set('fMonthly',planCfg.monthly);
@@ -2366,6 +2425,7 @@ function syncPlanInputs(){
   PHASES.forEach(n=>set('fMode'+n,phaseMode(n)));
   set('fRedirect',planCfg.redirectPct);
   set('fFundPct1',planCfg.fundPct1);
+  syncPhase2Start();
   // ฟังก์ชันนี้ถูกเรียกทุกครั้งที่ snapshot จาก Firebase มาถึง ซึ่งอาจตรงกับตอนผู้ใช้กำลังพิมพ์อยู่
   // จึงต้องจำช่องที่โฟกัสไว้แล้วคืนให้หลังสร้างลิสต์ใหม่ ไม่งั้นพิมพ์ค้างกลางคัน
   const ae=document.activeElement, aid=ae&&ae.id;
@@ -2376,6 +2436,19 @@ function syncPlanInputs(){
     const back=document.getElementById(aid);
     if(back){back.focus();try{if(ss!=null)back.setSelectionRange(ss,se);}catch(e){}}
   }
+}
+
+// เฟส 1 ยาว accMonths เดือน เฟส 2 จึงเริ่มที่ saveStart + accMonths
+// ช่องเดือนนี้กับช่อง "สะสมกี่เดือน" เป็นค่าเดียวกันคนละหน่วย ต้องวิ่งตามกันทั้งสองทาง
+function syncPhase2Start(){
+  const el=document.getElementById('fPhase2Start');
+  if(!el||document.activeElement===el)return;
+  el.value=monthAdd(planCfg.saveStart||thisMonth(),Math.max(0,+planCfg.accMonths||0));
+}
+function onPhase2StartChange(){
+  const el=document.getElementById('fPhase2Start'), am=document.getElementById('fAccMonths');
+  if(el&&el.value&&am)am.value=Math.max(0,Math.min(240,monthDiff(planCfg.saveStart||thisMonth(),el.value)));
+  onPlanInputChange();   // ปล่อยให้ทางเดิมอ่านค่าลง planCfg แล้วเรนเดอร์ใหม่ทั้งชุด
 }
 
 function onPlanInputChange(){
@@ -2400,6 +2473,7 @@ function onPlanInputChange(){
   });
   planCfg.redirectPct=Math.max(0,Math.min(100,num('fRedirect',100)));
   savePlan();
+  syncPhase2Start();   // เดือนเริ่มเฟส 2 ขยับตามทั้งเดือนเริ่มเก็บและจำนวนเดือนสะสม
   updateFundSums();   // ผลตอบแทนถัวเฉลี่ยมีขาของเงินพัก จึงขึ้นกับ rateMM/ratePark ที่แก้ในนี้ด้วย
   renderFundTab();renderLedger();buildFundChart();
 }
