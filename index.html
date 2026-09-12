@@ -1140,6 +1140,7 @@ function onBirthChange(){
   saveFormData();
   updateBirthHint();
   rerenderTable();
+  if(chartInst&&sched.length)buildChart();   // มี chartInst = Chart.js โหลดได้และกราฟหน้า 1 วาดไปแล้ว
   renderPage2();
 }
 function updateFormSavedAt(ts){
@@ -1442,25 +1443,37 @@ function setChart(m,el){
 }
 function buildChart(){
   if(!sched.length)return;
+  // Chart.js มาจาก CDN — ออฟไลน์แล้วโหลดไม่ได้ ให้ข้ามกราฟไปเงียบ ๆ แบบเดียวกับ buildFundChart()
+  // ไม่งั้นจะ throw กลางคัน calculate() แล้วบรรทัดหลังจากนั้นไม่ทำงาน
+  if(typeof Chart==='undefined')return;
   const ctx=document.getElementById('myChart').getContext('2d');
   if(chartInst){chartInst.destroy();chartInst=null;}
   const labels=sched.map(r=>`${r.i}`),hasPP=sched.some(r=>r.pp>0);
+  // แกน x เป็นเลขงวดล้วน ๆ เพราะป้ายเดือนยาวเกินจะวางเรียงกันทั้งสัญญา
+  // วันครบกำหนดกับอายุจึงไปอยู่ในหัวข้อ tooltip แทน — เห็นเมื่อชี้ ไม่รกตัวกราฟ
+  const tipTitle=(rows)=>(it)=>{
+    const r=rows[it[0].dataIndex];
+    if(!r)return it[0].label;
+    const a=ageOn(r.dateISO);
+    return `งวดที่ ${r.i} · ${r.date}`+(a?` · อายุ ${ageFull(a)}`:'');
+  };
   if(chartMode==='bar'){
     const ds=[{label:'เงินต้น',data:sched.map(r=>+r.pr.toFixed(2)),backgroundColor:'#3b82f6'},{label:'ดอกเบี้ย',data:sched.map(r=>+r.int.toFixed(2)),backgroundColor:'#ef4444'}];
     if(hasPP)ds.push({label:'โปะเพิ่ม',data:sched.map(r=>+r.pp.toFixed(2)),backgroundColor:'#22c55e'});
-    chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:15,font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+    chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{title:tipTitle(sched),label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:15,font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
   } else if(chartMode==='area'){
     let cp=0,ci=0,cpp=0;const cpA=[],ciA=[],cppA=[];
     sched.forEach(r=>{cp+=r.pr;ci+=r.int;cpp+=r.pp;cpA.push(+cp.toFixed(2));ciA.push(+ci.toFixed(2));cppA.push(+cpp.toFixed(2));});
     const ds=[{label:'เงินต้นสะสม',data:cpA,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.15)',fill:true,tension:.3,pointRadius:0},{label:'ดอกเบี้ยสะสม',data:ciA,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.3,pointRadius:0}];
     if(hasPP)ds.push({label:'โปะเพิ่มสะสม',data:cppA,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.3,pointRadius:0});
-    chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+    chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{title:tipTitle(sched),label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
   } else {
-    const allL=schedBase.length>sched.length?schedBase.map(r=>`${r.i}`):labels;
+    const useBase=schedBase.length>sched.length;
+    const allL=useBase?schedBase.map(r=>`${r.i}`):labels;
     const padded=sched.map(r=>+r.bal.toFixed(2));while(padded.length<allL.length)padded.push(0);
     const ds=[{label:'ยอดคงเหลือ (มีโปะ)',data:padded,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.3,pointRadius:0}];
     if(hasPP)ds.push({label:'ยอดคงเหลือ (ไม่โปะ)',data:schedBase.map(r=>+r.bal.toFixed(2)),borderColor:'#9ca3af',borderDash:[5,5],fill:false,tension:.3,pointRadius:0});
-    chartInst=new Chart(ctx,{type:'line',data:{labels:allL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+    chartInst=new Chart(ctx,{type:'line',data:{labels:allL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{title:tipTitle(useBase?schedBase:sched),label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
   }
 }
 
@@ -3153,8 +3166,9 @@ function buildFundChart(){
         tooltip:{
           callbacks:{
             title:(it)=>{
-              const r=s.rows[it[0].dataIndex];
-              return monthLabel(r.m)+' · เดือนที่ '+(r.t+1)+(r.paidOff?' · 💥 เดือนปิดบัญชี':' · เฟส '+r.phase);
+              const r=s.rows[it[0].dataIndex], a=ageOnMonth(r.m);
+              return monthLabel(r.m)+' · เดือนที่ '+(r.t+1)+(r.paidOff?' · 💥 เดือนปิดบัญชี':' · เฟส '+r.phase)
+                +(a?' · อายุ '+ageFull(a):'');
             },
             // เส้นที่ถูก fill ซ้อนชั้นพล็อตเป็น "ยอดสะสม" ไม่ใช่ยอดของตัวเอง
             // tooltip จึงต้องอ่านค่าจริงจากแถวข้อมูลตาม tipKey ไม่งั้นจะอ่านได้ว่ากองนั้นมีมากกว่าความจริง
