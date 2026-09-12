@@ -28,6 +28,7 @@ header p{font-size:.78rem;opacity:.8;margin-top:2px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 @media(max-width:640px){.g2,.g3,.g4,.cg{grid-template-columns:1fr!important}}
 label{display:block;font-size:.78rem;font-weight:600;color:#4b5563;margin-bottom:4px}
+.fld-hint{font-size:.7rem;color:var(--grayl);line-height:1.5;margin-top:4px}
 .iw{position:relative}
 .iw span{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:.75rem;color:var(--grayl);pointer-events:none}
 input[type=number],input[type=date],input[type=text],select{width:100%;padding:8px 38px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;background:#fff;color:var(--gray);transition:border .2s}
@@ -829,7 +830,13 @@ td:nth-child(2){text-align:left;color:#4b5563}
                 <option value="dca">DCA — ทยอยเท่ากันทุกเดือน</option>
                 <option value="lump">ก้อนเดียวตอนเริ่มเฟส</option>
               </select></div>
-            <div><label>โอนค่างวดเข้าพอร์ตหลังปิด</label><div class="iw"><input type="number" id="fRedirect" min="0" max="100" onchange="onPlanInputChange()"><span>%</span></div></div>
+            <div><label>โอนค่างวดเข้าพอร์ตหลังปิด</label>
+              <select id="fRedirectMode" onchange="onPlanInputChange()">
+                <option value="full">ทั้งก้อน (ค่างวดเดิม)</option>
+                <option value="custom">กำหนดเงินด้วยตัวเอง</option>
+              </select>
+              <div class="iw" id="fRedirectAmtWrap" style="margin-top:6px"><input type="number" id="fRedirectAmt" min="0" step="500" onchange="onPlanInputChange()"><span>บาท</span></div>
+              <div class="fld-hint" id="fRedirectHint"></div></div>
             <div><label>ผลตอบแทนพอร์ต <span style="font-weight:400;color:var(--grayl)">(ถัวเฉลี่ยจากรายการกอง)</span></label><div class="iw"><input type="text" id="fRateGrow3Out" readonly tabindex="-1"><span>%/ปี</span></div></div>
             <div><label>สัดส่วนที่ตั้งไว้รวม</label><div class="iw"><input type="text" id="fAllocSum3Out" readonly tabindex="-1"><span>%</span></div></div>
           </div>
@@ -934,6 +941,10 @@ const DEFAULT_PLAN={
   fdMonthly:0, fdMonths:24,
   rateFD:1.5, rateMM:1.8, ratePark:1.5,
   mode1:'dca', mode2:'dca', mode3:'dca',                 // dca = ทยอยเท่ากันทุกเดือน, lump = ก้อนเดียวต้นเฟส
+  // โอนค่างวดที่ไม่ต้องจ่ายแล้วเข้าพอร์ต: full = ทั้งก้อน, custom = กำหนดเองเดือนละ redirectAmt บาท
+  // redirectPct เป็นช่องของโครงเดิม เก็บไว้แปลงแผนเก่าที่ตั้ง % ไว้เท่านั้น
+  redirectMode:'full',   // full = โอนค่างวดเดิมทั้งก้อน
+  redirectAmt:null,      // บาท/เดือน เมื่อ redirectMode = custom (null = ยังไม่เคยกรอกเอง)
   redirectPct:100,
   fundPct1:0,          // % ของเงินเก็บต่อเดือน ที่เข้ากองทุนรวมในเฟส 1 (ที่เหลือเข้าฝากประจำ/กองตลาดเงิน)
   funds1:null, funds2:null, funds3:null,
@@ -1037,6 +1048,16 @@ function migratePlan(p){
   }
   if(p.fundPct1===undefined)p.fundPct1=0;
   p.fundPct1=Math.max(0,Math.min(100,+p.fundPct1||0));
+  // % ของค่างวด -> โหมดโอน: เคยตั้ง 100% = โอนทั้งก้อน, น้อยกว่านั้น = กำหนดเอง
+  // redirectAmt ปล่อย null ไว้ก่อนเพราะตรงนี้ยังไม่รู้ค่างวด redirectAmount() จะคิดจาก % เดิมให้จนกว่าผู้ใช้จะกรอกยอดเอง
+  if(p.redirectMode!=='full'&&p.redirectMode!=='custom'){
+    const rp=p.redirectPct===undefined?100:(+p.redirectPct||0);
+    p.redirectMode=rp>=100?'full':'custom';
+  }
+  if(p.redirectAmt!==undefined&&p.redirectAmt!==null){
+    const ra=+p.redirectAmt;
+    p.redirectAmt=isFinite(ra)&&ra>=0?ra:null;
+  }
   sanitizeAllFunds(p);
   p.v=3;   // 3 = มีช่องค่าธรรมเนียม ter/terM แล้ว (2 = ยังไม่มี, ret คือค่าสุทธิ)
   // ตัดคีย์ของโครงเก่าทิ้งถาวร ไม่งั้นจะค้างใน localStorage ตลอดไปทั้งที่ไม่มีอะไรอ่านแล้ว
@@ -1796,12 +1817,25 @@ function getStatus(r){
 // ปิดบัญชีที่งวดเป้าหมายแล้ว งวดถัด ๆ ไปจะไม่มีการจ่ายอีก เดือนพวกนั้นเหลือแค่บันทึกพอร์ตเติบโต
 // ถ้าผู้ใช้บันทึกว่าจ่ายจริงไปแล้ว ให้ยึดของจริงเสมอ — แผนเป็นแค่แผน เปลี่ยนทีหลังได้
 // calcPayoffPlan หนักเกินกว่าจะเรียกรายแถว จึงคิด cut ครั้งเดียวต่อการเรนเดอร์แล้วส่งต่อ
+// เงินที่โอนเข้าพอร์ตทุกเดือนหลังปิดบัญชี — โอนได้มากสุดเท่าค่างวดเดิมที่ไม่ต้องจ่ายแล้ว
+// เพราะเป็นเงินก้อนเดียวกัน ถ้ากรอกเกินจะถูกตัดลงเท่าค่างวด (เงินเก็บส่วนของเราแยกช่องอยู่แล้ว)
+// redirectAmt = null คือยังไม่เคยกรอกเอง ให้คิดจาก redirectPct ของโครงเดิมไปก่อน
+function redirectAmount(freedPay){
+  const f=Math.max(0,+freedPay||0);
+  if(planCfg.redirectMode!=='custom')return f;
+  const v=planCfg.redirectAmt;
+  if(v===null||v===undefined||!isFinite(+v)){
+    const pct=planCfg.redirectPct===undefined?100:(+planCfg.redirectPct||0);
+    return f*Math.max(0,Math.min(100,pct))/100;
+  }
+  return Math.max(0,Math.min(f,+v));
+}
+
 function payoffCut(){
   if(!planReady())return null;
   const p=calcPayoffPlan();
   if(!p||p.targetN>=p.T)return null;
-  const pct=Math.max(0,Math.min(100,+planCfg.redirectPct??100));
-  return{month:p.payoffMonth,targetN:p.targetN,redirect:p.freedPay*pct/100};
+  return{month:p.payoffMonth,targetN:p.targetN,redirect:redirectAmount(p.freedPay)};
 }
 function isSkippedPay(r,cut){
   if(!cut||!r||!r.dateISO)return false;
@@ -2278,7 +2312,7 @@ function buildFundSchedule(monthly){
   const AL=[null,phaseAlloc(1),phaseAlloc(2),phaseAlloc(3)];     // index = เฟส
   const fdMonthly=Math.max(0,+planCfg.fdMonthly||0);
   const fdMonths=Math.max(0,+planCfg.fdMonths||0);
-  const redirect=Math.max(0,Math.min(100,+planCfg.redirectPct??100))/100;
+  const redirectPay=redirectAmount(p.freedPay);   // บาท/เดือน ที่โอนเข้าพอร์ตหลังปิดบัญชี
   const budget=Math.max(0,monthly||0);
   const target=p.closureAmt;
   // \u0E04\u0E27\u0E32\u0E21\u0E22\u0E32\u0E27\u0E40\u0E1F\u0E2A 1 = \u0E08\u0E33\u0E19\u0E27\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E17\u0E35\u0E48\u0E22\u0E31\u0E07\u0E40\u0E15\u0E34\u0E21\u0E40\u0E07\u0E34\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16
@@ -2347,10 +2381,10 @@ function buildFundSchedule(monthly){
       // \u0E04\u0E48\u0E32\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E40\u0E1B\u0E47\u0E19\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E40\u0E07\u0E34\u0E19\u0E23\u0E32\u0E22\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E08\u0E23\u0E34\u0E07 \u0E08\u0E36\u0E07\u0E17\u0E22\u0E2D\u0E22\u0E40\u0E02\u0E49\u0E32\u0E17\u0E38\u0E01\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E40\u0E2A\u0E21\u0E2D
       // \u0E44\u0E21\u0E48\u0E27\u0E48\u0E32\u0E40\u0E07\u0E34\u0E19\u0E40\u0E01\u0E47\u0E1A\u0E2A\u0E48\u0E27\u0E19\u0E02\u0E2D\u0E07\u0E40\u0E23\u0E32\u0E08\u0E30\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E42\u0E2B\u0E21\u0E14\u0E44\u0E2B\u0E19
       phase=3;
-      const a=AL[3], cash=put(3,t-p.k-1), add=cash+redirect*p.freedPay;
+      const a=AL[3], cash=put(3,t-p.k-1), add=cash+redirectPay;
       for(let j=0;j<a.ids.length;j++)bal[a.ids[j]]+=add*a.w[a.ids[j]];
       if(a.resid>0)cashRes+=add*a.resid;
-      invest[2]+=cash;redirectTotal+=redirect*p.freedPay;principalCum+=add;
+      invest[2]+=cash;redirectTotal+=redirectPay;principalCum+=add;
     }
     // \u0E1D\u0E32\u0E01\u0E1B\u0E23\u0E30\u0E08\u0E33\u0E04\u0E23\u0E1A\u0E01\u0E33\u0E2B\u0E19\u0E14 -> \u0E42\u0E2D\u0E19\u0E40\u0E02\u0E49\u0E32\u0E01\u0E2D\u0E07\u0E15\u0E25\u0E32\u0E14\u0E40\u0E07\u0E34\u0E19\u0E17\u0E31\u0E49\u0E07\u0E01\u0E49\u0E2D\u0E19
     if(fdOpen&&t===fdMonths-1){mm+=fd;fd=0;fdOpen=false;}
@@ -2466,7 +2500,9 @@ function syncPlanInputs(){
   set('fRateMM',planCfg.rateMM);
   set('fRatePark',planCfg.ratePark);
   PHASES.forEach(n=>set('fMode'+n,phaseMode(n)));
-  set('fRedirect',planCfg.redirectPct);
+  set('fRedirectMode',planCfg.redirectMode==='custom'?'custom':'full');
+  set('fRedirectAmt',planCfg.redirectAmt==null?'':planCfg.redirectAmt);
+  updateRedirectUI(p?p.freedPay:null);
   set('fFundPct1',planCfg.fundPct1);
   syncPhase2Start();
   // ฟังก์ชันนี้ถูกเรียกทุกครั้งที่ snapshot จาก Firebase มาถึง ซึ่งอาจตรงกับตอนผู้ใช้กำลังพิมพ์อยู่
@@ -2514,7 +2550,12 @@ function onPlanInputChange(){
     const el=document.getElementById('fMode'+n);
     planCfg['mode'+n]=el&&el.value==='lump'?'lump':'dca';
   });
-  planCfg.redirectPct=Math.max(0,Math.min(100,num('fRedirect',100)));
+  const rMode=document.getElementById('fRedirectMode');
+  planCfg.redirectMode=rMode&&rMode.value==='custom'?'custom':'full';
+  // ช่องว่าง = เก็บเป็น null ไม่ใช่ 0 จะได้ต่างกันระหว่าง "ยังไม่กรอก" กับ "ตั้งใจไม่โอนเลย"
+  const rAmt=document.getElementById('fRedirectAmt');
+  const rv=parseFloat(rAmt&&rAmt.value);
+  planCfg.redirectAmt=isNaN(rv)?null:Math.max(0,rv);
   savePlan();
   syncPhase2Start();   // เดือนเริ่มเฟส 2 ขยับตามทั้งเดือนเริ่มเก็บและจำนวนเดือนสะสม
   updateFundSums();   // ผลตอบแทนถัวเฉลี่ยมีขาของเงินพัก จึงขึ้นกับ rateMM/ratePark ที่แก้ในนี้ด้วย
@@ -2524,6 +2565,29 @@ function onPlanInputChange(){
 // ---- \u0E41\u0E17\u0E47\u0E1A \u0E01\u0E2D\u0E07\u0E1B\u0E34\u0E14\u0E23\u0E16 ----
 // \u0E40\u0E02\u0E35\u0E22\u0E19\u0E0A\u0E48\u0E27\u0E07\u0E40\u0E27\u0E25\u0E32\u0E01\u0E33\u0E01\u0E31\u0E1A\u0E2B\u0E31\u0E27\u0E02\u0E49\u0E2D\u0E01\u0E25\u0E38\u0E48\u0E21\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32 \u2014 \u0E41\u0E15\u0E30\u0E40\u0E09\u0E1E\u0E32\u0E30 <span> \u0E14\u0E49\u0E27\u0E22 textContent \u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19
 // \u0E2B\u0E49\u0E32\u0E21\u0E2A\u0E23\u0E49\u0E32\u0E07 innerHTML \u0E02\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E4C\u0E14\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32\u0E43\u0E2B\u0E21\u0E48 \u0E44\u0E21\u0E48\u0E07\u0E31\u0E49\u0E19 cursor \u0E08\u0E30\u0E2B\u0E25\u0E38\u0E14\u0E15\u0E2D\u0E19\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49 tab \u0E02\u0E49\u0E32\u0E21\u0E0A\u0E48\u0E2D\u0E07
+// ---- ช่อง "โอนค่างวดเข้าพอร์ตหลังปิด" ----
+// ป้ายของตัวเลือกแรกกับเพดานของช่องกรอกขึ้นกับค่างวดจริง จึงต้องอัปเดตทุกครั้งที่แผนเปลี่ยน
+// freedPay = null คือยังคำนวณแผนไม่ได้ ให้โชว์ป้ายกลาง ๆ ไปก่อน
+function updateRedirectUI(freedPay){
+  const sel=document.getElementById('fRedirectMode');
+  const wrap=document.getElementById('fRedirectAmtWrap');
+  const inp=document.getElementById('fRedirectAmt');
+  const hint=document.getElementById('fRedirectHint');
+  if(!sel||!wrap||!inp||!hint)return;
+  const f=freedPay==null?null:Math.max(0,+freedPay||0);
+  const custom=planCfg.redirectMode==='custom';
+  sel.options[0].textContent=f==null?'ทั้งก้อน (ค่างวดเดิม)':`ทั้งก้อน ฿${fmt(f)}`;
+  wrap.style.display=custom?'':'none';
+  if(f==null)inp.removeAttribute('max'); else inp.max=f.toFixed(2);
+  // เพิ่งสลับมาโหมดกำหนดเองแล้วช่องยังว่าง — เติมยอดที่ระบบใช้อยู่ให้เป็นจุดตั้งต้น จะได้ไม่ต้องเดาเอง
+  if(custom&&inp.value===''&&f!=null&&document.activeElement!==inp)
+    inp.value=Math.round(redirectAmount(f)*100)/100;
+  hint.textContent=!custom?''
+    :f==null?'โอนได้สูงสุดเท่าค่างวดเดิมที่ไม่ต้องจ่ายแล้ว'
+    :(+inp.value||0)>f+0.005?`เกินค่างวดเดิม ระบบจะใช้เพดาน ฿${fmt(f)}`
+    :`โอนได้สูงสุด ฿${fmt(f)} (= ค่างวดเดิมที่ไม่ต้องจ่ายแล้ว) · ที่เหลือไม่เข้าพอร์ต`;
+}
+
 function setGroupWhen(base,p1,p2,p3,desc3){
   const put=(id,t)=>{const el=document.getElementById(id);if(el)el.textContent=t;};
   put('sgWhenBase',base);put('sgWhen1',p1);put('sgWhen2',p2);put('sgWhen3',p3);
@@ -2721,11 +2785,12 @@ function renderFundTab(){
     sum.innerHTML='<div class="note">\u0E22\u0E31\u0E07\u0E04\u0E33\u0E19\u0E27\u0E13\u0E41\u0E1C\u0E19\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49 \u2014 \u0E01\u0E23\u0E38\u0E13\u0E32\u0E01\u0E23\u0E2D\u0E01\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E40\u0E0A\u0E37\u0E48\u0E2D\u0E41\u0E25\u0E49\u0E27\u0E01\u0E14\u0E04\u0E33\u0E19\u0E27\u0E13\u0E17\u0E35\u0E48\u0E2B\u0E19\u0E49\u0E32 1 \u0E01\u0E48\u0E2D\u0E19</div>';
     phases.innerHTML='';
     setGroupWhen('\u2014','\u2014','\u2014','\u2014');
+    updateRedirectUI(null);
     return;
   }
   const monthly=effectiveMonthly();
   const s=buildFundSchedule(monthly);
-  if(!s){sum.innerHTML='';phases.innerHTML='';setGroupWhen('\u2014','\u2014','\u2014','\u2014');return;}
+  if(!s){sum.innerHTML='';phases.innerHTML='';setGroupWhen('\u2014','\u2014','\u2014','\u2014');updateRedirectUI(null);return;}
   const gap=s.atPayoff-p.closureAmt;
   const A1=s.alloc[1], A2=s.alloc[2], A3=s.alloc[3];
   const auto=!(+planCfg.monthly>0);
@@ -2739,7 +2804,8 @@ function renderFundTab(){
   const p1Avail=Math.max(0,monthly-fdPart), p1Want=monthly*A1.invested;
   const p1ToFunds=Math.min(p1Want,p1Avail), p1ToMM=Math.max(0,monthly-fdPart-p1ToFunds);
   const p1Squeezed=p1Want>p1Avail+0.005;
-  const redirectAmt=p.freedPay*(Math.max(0,Math.min(100,+planCfg.redirectPct??100))/100);
+  const redirectAmt=redirectAmount(p.freedPay);
+  updateRedirectUI(p.freedPay);
   const rng=(x)=>x?`${monthLabel(x.from)} – ${monthLabel(x.to)} · ${x.months} เดือน`:'ไม่มีช่วงนี้';
 
   setGroupWhen(
@@ -2748,8 +2814,8 @@ function renderFundTab(){
     ph2||ph3?`${monthLabel((ph2||ph3).from)} – ${monthLabel(p.contractEnd)}`:'ไม่มีช่วงนี้',
     rng(ph3),
     redirectAmt>=p.freedPay-0.005
-      ?`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก ตั้งไว้ 100% คือโอนค่างวดเดิมทั้งก้อน ฿${fmt(p.freedPay)} เข้าพอร์ตทุกเดือน`
-      :`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก ตั้งไว้ ${planCfg.redirectPct}% ของค่างวดเดิม ฿${fmt(p.freedPay)} คือโอนเดือนละ ฿${fmt(redirectAmt)} เข้าพอร์ต`
+      ?`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก — โอนค่างวดเดิมทั้งก้อน ฿${fmt(p.freedPay)} เข้าพอร์ตทุกเดือน`
+      :`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก — กำหนดเอง โอนเดือนละ ฿${fmt(redirectAmt)} จากค่างวดเดิม ฿${fmt(p.freedPay)} · อีก ฿${fmt(p.freedPay-redirectAmt)} เก็บไว้ใช้เอง ไม่เข้าพอร์ต`
   );
 
   let h='';
