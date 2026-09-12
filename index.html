@@ -29,6 +29,7 @@ header p{font-size:.78rem;opacity:.8;margin-top:2px}
 @media(max-width:640px){.g2,.g3,.g4,.cg{grid-template-columns:1fr!important}}
 label{display:block;font-size:.78rem;font-weight:600;color:#4b5563;margin-bottom:4px}
 .fld-hint{font-size:.7rem;color:var(--grayl);line-height:1.5;margin-top:4px}
+.t-age{white-space:nowrap;color:#6b7280;font-size:.82rem}
 .iw{position:relative}
 .iw span{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:.75rem;color:var(--grayl);pointer-events:none}
 input[type=number],input[type=date],input[type=text],select{width:100%;padding:8px 38px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;background:#fff;color:var(--gray);transition:border .2s}
@@ -395,9 +396,12 @@ td:nth-child(2){text-align:left;color:#4b5563}
 <div id="page1" class="page on">
 <div class="card">
   <div class="card-title">📋 ข้อมูลสินเชื่อ</div>
-  <div class="g2" style="margin-bottom:12px">
+  <div class="g3" style="margin-bottom:12px">
     <div><label>ราคารถยนต์</label><div class="iw"><input type="number" id="carPrice" value="0" oninput="saveFormData()"><span>บาท</span></div></div>
     <div><label>วันที่เริ่มผ่อน (งวดแรก)</label><input type="date" id="startDate" onchange="saveFormData()"></div>
+    <div><label>วันเกิด <span style="font-weight:400;color:var(--grayl)">(ว่างได้ — ไว้ดูอายุในแต่ละช่วง)</span></label>
+      <input type="date" id="birthDate" onchange="onBirthChange()">
+      <div class="fld-hint" id="birthHint"></div></div>
   </div>
   <div style="margin-bottom:12px">
     <label>เงินดาวน์</label>
@@ -489,7 +493,7 @@ td:nth-child(2){text-align:left;color:#4b5563}
       </div>
       <div class="tw"><table>
         <thead><tr>
-          <th>งวดที่</th><th style="text-align:left">วันครบกำหนด</th>
+          <th>งวดที่</th><th style="text-align:left">วันครบกำหนด</th><th id="ageHeader" class="hidden">อายุ</th>
           <th>ยอดต้นงวด</th><th>เงินต้น</th><th>ดอกเบี้ย</th><th>ค่างวด</th>
           <th id="ppHeader" class="th-pp hidden">โปะเพิ่ม</th>
           <th>ยอดปลายงวด</th>
@@ -1081,7 +1085,13 @@ loadFund();
 loadFormData();
 
 // ---- Form persistence ----
+// setDM() ที่ loadFormData เรียกกลางคัน จะ saveFormData() ทันทีทั้งที่ยังเติมค่าไม่ครบ
+// ทุกครั้งที่เปิดหน้าเว็บ ช่องที่ยังไม่ถูกเติม (ดอกเบี้ย/จำนวนงวด/วันเกิด/โปะ) จึงถูกล้างใน localStorage
+// แล้วหายจริงตอนเปิดรอบถัดไปถ้าไม่ได้แตะฟอร์มเลย — ระหว่างโหลดจึงต้องห้ามเขียนทับ
+// var ไม่ใช่ let เพราะบล็อก Init ด้านบนเรียก loadFormData() ก่อนถึงบรรทัดนี้ (let จะติด TDZ)
+var isLoadingForm=false;
 function saveFormData(){
+  if(isLoadingForm)return;
   const data={
     carPrice:document.getElementById('carPrice').value,
     down:document.getElementById('down').value,
@@ -1090,6 +1100,7 @@ function saveFormData(){
     term:document.getElementById('term').value,
     method:document.getElementById('method').value,
     startDate:document.getElementById('startDate').value,
+    birth:document.getElementById('birthDate').value,
     enablePP:document.getElementById('enablePP').checked,
     ppAmt:document.getElementById('ppAmt').value,
     ppFreq:document.getElementById('ppFreq').value,
@@ -1101,6 +1112,7 @@ function saveFormData(){
   scheduleFirebaseSync();
 }
 function loadFormData(){
+  isLoadingForm=true;
   try{
     const raw=localStorage.getItem(FKEY);
     if(!raw)return;
@@ -1112,6 +1124,7 @@ function loadFormData(){
     if(d.term!==undefined)document.getElementById('term').value=d.term;
     if(d.method)document.getElementById('method').value=d.method;
     if(d.startDate)document.getElementById('startDate').value=d.startDate;
+    if(d.birth!==undefined)document.getElementById('birthDate').value=d.birth;
     if(d.enablePP){document.getElementById('enablePP').checked=true;document.getElementById('ppPanel').classList.remove('hidden');}
     if(d.ppAmt!==undefined)document.getElementById('ppAmt').value=d.ppAmt;
     if(d.ppFreq){document.getElementById('ppFreq').value=d.ppFreq;updatePPLabel();}
@@ -1119,6 +1132,16 @@ function loadFormData(){
     if(d.ppEnd!==undefined)document.getElementById('ppEnd').value=d.ppEnd;
     if(d.savedAt)updateFormSavedAt(d.savedAt);
   }catch(e){}
+  finally{isLoadingForm=false;}
+  updateBirthHint();
+}
+// เปลี่ยนวันเกิด = คอลัมน์อายุกับป้ายอายุทุกที่ต้องขยับตาม แต่ไม่ต้องคำนวณสินเชื่อใหม่
+function onBirthChange(){
+  saveFormData();
+  updateBirthHint();
+  rerenderTable();
+  if(chartInst&&sched.length)buildChart();   // มี chartInst = Chart.js โหลดได้และกราฟหน้า 1 วาดไปแล้ว
+  renderPage2();
 }
 function updateFormSavedAt(ts){
   const el=document.getElementById('formSavedAt');
@@ -1134,6 +1157,8 @@ function resetFormData(){
   document.getElementById('term').value=0;
   document.getElementById('method').value='flat';
   document.getElementById('startDate').value=defDate.toISOString().split('T')[0];
+  document.getElementById('birthDate').value='';
+  updateBirthHint();
   document.getElementById('enablePP').checked=false;
   document.getElementById('ppPanel').classList.add('hidden');
   document.getElementById('ppAmt').value=0;
@@ -1207,6 +1232,52 @@ function updatePPLabel(){
   document.getElementById('ppStartUnit').textContent=y?'(นับจากงวดแรก)':'งวด';
 }
 function fmt(n){return n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+// ---- อายุ ----
+// วันเกิดอยู่ในช่องหน้า 1 (เก็บรวมกับ formData) เพราะเป็นข้อมูลส่วนตัว ไม่ใช่ส่วนหนึ่งของแผนการเงิน
+// ว่างไว้ได้ — ทุกที่ที่โชว์อายุจะซ่อนตัวเองเมื่อไม่มีวันเกิด
+function birthISO(){
+  const el=document.getElementById('birthDate');
+  const v=el&&el.value?el.value:'';
+  return /^\d{4}-\d{2}-\d{2}$/.test(v)?v:'';
+}
+// อายุ ณ วันที่นั้น — ต้องผ่านวันเกิดของปีนั้นแล้วถึงนับเพิ่มอีกปี
+// คืน null เมื่อยังไม่ได้กรอกวันเกิด หรือวันที่นั้นมาก่อนวันเกิด
+function ageOn(iso,birth){
+  const b=birth===undefined?birthISO():birth;
+  if(!b||!iso)return null;
+  const [by,bm,bd]=b.split('-').map(Number);
+  const [y,mo,d]=String(iso).slice(0,10).split('-').map(Number);
+  if(!y||!mo||!d)return null;
+  let months=(y*12+mo)-(by*12+bm);
+  if(d<bd)months--;                  // เดือนนี้ยังไม่ถึงวันเกิด ยังไม่นับเดือนนั้นเต็ม
+  if(months<0)return null;
+  return{y:Math.floor(months/12),m:months%12};
+}
+// ตารางรายเดือนสรุปยอด "ณ สิ้นเดือน" อายุของเดือนนั้นจึงคิดที่วันสุดท้ายของเดือน
+function ageOnMonth(m,birth){
+  if(!m)return null;
+  const [y,mo]=String(m).split('-').map(Number);
+  if(!y||!mo)return null;
+  const last=new Date(y,mo,0).getDate();   // วันที่ 0 ของเดือนถัดไป = วันสุดท้ายของเดือนนี้
+  return ageOn(y+'-'+String(mo).padStart(2,'0')+'-'+String(last).padStart(2,'0'),birth);
+}
+function ageFull(a){return a?a.y+' ปี'+(a.m?' '+a.m+' เดือน':''):'';}
+function ageShort(a){return a?a.y+' ปี'+(a.m?' '+a.m+' ด.':''):'';}
+// ต่อท้ายป้ายช่วงเวลา — ช่วงยาว ๆ เอาแค่ตัวเลขปี อ่านง่ายกว่าใส่เดือนทั้งสองฝั่ง
+function ageSpanText(from,to){
+  const a=ageOnMonth(from), b=ageOnMonth(to);
+  if(!a&&!b)return '';
+  if(!a||!b)return ' · อายุ '+(a||b).y+' ปี';
+  return ' · อายุ '+(a.y===b.y?a.y+' ปี':a.y+'–'+b.y+' ปี');
+}
+function ageAtText(m){const a=ageOnMonth(m);return a?' · อายุ '+a.y+' ปี':'';}
+function updateBirthHint(){
+  const el=document.getElementById('birthHint');
+  if(!el)return;
+  const a=ageOn(new Date().toLocaleDateString('sv-SE'));   // sv-SE = YYYY-MM-DD ตามเวลาเครื่อง
+  el.textContent=a?'ตอนนี้อายุ '+ageFull(a):'กรอกวันเกิดแล้วจะมีคอลัมน์อายุในตารางและป้ายอายุในแต่ละเฟส';
+}
 // ป้ายแกนของกราฟ — เดิมเป็น "2500k" เปล่า ๆ อ่านแล้วต้องเดาเองว่าหน่วยอะไรและกี่ล้าน
 function axisMoney(v){
   const a=Math.abs(v);
@@ -1316,8 +1387,15 @@ function calculate(){
 }
 
 // ---- Page1 table ----
+// เก็บอาร์กิวเมนต์ล่าสุดไว้ เพราะการเปลี่ยนวันเกิดต้องวาดตารางใหม่โดยไม่คำนวณสินเชื่อซ้ำ
+let lastTableArgs=null;
+function rerenderTable(){if(lastTableArgs)renderTable.apply(null,lastTableArgs);}
 function renderTable(rows,prepay,origTerm,method){
+  lastTableArgs=[rows,prepay,origTerm,method];
   const hasPP=prepay&&rows.some(r=>r.pp>0);
+  const showAge=!!birthISO();
+  const ah=document.getElementById('ageHeader');
+  if(ah)ah.classList.toggle('hidden',!showAge);
   document.getElementById('ppHeader').classList.toggle('hidden',!hasPP);
   const tb=document.getElementById('tbody');tb.innerHTML='';
   rows.forEach((r,idx)=>{
@@ -1325,17 +1403,22 @@ function renderTable(rows,prepay,origTerm,method){
     const tr=document.createElement('tr');
     if(isPP)tr.className='pp-row';if(isE)tr.className='early-end';
     const ppc=hasPP?`<td class="tpp">${r.pp>0?fmt(r.pp)+' 💚':'-'}</td>`:'';
-    tr.innerHTML=`<td>${r.i}${isPP?'<span class="badge">โปะ</span>':''}</td><td>${r.date}</td><td>${fmt(r.op)}</td><td class="tp">${fmt(r.pr)}</td><td class="ti">${fmt(r.int)}</td><td class="tpay">${fmt(r.pay)}</td>${ppc}<td>${fmt(r.bal)}</td>`;
+    const agec=showAge?`<td class="t-age">${ageShort(ageOn(r.dateISO))||'-'}</td>`:'';
+    tr.innerHTML=`<td>${r.i}${isPP?'<span class="badge">โปะ</span>':''}</td><td>${r.date}</td>${agec}<td>${fmt(r.op)}</td><td class="tp">${fmt(r.pr)}</td><td class="ti">${fmt(r.int)}</td><td class="tpay">${fmt(r.pay)}</td>${ppc}<td>${fmt(r.bal)}</td>`;
     tb.appendChild(tr);
   });
   const tot=rows.reduce((a,r)=>({pr:a.pr+r.pr,int:a.int+r.int,pay:a.pay+r.pay,pp:a.pp+r.pp}),{pr:0,int:0,pay:0,pp:0});
   const tf=document.createElement('tr');
   const ppc=hasPP?`<td class="tpp">${fmt(tot.pp)}</td>`:'';
-  tf.innerHTML=`<td colspan="2">รวมทั้งหมด</td><td>-</td><td>${fmt(tot.pr)}</td><td>${fmt(tot.int)}</td><td>${fmt(tot.pay)}</td>${ppc}<td>0.00</td>`;
+  tf.innerHTML=`<td colspan="${showAge?3:2}">รวมทั้งหมด</td><td>-</td><td>${fmt(tot.pr)}</td><td>${fmt(tot.int)}</td><td>${fmt(tot.pay)}</td>${ppc}<td>0.00</td>`;
   tb.appendChild(tf);
   const ex=[];
   if(method==='flat')ex.push('Flat Rate: ดอกเบี้ยคงที่จากยอดกู้ตั้งต้น');else ex.push('Reducing Balance: ดอกเบี้ยจากยอดคงเหลือ');
   if(hasPP)ex.push('🟢 แถวสีเขียว = งวดที่โปะเพิ่ม | ยอดโปะหักจากเงินต้นโดยตรง (สคบ.)');
+  if(showAge&&rows.length){
+    const a0=ageOn(rows[0].dateISO), a1=ageOn(rows[rows.length-1].dateISO);
+    if(a0&&a1)ex.push(`อายุตอนงวดแรก ${ageFull(a0)} → งวดสุดท้าย ${ageFull(a1)}`);
+  }
   document.getElementById('tblNote').textContent='* '+ex.join(' · ');
   scheduleFirebaseSync();
 }
@@ -1360,25 +1443,37 @@ function setChart(m,el){
 }
 function buildChart(){
   if(!sched.length)return;
+  // Chart.js มาจาก CDN — ออฟไลน์แล้วโหลดไม่ได้ ให้ข้ามกราฟไปเงียบ ๆ แบบเดียวกับ buildFundChart()
+  // ไม่งั้นจะ throw กลางคัน calculate() แล้วบรรทัดหลังจากนั้นไม่ทำงาน
+  if(typeof Chart==='undefined')return;
   const ctx=document.getElementById('myChart').getContext('2d');
   if(chartInst){chartInst.destroy();chartInst=null;}
   const labels=sched.map(r=>`${r.i}`),hasPP=sched.some(r=>r.pp>0);
+  // แกน x เป็นเลขงวดล้วน ๆ เพราะป้ายเดือนยาวเกินจะวางเรียงกันทั้งสัญญา
+  // วันครบกำหนดกับอายุจึงไปอยู่ในหัวข้อ tooltip แทน — เห็นเมื่อชี้ ไม่รกตัวกราฟ
+  const tipTitle=(rows)=>(it)=>{
+    const r=rows[it[0].dataIndex];
+    if(!r)return it[0].label;
+    const a=ageOn(r.dateISO);
+    return `งวดที่ ${r.i} · ${r.date}`+(a?` · อายุ ${ageFull(a)}`:'');
+  };
   if(chartMode==='bar'){
     const ds=[{label:'เงินต้น',data:sched.map(r=>+r.pr.toFixed(2)),backgroundColor:'#3b82f6'},{label:'ดอกเบี้ย',data:sched.map(r=>+r.int.toFixed(2)),backgroundColor:'#ef4444'}];
     if(hasPP)ds.push({label:'โปะเพิ่ม',data:sched.map(r=>+r.pp.toFixed(2)),backgroundColor:'#22c55e'});
-    chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:15,font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+    chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{title:tipTitle(sched),label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{stacked:true,ticks:{maxTicksLimit:15,font:{size:10}}},y:{stacked:true,ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
   } else if(chartMode==='area'){
     let cp=0,ci=0,cpp=0;const cpA=[],ciA=[],cppA=[];
     sched.forEach(r=>{cp+=r.pr;ci+=r.int;cpp+=r.pp;cpA.push(+cp.toFixed(2));ciA.push(+ci.toFixed(2));cppA.push(+cpp.toFixed(2));});
     const ds=[{label:'เงินต้นสะสม',data:cpA,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.15)',fill:true,tension:.3,pointRadius:0},{label:'ดอกเบี้ยสะสม',data:ciA,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.3,pointRadius:0}];
     if(hasPP)ds.push({label:'โปะเพิ่มสะสม',data:cppA,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.3,pointRadius:0});
-    chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+    chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{title:tipTitle(sched),label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
   } else {
-    const allL=schedBase.length>sched.length?schedBase.map(r=>`${r.i}`):labels;
+    const useBase=schedBase.length>sched.length;
+    const allL=useBase?schedBase.map(r=>`${r.i}`):labels;
     const padded=sched.map(r=>+r.bal.toFixed(2));while(padded.length<allL.length)padded.push(0);
     const ds=[{label:'ยอดคงเหลือ (มีโปะ)',data:padded,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',fill:true,tension:.3,pointRadius:0}];
     if(hasPP)ds.push({label:'ยอดคงเหลือ (ไม่โปะ)',data:schedBase.map(r=>+r.bal.toFixed(2)),borderColor:'#9ca3af',borderDash:[5,5],fill:false,tension:.3,pointRadius:0});
-    chartInst=new Chart(ctx,{type:'line',data:{labels:allL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
+    chartInst=new Chart(ctx,{type:'line',data:{labels:allL,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{title:tipTitle(useBase?schedBase:sched),label:c=>`${c.dataset.label}: ฿${fmt(c.raw)}`}}},scales:{x:{ticks:{maxTicksLimit:15,font:{size:10}}},y:{ticks:{callback:v=>'฿'+v.toLocaleString()}}}}});
   }
 }
 
@@ -2141,6 +2236,7 @@ function renderPayoffTab(){
     return;
   }
   const ec=p.ec;
+  const targetAge=ageOn(schedBase[p.targetN-1]&&schedBase[p.targetN-1].dateISO);
   // ตอน boot ยังไม่มีตาราง ช่องนี้จึงว่าง ต้องเติมให้หลังคำนวณเสร็จ
   // แต่ห้ามเขียนทับขณะผู้ใช้กำลังพิมพ์อยู่ในช่องนั้น
   const tnEl=document.getElementById('poTargetN');
@@ -2151,7 +2247,7 @@ function renderPayoffTab(){
   renderTargetPickers(p.targetN);
 
   head.innerHTML=`
-    <div class="stat pur"><div class="stat-lbl">\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22</div><div class="stat-val">\u0E07\u0E27\u0E14 ${p.targetN}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">${ec.date}</div></div>
+    <div class="stat pur"><div class="stat-lbl">\u0E07\u0E27\u0E14\u0E40\u0E1B\u0E49\u0E32\u0E2B\u0E21\u0E32\u0E22</div><div class="stat-val">\u0E07\u0E27\u0E14 ${p.targetN}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">${ec.date}${targetAge?' · อายุ '+ageFull(targetAge):''}</div></div>
     <div class="stat o"><div class="stat-lbl">\u0E22\u0E2D\u0E14\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22\u0E1B\u0E34\u0E14\u0E1A\u0E31\u0E0D\u0E0A\u0E35</div><div class="stat-val">\u0E3F${fmt(ec.closureAmt)}</div></div>
     <div class="stat g"><div class="stat-lbl">\u0E2A\u0E48\u0E27\u0E19\u0E25\u0E14\u0E14\u0E2D\u0E01\u0E40\u0E1A\u0E35\u0E49\u0E22 ${(ec.rebatePct*100).toFixed(0)}%</div><div class="stat-val">\u0E3F${fmt(ec.savings)}</div></div>
     <div class="stat"><div class="stat-lbl">\u0E07\u0E27\u0E14\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E08\u0E48\u0E32\u0E22</div><div class="stat-val">${p.skipped} \u0E07\u0E27\u0E14</div></div>
@@ -2806,12 +2902,12 @@ function renderFundTab(){
   const p1Squeezed=p1Want>p1Avail+0.005;
   const redirectAmt=redirectAmount(p.freedPay);
   updateRedirectUI(p.freedPay);
-  const rng=(x)=>x?`${monthLabel(x.from)} – ${monthLabel(x.to)} · ${x.months} เดือน`:'ไม่มีช่วงนี้';
+  const rng=(x)=>x?`${monthLabel(x.from)} – ${monthLabel(x.to)} · ${x.months} เดือน${ageSpanText(x.from,x.to)}`:'ไม่มีช่วงนี้';
 
   setGroupWhen(
-    p.k<=0?'ถึงกำหนดปิดบัญชีแล้ว':`เก็บ ${p.k} เดือน · ${monthLabel(p.saveStart)} – ${monthLabel(p.payoffMonth)}`,
+    p.k<=0?'ถึงกำหนดปิดบัญชีแล้ว':`เก็บ ${p.k} เดือน · ${monthLabel(p.saveStart)} – ${monthLabel(p.payoffMonth)}${ageSpanText(p.saveStart,p.payoffMonth)}`,
     rng(ph1),
-    ph2||ph3?`${monthLabel((ph2||ph3).from)} – ${monthLabel(p.contractEnd)}`:'ไม่มีช่วงนี้',
+    ph2||ph3?`${monthLabel((ph2||ph3).from)} – ${monthLabel(p.contractEnd)}${ageSpanText((ph2||ph3).from,p.contractEnd)}`:'ไม่มีช่วงนี้',
     rng(ph3),
     redirectAmt>=p.freedPay-0.005
       ?`ปิดบัญชีแล้วไม่มีค่างวดต้องจ่ายอีก — โอนค่างวดเดิมทั้งก้อน ฿${fmt(p.freedPay)} เข้าพอร์ตทุกเดือน`
@@ -2824,11 +2920,11 @@ function renderFundTab(){
       \u0E15\u0E49\u0E2D\u0E07\u0E40\u0E15\u0E23\u0E35\u0E22\u0E21\u0E40\u0E07\u0E34\u0E19 <strong>\u0E3F${fmt(Math.max(0,p.closureAmt-(+planCfg.seed||0)))}</strong> \u0E17\u0E31\u0E19\u0E17\u0E35 \u0E44\u0E21\u0E48\u0E21\u0E35\u0E40\u0E27\u0E25\u0E32\u0E17\u0E22\u0E2D\u0E22\u0E40\u0E01\u0E47\u0E1A</div>`;
   } else {
     h+=`<div class="sum-grid-p2" style="margin-bottom:0">
-      <div class="stat"><div class="stat-lbl">\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E01\u0E47\u0E1A\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49</div><div class="stat-val">\u0E3F${fmt(p.closureAmt)}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">\u0E20\u0E32\u0E22\u0E43\u0E19 ${monthLabel(p.payoffMonth)}</div></div>
+      <div class="stat"><div class="stat-lbl">\u0E15\u0E49\u0E2D\u0E07\u0E40\u0E01\u0E47\u0E1A\u0E43\u0E2B\u0E49\u0E44\u0E14\u0E49</div><div class="stat-val">\u0E3F${fmt(p.closureAmt)}</div><div style="font-size:.7rem;color:var(--grayl);margin-top:2px">\u0E20\u0E32\u0E22\u0E43\u0E19 ${monthLabel(p.payoffMonth)}${ageAtText(p.payoffMonth)}</div></div>
       <div class="stat pur"><div class="stat-lbl">\u0E21\u0E35\u0E40\u0E27\u0E25\u0E32\u0E40\u0E01\u0E47\u0E1A</div><div class="stat-val">${p.k} \u0E40\u0E14\u0E37\u0E2D\u0E19</div></div>
       <div class="stat ${auto?'g':''}"><div class="stat-lbl">\u0E40\u0E01\u0E47\u0E1A\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E25\u0E30${auto?' (\u0E04\u0E33\u0E19\u0E27\u0E13\u0E43\u0E2B\u0E49)':''}</div><div class="stat-val">\u0E3F${fmt(monthly)}</div></div>
       <div class="stat ${gap>=0?'g':'r'}"><div class="stat-lbl">${gap>=0?'\u0E04\u0E32\u0E14\u0E27\u0E48\u0E32\u0E08\u0E30\u0E40\u0E2B\u0E25\u0E37\u0E2D':'\u0E04\u0E32\u0E14\u0E27\u0E48\u0E32\u0E08\u0E30\u0E02\u0E32\u0E14'}</div><div class="stat-val">\u0E3F${fmt(Math.abs(gap))}</div></div>
-      <div class="stat o"><div class="stat-lbl">\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E23\u0E27\u0E21 ${monthLabel(p.contractEnd)}</div><div class="stat-val">\u0E3F${fmt(s.finalTotal)}</div></div>
+      <div class="stat o"><div class="stat-lbl">\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E23\u0E27\u0E21 ${monthLabel(p.contractEnd)}${ageAtText(p.contractEnd)}</div><div class="stat-val">\u0E3F${fmt(s.finalTotal)}</div></div>
     </div>`;
     if(gap<-1){
       const need=solveMonthlyDeposit();
@@ -3070,8 +3166,9 @@ function buildFundChart(){
         tooltip:{
           callbacks:{
             title:(it)=>{
-              const r=s.rows[it[0].dataIndex];
-              return monthLabel(r.m)+' · เดือนที่ '+(r.t+1)+(r.paidOff?' · 💥 เดือนปิดบัญชี':' · เฟส '+r.phase);
+              const r=s.rows[it[0].dataIndex], a=ageOnMonth(r.m);
+              return monthLabel(r.m)+' · เดือนที่ '+(r.t+1)+(r.paidOff?' · 💥 เดือนปิดบัญชี':' · เฟส '+r.phase)
+                +(a?' · อายุ '+ageFull(a):'');
             },
             // เส้นที่ถูก fill ซ้อนชั้นพล็อตเป็น "ยอดสะสม" ไม่ใช่ยอดของตัวเอง
             // tooltip จึงต้องอ่านค่าจริงจากแถวข้อมูลตาม tipKey ไม่งั้นจะอ่านได้ว่ากองนั้นมีมากกว่าความจริง
@@ -3287,6 +3384,8 @@ function renderLedger(){
     td:e=>`<td class="tdl" style="white-space:nowrap">${e.m?monthLabel(e.m):'-'}${e.f&&e.f.paidOff?' 💥':''}${e.m===nowM?' <span class="lg-now-tag">เดือนนี้</span>':''}</td>`,
     tot:()=>'<td class="tdl"><strong>รวมทั้งหมด</strong></td>'});
   add('base','📋 เดือน','งวดที่',{td:e=>`<td>${e.pay?'<strong>'+e.pay.i+'</strong>':'-'}</td>`});
+  if(birthISO())add('base','📋 เดือน','อายุ',{
+    td:e=>`<td class="t-age">${(e.m?ageShort(ageOnMonth(e.m)):'')||'-'}</td>`});
   if(hasFund)add('base','📋 เดือน','เฟส',{
     td:e=>`<td>${e.phase?`<span class="ph-pill ph-${e.phase}">${e.phaseText}</span>`:'-'}</td>`});
 
